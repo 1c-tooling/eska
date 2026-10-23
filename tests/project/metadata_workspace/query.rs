@@ -5,6 +5,8 @@ use crate::backend::project::{
     query::{QueryError, QueryIdentity},
 };
 
+mod recovery;
+
 const INPUT: &str = "\u{feff}Процедура Тест()\r\n\tТекст = \"ВЫБРАТЬ 1\r\n\t\t|КАК Значение\"; // keep\r\nКонецПроцедуры\r\n";
 
 /// The queried module is a real declared root source inside a uniquely owned playground project.

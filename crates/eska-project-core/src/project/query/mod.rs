@@ -3,6 +3,7 @@
 mod bsl;
 mod editing;
 mod mapping;
+pub mod recovery;
 mod xml;
 
 pub use bsl::read_bsl;

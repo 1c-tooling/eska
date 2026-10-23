@@ -4,6 +4,7 @@ mod buffers;
 mod documents;
 mod dto;
 mod params;
+mod recovery;
 
 use std::collections::BTreeMap;
 
@@ -16,6 +17,7 @@ use super::{
     server::Server,
 };
 use params::Key;
+pub(super) use recovery::State as RecoveryState;
 
 const INLINE_BYTES: usize = 128 * 1024;
 const RETAINED_BYTES: usize = 32 * 1024 * 1024;
@@ -31,18 +33,29 @@ pub(super) struct State {
 
 /// Request-only routing prevents notifications from allocating retained source snapshots.
 pub(super) fn is_method(method: &str) -> bool {
-    matches!(
-        method,
-        "query/bufferBegin"
-            | "query/bufferAppend"
-            | "query/bufferClose"
-            | "query/open"
-            | "query/close"
-            | "query/list"
-            | "query/read"
-            | "query/map"
-            | "query/plan"
-    )
+    recovery::is_method(method)
+        || matches!(
+            method,
+            "query/bufferBegin"
+                | "query/bufferAppend"
+                | "query/bufferClose"
+                | "query/open"
+                | "query/close"
+                | "query/list"
+                | "query/read"
+                | "query/map"
+                | "query/plan"
+        )
+}
+
+/// Recovery is independent of source generations and never writes a project owner.
+pub(super) fn recovery_capability() -> Value {
+    recovery::capability()
+}
+
+/// Recovery handles belong to the connection rather than to a successfully opened metadata workspace.
+pub(super) fn is_recovery_method(method: &str) -> bool {
+    recovery::is_method(method)
 }
 
 /// Negotiate resource bounds explicitly without changing framing for older API clients.
@@ -102,6 +115,20 @@ impl State {
 }
 
 impl Server {
+    /// A broken manifest cannot prevent inspection or preservation of an inert private checkpoint.
+    pub(super) fn query_recovery(&mut self, method: &str, args: &Value) -> Result<Value, Value> {
+        let mut forbidden = self.recovery_root.iter().cloned().collect::<Vec<_>>();
+        if let Some(session) = &self.session {
+            forbidden.extend(session.workspace.projects().iter().flat_map(|project| {
+                [
+                    project.project().root().to_path_buf(),
+                    project.project().source().to_path_buf(),
+                ]
+            }));
+        }
+        self.recovery.request(method, args, &forbidden)
+    }
+
     /// Share the metadata session's refresh/reopen boundary while retaining query state separately.
     pub(super) fn query(&mut self, method: &str, args: &Value) -> Result<Value, Value> {
         let key = Key::decode(args)?;

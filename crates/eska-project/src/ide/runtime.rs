@@ -455,6 +455,13 @@ fn commits_state(method: &str) -> bool {
             | "query/bufferClose"
             | "query/open"
             | "query/close"
+            | "query/recoveryOpen"
+            | "query/recoveryBegin"
+            | "query/recoveryAppend"
+            | "query/recoveryCommit"
+            | "query/recoveryCancel"
+            | "query/recoveryRemove"
+            | "query/recoveryClose"
     )
 }
 

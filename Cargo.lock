@@ -807,6 +807,7 @@ dependencies = [
 name = "eska-project-core"
 version = "0.15.0"
 dependencies = [
+ "base64 0.23.1",
  "bstr",
  "gix-path",
  "gix-validate",

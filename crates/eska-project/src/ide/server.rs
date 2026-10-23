@@ -54,6 +54,8 @@ pub(super) struct Server {
     pub labels: dto::Labels,
     pub(super) client_minor: u32,
     pub(super) queries: super::query::State,
+    pub(super) recovery: super::query::RecoveryState,
+    pub(super) recovery_root: Option<std::path::PathBuf>,
     property_editing: bool,
     serial: u64,
     round_robin: usize,
@@ -73,6 +75,13 @@ impl Server {
             labels: dto::Labels::new()?,
             client_minor: 0,
             queries: super::query::State::default(),
+            recovery: super::query::RecoveryState::default(),
+            recovery_root: std::env::current_dir().ok().and_then(|start| {
+                start
+                    .ancestors()
+                    .find(|path| path.join("eska.toml").is_file())
+                    .map(std::path::Path::to_path_buf)
+            }),
             property_editing: false,
             serial: 0,
             round_robin: 0,
@@ -134,11 +143,19 @@ impl Server {
             "shutdown" => {
                 self.analyzer_lease = None;
                 self.queries = super::query::State::default();
+                self.recovery = super::query::RecoveryState::default();
                 self.session = None;
                 self.closing = true;
                 Ok(Value::Null)
             }
             method if super::metadata::is_method(method) => self.metadata(method, args, events),
+            method if super::query::is_recovery_method(method) => {
+                if self.client_minor < 14 {
+                    Err(error(-32601))
+                } else {
+                    self.query_recovery(method, args)
+                }
+            }
             method if super::query::is_method(method) && self.client_minor >= 13 => {
                 self.query(method, args)
             }
@@ -196,6 +213,9 @@ impl Server {
         let mut result = json!({"apiVersion":{"major":1,"minor":super::API_MINOR},"server":{"name":self.identity.name(),"version":env!("CARGO_PKG_VERSION")},"capabilities":{"analyzerConfiguration":self.client_minor>=12,"propertyEditing":self.property_editing,"unsignedIntegerProperties":self.property_editing && self.client_minor >= 11,"linkedPropertyEdits":self.property_editing && self.client_minor >= 10,"metadataRename":self.property_editing && self.client_minor >= 9,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":matches!(self.identity,Identity::Legacy),"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}});
         if self.client_minor >= 13 {
             result["capabilities"]["queryEditing"] = super::query::capability();
+        }
+        if self.client_minor >= 14 {
+            result["capabilities"]["queryRecovery"] = super::query::recovery_capability();
         }
         Ok(result)
     }

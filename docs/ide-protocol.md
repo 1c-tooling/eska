@@ -867,3 +867,104 @@ Domain `query_failed` содержит только `details.reason`: `too_large
 `already_open`, `unknown_document`, `unknown_buffer`, `upload_offset`, `snapshot_mismatch`.
 `query_context_unavailable` содержит прежний `{code,data}` resolver/config error.
 `resource_limit` называет конкретный ресурс и его предел. JSON не зависит от locale.
+
+### API 1.14: общее восстановление черновиков
+
+Опциональная capability `queryRecovery` доступна при handshake 1.14:
+`{schemaVersion:1,writesOwner:false,storageVersion:1,maxRecords:16,
+maxRetainedBytes:33554432,maxMetadataBytes:1048576,maxTextBytes:8388608,
+maxChunkBytes:131072,maxUploads:1,compareRevision:true}`.
+Клиенты 1.13 сохраняют прежние query RPC; новые recovery-методы им недоступны.
+Реализация хранилища и проверка данных находятся в ESKA, без API конкретной IDE.
+Подключение этого RPC вместо клиентского файлового хранилища входит в T102;
+наличие серверной capability само по себе не объявляет перенос клиента завершённым.
+
+Все методы — request-only и доступны после initialize без workspace/open.
+`sessionId`, `projectId`, `generation` не используются. Журнал принадлежит
+connection: черновик можно сохранить и прочитать при requiresRefresh/requiresReopen,
+после workspace/close или при ошибке открытия проекта. Это не разрешение применить
+его к исходнику. Каждый метод после open использует и возвращает `storeId`.
+
+`query/recoveryOpen`: `{directory:Path}`. Directory — абсолютный
+приватный каталог адаптера вне root/source всех открытых проектов и известного
+ESKA-корня рабочего каталога процесса. Известный корень определяется наличием
+eska.toml при старте без разбора его содержимого, поэтому невалидный manifest
+не блокирует восстановление. Местоположение повторно проверяется перед записью
+и удалением после изменения сессии метаданных.
+Fallback в проект, переходы к родителю и symlink-компоненты запрещены.
+Отсутствующий каталог при чтении не создаётся. Один connection держит один
+каталог; смена требует close. Повторный open без активного upload перечитывает
+файлы и выдаёт новый непрозрачный `storeId`.
+
+Ответ: `{storeId,records:[Header],damaged:[id],limited:boolean}`.
+`damaged` перечисляет непринятые записи: неверный формат, alias или превышение
+квот; файлы сохраняются. `limited:true` отдельно указывает неполный результат
+из-за лимита. Этот результат не считается отсутствием сохранённых черновиков.
+Header: `{id,revision,metadata,parts}`. `revision` — SHA-256 точных подтверждённых
+bytes файла, включая прежний порядок JSON полей клиента T101.
+`parts` имеет ключи `metadata`, `ownerText`, `base`, `draft`; значение каждого —
+`{bytes,snapshot}` с длиной UTF-8 и SHA-256 полного компонента.
+
+Metadata использует binding checkpoint v1: `schemaVersion:1`, canonical UUID v4
+`id`, непрозрачный `projectKey`, `node:NodeId`, `source:Path`, `descriptor:Path`,
+`descriptorSnapshot`, `diskSnapshot`, `ownerSnapshot`, положительный u64
+`ownerVersion` строкой, `contextFingerprint`, `application:string|null`,
+`identity:Identity` и `writable:boolean`. Лишние поля checkpoint отклоняются.
+`ownerText` содержит полный исходный буфер, `base` — исходный SDBL, `draft` —
+последний черновик. UTF-8, BOM, NUL и незавершённый текст сохраняются буквально.
+Поддерживаемый предыдущим клиентом JSON/base64 storageVersion 1 читается без
+перезаписи при загрузке. Запомненные paths и writable — данные восстановления;
+перед применением требуется заново проверить источник, контекст и права.
+
+`query/recoveryRead`: `{storeId,id,revision,part,offset}`.
+Part — один из четырёх ключей выше; offset задаётся в UTF-8 bytes и не может
+разрезать символ. Ответ: `{id,revision,part,offset,text,nextOffset,complete}`.
+Один chunk не превышает 128 KiB UTF-8. Заголовок и все chunks адресуют одну
+подтверждённую ревизию; чтение не подменяет её записью другого окна.
+
+`query/recoveryBegin`: `{storeId,id,expectedRevision:string|null,parts}`.
+Null означает явное создание новой записи; строка — точную предыдущую revision.
+Для совместимости пропущенный expectedRevision также означает null.
+Все четыре descriptions обязательны. Backend резервирует ограниченный upload
+и переиспользует неизменённые подтверждённые компоненты без копирования владельца.
+Ответ: `{updateId,received:{metadata,ownerText,base,draft}}`, значения — числа
+принятых bytes. Для переиспользованной части уже принята вся заявленная длина.
+
+`query/recoveryAppend`: `{storeId,updateId,part,offset,text}`.
+Принимает непустой chunk до 128 KiB, строго по следующему offset, и проверяет
+полный hash завершённого компонента. Ответ:
+`{updateId,part,receivedBytes,ready}`. Неверный hash освобождает весь upload;
+ошибка offset его не публикует. Сами begin/append файлов не создают.
+
+`query/recoveryCommit`: `{storeId,updateId}` → новый Header.
+Только завершённый upload с правильным полным ownerSnapshot становится записью.
+ESKA проверяет текущую дисковую revision и общую квоту под короткой блокировкой
+хранилища, пишет отдельный файл и атомарно заменяет checkpoint. На Unix новые
+каталоги имеют mode 0700, файлы — 0600. Блокировка хранилища освобождается ОС
+при закрытии handle/процесса; это отдельный механизм от защиты исходного редактора.
+Два backend-процесса используют общий lock inode, который не удаляется.
+Прямая внешняя запись, не участвующая в блокировке, проверяется перед rename;
+операция не объявляется OS compare-and-swap для такого стороннего writer.
+
+`query/recoveryCancel`: `{storeId,updateId}` → `{released}`.
+Освобождает только staging в памяти и не удаляет подтверждённый checkpoint.
+`query/recoveryRemove`: `{storeId,id,revision}` → `{released}`.
+Удаление требует текущей revision и отменяет upload той же записи.
+Поздний commit старого updateId не восстанавливает удалённый черновик.
+Повторное удаление уже отсутствующей в handle записи отвечает released false.
+Явный begin с null создаёт новую запись; адаптер не преобразует запоздалое
+обновление закрытой сессии в такое создание.
+
+`query/recoveryClose`: `{storeId}` → `{released:true}`.
+Закрытие store, shutdown и EOF освобождают retained state; checkpoint
+на диске сохраняется. Workspace/close закрывает только метаданные; журнал остаётся
+доступным до своего close или завершения connection. Незавершённые uploads не применяются. После изменения
+состояния поздняя отмена запроса не скрывает acknowledgement. При shutdown
+адаптер сначала дожидается подтверждения своих checkpoint-запросов.
+
+В domain `query_failed` добавлены reasons `unknown_store`, `store_already_open`,
+`unknown_update`, `upload_busy`, `upload_incomplete`, `recovery_invalid`,
+`recovery_path`, `recovery_in_project`, `recovery_conflict`, `recovery_busy`,
+`recovery_io`, `recovery_limit`; используются также прежние `upload_offset` и
+`snapshot_mismatch`. `resource_limit` обозначает `query_recovery` или
+`query_recovery_part`. Ошибки не содержат исходного текста или локальных IO messages.
