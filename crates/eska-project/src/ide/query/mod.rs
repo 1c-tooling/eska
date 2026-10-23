@@ -310,6 +310,7 @@ fn session_error(error: QuerySessionError) -> Value {
         QuerySessionError::ContextChanged => failure("context_changed"),
         QuerySessionError::ResumeRequired => failure("resume_required"),
         QuerySessionError::OwnerLockRequired => failure("owner_lock_required"),
+        QuerySessionError::OwnerBusy => failure("owner_busy"),
         QuerySessionError::UserReadOnly => failure("user_read_only"),
         QuerySessionError::StaleDraft => failure("stale_draft"),
         QuerySessionError::ApplyBusy => failure("apply_busy"),

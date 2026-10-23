@@ -13,6 +13,7 @@ mod refresh;
 mod renaming;
 pub mod search;
 mod session;
+mod source_protection;
 mod support;
 pub use super::metadata_disk_cache::DiskCacheStats;
 pub use super::metadata_rename::transaction::RecoveryStatus as RenameRecovery;

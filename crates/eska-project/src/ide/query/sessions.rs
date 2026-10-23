@@ -442,7 +442,8 @@ fn header(id: &str, entry: &Entry) -> Result<Value, Value> {
         "revision":entry.core.revision().to_string(),"resumed":entry.core.resumed(),"applyPending":entry.core.applying(),
         "draftWritable":entry.core.draft_writable(),"format":match entry.core.owner_format(){QueryOwnerFormat::Editor=>"editor",QueryOwnerFormat::Source=>"source"},
         "protection":{"capturedSourceWritable":entry.core.document().writable(),"userReadOnly":restrictions.user_read_only,
-            "ownerLock":restrictions.owner_lock.map(|id|id.to_string())},"record":recovery::header(&entry.stored)?}),
+            "ownerLock":restrictions.owner_lock.map(|id|id.to_string()),
+            "sourceRestriction":entry.core.source_restriction_id().map(|id|id.to_string())},"record":recovery::header(&entry.stored)?}),
     )
 }
 

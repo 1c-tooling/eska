@@ -83,6 +83,27 @@ impl From<QueryError> for QueryDocumentError {
 }
 
 impl QueryDocument {
+    /// Pure source encoding is shared by direct planning and the owning source session.
+    fn plan(
+        &self,
+        identity: &QueryIdentity,
+        value: &str,
+        decisions: &[CommentPlacement],
+        line_ending: Option<query::LineEnding>,
+    ) -> Result<EditPlan, QueryDocumentError> {
+        if !self.accepts(identity) {
+            return Err(QueryError::UnsupportedStructure.into());
+        }
+        Ok(query::plan(
+            &self.input,
+            &self.snapshot,
+            identity,
+            value,
+            decisions,
+            line_ending,
+        )?)
+    }
+
     /// The full unsaved owner is retained for conflict checks and source projection.
     #[must_use]
     pub fn input(&self) -> &str {
@@ -253,7 +274,19 @@ impl ProjectSession {
         document: &QueryDocument,
         revision: QueryRevision<'_>,
     ) -> Result<(), QueryDocumentError> {
-        if !self.check_query_read(document, revision)? {
+        self.check_query_source(document, revision, None)
+    }
+
+    /// An owned lease permits only its query plan and never overrides a source/support prohibition.
+    fn check_query_source(
+        &mut self,
+        document: &QueryDocument,
+        revision: QueryRevision<'_>,
+        permit: Option<&super::source_protection::SourceRestriction>,
+    ) -> Result<(), QueryDocumentError> {
+        if self.source_protections.blocks(&document.path, permit)
+            || !self.check_query_read(document, revision)?
+        {
             return Err(QueryDocumentError::ReadOnly);
         }
         Ok(())
@@ -310,17 +343,7 @@ impl ProjectSession {
         line_ending: Option<query::LineEnding>,
     ) -> Result<EditPlan, QueryDocumentError> {
         self.check_query_document(document, revision)?;
-        if !document.accepts(identity) {
-            return Err(QueryError::UnsupportedStructure.into());
-        }
-        let plan = query::plan(
-            &document.input,
-            &document.snapshot,
-            identity,
-            value,
-            decisions,
-            line_ending,
-        )?;
+        let plan = document.plan(identity, value, decisions, line_ending)?;
         self.check_query_document(document, revision)?;
         Ok(plan)
     }

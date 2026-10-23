@@ -1017,12 +1017,29 @@ Document получают через query/open 1.13 из текущего по�
 Остальные символы текста не нормализуются.
 
 SessionHeader: `{querySessionId,storeId,id,revision,resumed,applyPending,
-draftWritable,format,protection:{capturedSourceWritable,userReadOnly,ownerLock},
+draftWritable,format,protection:{capturedSourceWritable,userReadOnly,ownerLock,sourceRestriction},
 record:Header}`. `record` — прежний recovery Header; полные компоненты читаются
 через recoveryRead. `capturedSourceWritable` — запомненная доступность источника,
-а не разрешение пропустить повторную проверку. `ownerLock` пока null в RPC;
-модель core различает собственное временное ограничение и независимый запрет
-пользователя. Изменить draft можно через recoveryBegin/Append/Commit: для активной
+а не разрешение пропустить повторную проверку. `ownerLock` пока null в RPC:
+он относится к подтверждению нативной блокировки BSL. Дополнительный
+`sourceRestriction:string|null` обозначает собственное ограничение записи
+в backend; это положительный token текущей project session, который может
+повториться в другом процессе и не предоставляет права записи по числу.
+В старых сборках поле отсутствует. Активная сессия удерживает исходник и
+его XML-дескриптор: обычный query/plan, обновление свойств и их Undo/Redo,
+связанные правки и затрагивающее их переименование отклоняются. Подготовка
+через владеющую query/sessionPrepare по-прежнему проверяет support policy.
+Переименование сообщает issue `source_session_active`, read-only scalar —
+прежний `property_read_only`/`query_failed` с `reason:read_only`.
+Восстановление структурного журнала с неизвестным набором записей требует
+освободить все активные ограничения проекта. Обновление метаданных и
+переименование других объектов не снимают ограничение. Close, удаление
+checkpoint и уничтожение последнего владеющего состояния освобождают только
+его ограничение; flags пользователя и support policy не меняются.
+Это защита операций текущего backend, без глобальной блокировки файла или
+запрета ввода в IDE. Изменения других процессов всё равно проверяются по снимкам.
+
+Изменить draft можно через recoveryBegin/Append/Commit: для активной
 сессии metadata, ownerText и base должны совпадать с подтверждёнными данными,
 а expectedRevision — с её текущим checkpoint. Обновление draft продвигает revision
 сессии и не меняет разрешение на применение. Лимит памяти учитывает также
@@ -1090,12 +1107,12 @@ recoveryOpen, recoveryClose, workspace/close, shutdown и EOF инвалидир
 применяемая версия draft не журналируются отдельно. При остановке процесса
 сохраняются исходные owner/base и последний подтверждённый draft, который уже
 может отличаться от применяемого. Устойчивый вариант доступен в API 1.16 ниже;
-рабочий адаптер ещё не переключён на общий жизненный цикл.
+рабочий адаптер использует устойчивый вариант 1.16.
 Восстановление никогда автоматически не применяет исходник.
 
 Добавлены reasons `unknown_query_session`, `resume_required`, `owner_lock_required`,
 `user_read_only`, `stale_draft`, `apply_busy`, `unknown_apply`, `invalid_receipt`,
-`closed_session`, `session_limit`; действуют прежние source/context/recovery errors.
+`closed_session`, `session_limit`, `owner_busy`; действуют прежние source/context/recovery errors.
 `resource_limit` использует `query_sessions` или прежний `query_snapshots`.
 JSON-схема и машинные причины одинаковы в ru-RU и en-US.
 

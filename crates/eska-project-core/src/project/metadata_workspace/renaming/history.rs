@@ -21,6 +21,7 @@ impl ProjectSession {
         let mut fresh = Self::open(source)?;
         fresh.generation = self.generation;
         fresh.property_history = std::mem::take(&mut self.property_history);
+        fresh.source_protections = std::mem::take(&mut self.source_protections);
         *self = fresh;
         Ok(())
     }
@@ -56,6 +57,7 @@ impl ProjectSession {
             return Err(EditError::Conflict.into());
         }
         let mut current = Self::open(self.source.reopen().map_err(WorkspaceError::Source)?)?;
+        current.source_protections = self.source_protections.clone();
         let mut checked = plan.clone();
         current.rename_support(&mut checked)?;
         if !checked.issues.is_empty() {

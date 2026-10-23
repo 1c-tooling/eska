@@ -1,0 +1,453 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-24",
+  "part": "Common core source ownership and competing-write fences",
+  "sourceParent": "80320cd03c8112739aef22ae54e0b442a91dbf8c",
+  "explorerCommit": "e3bce744f0ff8f7ed97da0dd5508f7c5ca3bb63e",
+  "sourceSessionBackendWriteFencesComplete": true,
+  "sourceProtectionMigrationComplete": false,
+  "ownerLockAccepted": false,
+  "productionBslEditingEnabled": false,
+  "sourceSha256": {
+    "crates/eska-project-core/src/project/metadata_workspace/editing.rs": "9da35e48c6a3ebbe00fc0288f54eac96001994f29d17285b9311b1040745c724",
+    "crates/eska-project-core/src/project/metadata_workspace/mod.rs": "b128653953edc312a6f92c7656e5347aad3ca62aed449b4db57106c519c5426c",
+    "crates/eska-project-core/src/project/metadata_workspace/query.rs": "9e4cdfefec16678cc6108753ecddff058e41c26d12b7e0cac2053c4b6fa6b079",
+    "crates/eska-project-core/src/project/metadata_workspace/query/session.rs": "8dfd710cb210a16b36f07ca8c48128702c599ff66c982f98fce587bbb0b211c3",
+    "crates/eska-project-core/src/project/metadata_workspace/renaming.rs": "a2dbf362160dd133a77ff9725ba0954f306771f55c5004eb81d9faacbe5cd1b7",
+    "crates/eska-project-core/src/project/metadata_workspace/renaming/history.rs": "2cded93a0780cc5f689ad8f4792651956ade60eba2ba17638e2fe59045b0c8fb",
+    "crates/eska-project-core/src/project/metadata_workspace/session.rs": "f56b94f2aae593cce7cdeaa6f1f8f179b41cd42217ce3748982d215289cb4ef1",
+    "crates/eska-project-core/src/project/metadata_workspace/source_protection.rs": "49a00fd6fd7f8540dbb4bbb56853aa7a930459e5be6251e51137ace1df16bbe4",
+    "crates/eska-project/src/ide/query/mod.rs": "6c6150461675e3048731402c0768ac4a7861f2919e3f52ad30fadaa0158b0986",
+    "crates/eska-project/src/ide/query/sessions.rs": "cf9e9116a951e469496f351a64502cba0d64e68aa22f62293dfa9f612ad97ea3",
+    "crates/eska-project/tests/server/recovery/sessions.rs": "0bb53514556b1eca3e61437449b7936accbb67ae5e9ef9e9fae0c35d524f0af1",
+    "crates/eska-project/tests/server/recovery/sessions/protection.rs": "15e5262d89aa7af2f8bdba1a53a8649049e1cbda87e1b545638e11ad30dd4798",
+    "docs/ide-protocol.md": "f495d23d926efc7503333ea792766ff165bc1d2e869defb6e1eb0c2712ee19d7",
+    "docs/project-cli.md": "c7c97715a749b34697f10e274f4d059cdb831320116401e51bbe8cc82e061460",
+    "docs/roadmap/16-query-editing.md": "b4237ac78d0359fde554a8ed505de464d73280372d1ad1c992247707b7a8f311",
+    "tests/project/metadata_workspace/editing/numbering/linked.rs": "8148269305cf4c7203b6b21e0c53ff63efd070d4390a896677f3cc1f4ee218d0",
+    "tests/project/metadata_workspace/query/session.rs": "fac7f833a6659d8ebf879713c52cbb61b2ef59fba40a96cabe70932fbf5ebf43",
+    "tests/project/metadata_workspace/query/session/protection.rs": "0354575c3d2320e32fa45b09f0e546fb15cb3c7d88529791096700f2d2960b71"
+  },
+  "explorerSourceSha256": {
+    "docs/query-editing.md": "64d1dfbd72115fe46be314a5df53473586c3dbb78863b939faa4b7595fe1ff26",
+    "src/messages.ts": "4b24c4d42ee99c1bf3144588e36f64a9b4e692910c85b0941c947edb02c36b42",
+    "src/property-rename-review.ts": "e8cceb78ad69268aacbc9186f9554a0c28d2873a8b0367559b3847d1efc0f295",
+    "test/query-session-host.cjs": "5b39af2723f685c4b29bde62f1457eeb2e40bbecaf876e6f9cea7f95d480d5c5"
+  },
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6",
+  "backend": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/bin/eska-project",
+    "sha256": "51302c8a369a0d459b68b25427d85bd2228663f1f38b5ae1cf3a7c45411cdb78"
+  },
+  "installedVsix": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/eska-query-source-guards.vsix",
+    "sha256": "0d9444aaddf99feccc6d382b6e841671824856b0f08adbce23354a0cfbc04490",
+    "runtimeMatchesCommittedExplorer": true,
+    "comparedRuntimeAndQueryDocFiles": 1285
+  },
+  "behavior": {
+    "ownership": "QuerySession acquires an owned core lease for the checked source path and descriptor. The project registry holds only Weak references; a numeric RPC sourceRestriction ID describes the owner and cannot recreate the Arc capability.",
+    "limits": "At most 16 live core source owners per project session. Dead weak entries are inert immediately and collected on the next acquisition. IDs advance with checked arithmetic and are never reused within that registry.",
+    "competingWrites": "The common can_edit boundary blocks scalar and dependent property files, including exact history replay. Legacy direct query planning rejects a protected owner; the owning QuerySession supplies its unforgeable lease to the same source/support check.",
+    "rename": "Preview and apply inspect text changes and both sides of directory moves. Existing rename Undo/Redo receives the same registry; unrelated structural refresh retains restrictions. Opaque project-journal recovery rejects active owners before attempting writes.",
+    "lifetime": "Close drops only the source session lease. Checkpoint removal drops its linked handle. Proposed transactional clones retain the same lease until they are committed or dropped. EOF or metadata session destruction cannot leave a live global filesystem lock.",
+    "policy": "No source permissions, native override, or persistent IDE setting is changed. Releasing a source session does not release a support-policy or user restriction.",
+    "scope": "Restrictions affect operations in the owning ProjectSession/backend. A different process or IDE may change disk; exact source/descriptor/context guards detect those changes before source application. There is no global filesystem freeze.",
+    "rpc": "API 1.15/1.16 SessionHeader adds optional protection.sourceRestriction. Native ownerLock remains null and bslEditing remains false. Rename issue source_session_active is localized by the adapter in ru/en.",
+    "headlessBsl": "Core tests use explicit synthetic native lock acknowledgement 19. This proves backend ownership and source checks only; it is not acceptance of a native BSL editor freeze.",
+    "protectedViews": "The general protected-view provider is not migrated in this part. Query owner snapshots and recovery already come from ESKA; the ordinary support provider still reads file bytes through the IDE.",
+    "newDependencies": false,
+    "backendWritesQueryOwner": false
+  },
+  "validation": {
+    "cargoFmt": {
+      "command": "cargo fmt --check",
+      "exitCode": 0
+    },
+    "cargoCheck": {
+      "command": "cargo check",
+      "exitCode": 0
+    },
+    "cargoClippy": {
+      "command": "cargo clippy --all-targets --all-features -- -D warnings",
+      "exitCode": 0
+    },
+    "cargoTest": {
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test",
+      "exitCode": 0,
+      "passed": 1003,
+      "failed": 0,
+      "ignored": 12,
+      "suites": 35
+    },
+    "rustdoc": {
+      "command": "RUSTDOCFLAGS='-D warnings' cargo doc --no-deps",
+      "exitCode": 0
+    },
+    "addressedCore": {
+      "passed": 7,
+      "failed": 0,
+      "cases": [
+        "Direct query/property/Undo writers denied while the owning prepare succeeds.",
+        "Rename of a protected owner rejected; unrelated rename retains its restriction.",
+        "Existing rename history cannot move an owner protected after the original rename.",
+        "Closing one source cannot release another; last proposed state drop releases only its own lease.",
+        "Matching numeric IDs in another project registry cannot authorize an older session.",
+        "Source release preserves a support policy prohibition introduced during its lifetime.",
+        "A protected secondary linked document rejects the entire multi-file property write and its Undo without partial source publication."
+      ]
+    },
+    "rpc": {
+      "realBackend": true,
+      "locales": [
+        "ru-RU",
+        "en-US"
+      ],
+      "sameMachineEvidence": true,
+      "metadataWriteHandshakeEnabled": true,
+      "checks": [
+        "Owner descriptor read-only status; scalar write and history rejected.",
+        "Unknown close cannot release the existing owner.",
+        "Rename preview and apply report the common source-session restriction.",
+        "Owned prepare still succeeds and does not write source.",
+        "Exact close releases writes; restoring re-acquires a fresh restriction.",
+        "Checkpoint removal drops its linked source owner; independent property Undo then succeeds."
+      ]
+    },
+    "typecheck": {
+      "command": "npm run check",
+      "exitCode": 0
+    },
+    "compile": {
+      "command": "npm run compile",
+      "exitCode": 0
+    },
+    "node": {
+      "command": "node --test test/*.test.mjs",
+      "exitCode": 0,
+      "passed": 244,
+      "failed": 0,
+      "skipped": 3
+    },
+    "bun": {
+      "command": "bun test",
+      "exitCode": 0,
+      "passed": 244,
+      "failed": 0,
+      "skipped": 3
+    },
+    "nativeSessionEn": [
+      {
+        "passed": true,
+        "suite": "query-source-sessions",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "backendSourceSessions": true,
+        "newerInputDuringReceipt": true,
+        "interruptedNativeReceipt": true,
+        "latestDraftPreserved": true,
+        "explicitReconciliation": true,
+        "cleanDraftMarkedDirty": true,
+        "noAutomaticReplay": true,
+        "cleanCloseReleasesCheckpoint": true,
+        "backendSourceWriteFence": true,
+        "backendFenceReleasedOnError": true,
+        "restoredFenceUntilClose": true,
+        "injectedErrors": [
+          {
+            "message": "Error: simulated interrupted native receipt"
+          }
+        ]
+      }
+    ],
+    "nativeSessionRu": [
+      {
+        "passed": true,
+        "suite": "language-pack-registration",
+        "locale": "en"
+      },
+      {
+        "passed": true,
+        "suite": "query-source-sessions",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "backendSourceSessions": true,
+        "newerInputDuringReceipt": true,
+        "interruptedNativeReceipt": true,
+        "latestDraftPreserved": true,
+        "explicitReconciliation": true,
+        "cleanDraftMarkedDirty": true,
+        "noAutomaticReplay": true,
+        "cleanCloseReleasesCheckpoint": true,
+        "backendSourceWriteFence": true,
+        "backendFenceReleasedOnError": true,
+        "restoredFenceUntilClose": true,
+        "injectedErrors": [
+          {
+            "message": "Error: simulated interrupted native receipt"
+          }
+        ]
+      }
+    ],
+    "nativeTabsEn": [
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRead",
+          "query/recoveryRemove"
+        ],
+        "backendSourceSessions": true,
+        "sourceSessionMethods": [
+          "query/sessionApplied",
+          "query/sessionClose",
+          "query/sessionGet",
+          "query/sessionOpen",
+          "query/sessionPrepare",
+          "query/sessionResume"
+        ],
+        "legacyQueryPlans": 0
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ],
+    "nativeTabsRu": [
+      {
+        "passed": true,
+        "suite": "language-pack-registration",
+        "locale": "en"
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRead",
+          "query/recoveryRemove"
+        ],
+        "backendSourceSessions": true,
+        "sourceSessionMethods": [
+          "query/sessionApplied",
+          "query/sessionClose",
+          "query/sessionGet",
+          "query/sessionOpen",
+          "query/sessionPrepare",
+          "query/sessionResume"
+        ],
+        "legacyQueryPlans": 0
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ],
+    "nativeScope": "Installed current VSIX and immutable real backend, Linux/VSCodium 1.109.5. Backend property writability is checked through actual production query opening, save failure, resume and clean close. No BSL owner freeze is claimed. Language-pack registration is warm-up only.",
+    "developmentCorrections": [
+      "A test initially addressed a nonexistent EditableField.key; it now selects the real fixture field.",
+      "The broad rename fixture contained an opaque binary module; this test-owned module was replaced with ordinary BSL before a successful baseline preview.",
+      "A rejected structural write creates the existing private write.lock; source invariance is now compared inside src, without treating that lock as a source change.",
+      "The competing-writer RPC fixture first used the default read-only handshake; a dedicated opt-in now proves that source ownership, rather than client_read_only, denies actual writes.",
+      "Strict Clippy identified long test functions; assertion stages were extracted into named helpers, without lint suppression."
+    ]
+  },
+  "evidence": {
+    "bun-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/bun-final.log",
+      "sha256": "eb2441f7eda8fce898cfa6d09b6d8fc79a88149d648cfba7bee8711aed2e9ded"
+    },
+    "check-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/check-final.log",
+      "sha256": "22e0df986057b9ba5be07526ac5fb348862a3dedef42108383cc3e088acbb889"
+    },
+    "clippy-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/clippy-final.log",
+      "sha256": "a757c556e922ee48fd5fcf78964fbae71da0077c46d5207712c2b39e2e602e78"
+    },
+    "clippy-first.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/clippy-first.log",
+      "sha256": "10803957c5c36a388699e191ce7afdc7a2cf7e7e13d8ae41a7da182bf6e2540f"
+    },
+    "explorer-compile.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/explorer-compile.log",
+      "sha256": "aacc76ba29050ec4640c8c2766f813765565ba00278fa226d6072f11f59695bf"
+    },
+    "explorer-typecheck.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/explorer-typecheck.log",
+      "sha256": "5062faef2ef40eb366b4a0a37c2b49bd34f9990ce7448c0e7dcc53401761fba0"
+    },
+    "fmt-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/fmt-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "linked-first.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/linked-first.log",
+      "sha256": "917269e48b20bb73d87c6bdeac4727433dfc0e42f32e9566d9d21d33293cb57a"
+    },
+    "native-session-en-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/native-session-en-full.log",
+      "sha256": "f52d21e34440a0e99a20dc537ec1cea98c86b0b43b62d423176c8a6bf4132403"
+    },
+    "native-session-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/native-session-en-result.log",
+      "sha256": "e27575fb2f362f0ebf5bc3518fac1291974692d8fe5f2c53af405e9a2e2a7891"
+    },
+    "native-session-ru-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/native-session-ru-full.log",
+      "sha256": "3d5c74dc1c2033e94fdb94da46eaba94da4083940fa6606af57f9e4ff07e131d"
+    },
+    "native-session-ru-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/native-session-ru-result.log",
+      "sha256": "f715987980bfd9f863cdaa1ee9a40fdf662c2c5d0ef6ff6ec7cc9fd59d5e44eb"
+    },
+    "native-tabs-en-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/native-tabs-en-full.log",
+      "sha256": "67d8de707116a6051e05aeca9a8606b88170f956ae716a9700627c4f34d3e37a"
+    },
+    "native-tabs-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/native-tabs-en-result.log",
+      "sha256": "15d0ba2aa9d6cb12ec1b151c6b5b4f0e15cd32b9389965ed9ea3c68d3c9551af"
+    },
+    "native-tabs-ru-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/native-tabs-ru-full.log",
+      "sha256": "d8893454472d38e6926651d9b5b5f3f55e3821d9f6482035efe050e1c2334fc9"
+    },
+    "native-tabs-ru-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/native-tabs-ru-result.log",
+      "sha256": "6bd2e01b1f3ccdcfc4ed0d0962a78af1de74c97ba808760dfe53377364060ca6"
+    },
+    "node-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/node-final.log",
+      "sha256": "fe2bad440b4a73f70782ae9ca22bc43691cba16382dfec6dd0678cffa65b9fa2"
+    },
+    "package.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/package.log",
+      "sha256": "141f5e989e3d69440ae2ca79784657ca619e88f8e5e01f0d9e6b23774a489cc8"
+    },
+    "protection-core-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/protection-core-final.log",
+      "sha256": "6d075ac563391602240f8f687aaf2187c6903089c7f6666490401e96f52c618d"
+    },
+    "protection-core-fourth.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/protection-core-fourth.log",
+      "sha256": "63cd9bc62ab2e970793ead337d9bea2265e44a843951e2260e280dbd561933a9"
+    },
+    "protection-rpc-first.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/protection-rpc-first.log",
+      "sha256": "92d650a093c9a3b3ab843e52d3a7ffa7708d86cf977a89e8c2b2f98669649217"
+    },
+    "protection-rpc-second.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/protection-rpc-second.log",
+      "sha256": "a20804c1314412ab56fcdb322abfc1e1278f31aa304ddd4d1a269f1250db9057"
+    },
+    "query-first.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/query-first.log",
+      "sha256": "1b4f9b8c7a612d3fcc2253f604df016a5cd9669d8a621ab36e3853cc27048904"
+    },
+    "query-second.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/query-second.log",
+      "sha256": "d4e9a288b20bc07f0aaeaaeca05a66af4001bbe4ce318138350fe506589c88a6"
+    },
+    "query-third.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/query-third.log",
+      "sha256": "a5ce8fc31dc90f3be6bbbf45b612c7a448fb2beab4c09db50ddd9ad0d99b5938"
+    },
+    "rustdoc-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/rustdoc-final.log",
+      "sha256": "89d576cb985a61ddf94b6e1a5e816a852a76b1cde80196a7f18643e9acbddd94"
+    },
+    "test-before-linked.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/test-before-linked.log",
+      "sha256": "22fde163e3d75ae4087866a7f847db3c0705f9be4f9cb2aa5a9c3e418c4fffa4"
+    },
+    "test-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-guard-5_qi21a6/test-final.log",
+      "sha256": "f464a378c7894c053ca19d2df0c5e633228b762d650b745525fd2d7a6b785a55"
+    }
+  },
+  "environment": {
+    "os": "Linux",
+    "rust": "1.99.1",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "vscodium": "1.109.5",
+    "nativeNode": "22.21.1"
+  },
+  "remaining": [
+    "Complete shared protected-view snapshots/reasons through the backend contract.",
+    "Prove native BSL owner freeze/release preserving prior user restrictions, then enable and accept BSL Apply/Cancel in T102.",
+    "Continue T103, T104 and T105 in order after T102."
+  ],
+  "unverifiedEnvironments": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ]
+}

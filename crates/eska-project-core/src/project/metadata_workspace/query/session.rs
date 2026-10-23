@@ -72,6 +72,7 @@ pub enum QuerySessionError {
     ContextChanged,
     ResumeRequired,
     OwnerLockRequired,
+    OwnerBusy,
     UserReadOnly,
     StaleDraft,
     ApplyBusy,
@@ -125,6 +126,7 @@ pub struct QuerySession {
     draft: Arc<str>,
     format: QueryOwnerFormat,
     restrictions: QueryOwnerRestrictions,
+    source_restriction: Option<super::super::source_protection::SourceRestriction>,
     phase: Phase,
     revision: u64,
     plan_serial: u64,
@@ -149,6 +151,10 @@ impl QuerySession {
         project.check_query_read(&document, revision(&document))?;
         let application = context.context.name().map(|name| name.as_str().to_owned());
         let base: Arc<str> = query.text.into();
+        let source_restriction = project
+            .source_protections
+            .acquire(&document.path, &document.descriptor)
+            .ok_or(QuerySessionError::OwnerBusy)?;
         let session = Self {
             document,
             application,
@@ -158,6 +164,7 @@ impl QuerySession {
             base,
             format,
             restrictions,
+            source_restriction: Some(source_restriction),
             phase: Phase::Ready,
             revision: 1,
             plan_serial: 0,
@@ -208,6 +215,10 @@ impl QuerySession {
             .map(|prepared| restore_pending(&document, &saved.identity, format, prepared))
             .transpose()?;
         let plan_serial = pending.as_ref().map_or(0, |pending| pending.token);
+        let source_restriction = project
+            .source_protections
+            .acquire(&document.path, &document.descriptor)
+            .ok_or(QuerySessionError::OwnerBusy)?;
         Ok(Self {
             document,
             application: saved.application,
@@ -217,6 +228,7 @@ impl QuerySession {
             draft: saved.draft,
             format,
             restrictions: QueryOwnerRestrictions::default(),
+            source_restriction: Some(source_restriction),
             phase: pending.map_or(Phase::Paused, Phase::Recovering),
             revision: 1,
             plan_serial,
@@ -227,6 +239,14 @@ impl QuerySession {
     #[must_use]
     pub const fn document(&self) -> &QueryDocument {
         &self.document
+    }
+
+    /// This backend restriction blocks competing ESKA writes; it is not a native-editor lock acknowledgement.
+    #[must_use]
+    pub fn source_restriction_id(&self) -> Option<u64> {
+        self.source_restriction
+            .as_ref()
+            .map(super::super::source_protection::SourceRestriction::id)
     }
 
     /// Query identity always belongs to the retained full-owner snapshot.
@@ -588,6 +608,7 @@ impl QuerySession {
             return None;
         }
         self.phase = Phase::Closed;
+        self.source_restriction = None;
         self.restrictions.owner_lock.take()
     }
 
@@ -601,13 +622,16 @@ impl QuerySession {
     ) -> Result<(QueryDocument, EditPlan, Query), QuerySessionError> {
         self.check_restrictions(current)?;
         let document = self.checked_document(project, current, false)?;
-        let plan = project.plan_query(
+        project.check_query_source(
             &document,
             revision(&document),
-            &self.identity,
-            &self.draft,
-            decisions,
-            line_ending,
+            self.source_restriction.as_ref(),
+        )?;
+        let plan = document.plan(&self.identity, &self.draft, decisions, line_ending)?;
+        project.check_query_source(
+            &document,
+            revision(&document),
+            self.source_restriction.as_ref(),
         )?;
         self.check_context(project, current.application)?;
         let query = projected(&plan, &self.identity)?;
@@ -669,6 +693,10 @@ impl QuerySession {
         if self.document.root != project.project().root()
             || self.document.source_root != project.project().source()
             || &self.document.scope != project.scope()
+            || !self
+                .source_restriction
+                .as_ref()
+                .is_some_and(|restriction| project.source_protections.owns(restriction))
         {
             return Err(QueryDocumentError::OwnerChanged.into());
         }

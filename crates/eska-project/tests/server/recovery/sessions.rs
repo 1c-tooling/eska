@@ -3,6 +3,9 @@ use super::*;
 #[path = "sessions/prepared.rs"]
 mod prepared;
 
+#[path = "sessions/protection.rs"]
+mod protection;
+
 const SOURCE: &str = "CommonForms/Queries/Ext/Form.xml";
 const XML: &str = "\u{feff}<Form xmlns='http://v8.1c.ru/8.3/xcf/logform' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\r\n<Attributes><Attribute name='List' id='1'><Settings xsi:type='DynamicList'><ManualQuery>true</ManualQuery><QueryText>SELECT 1</QueryText></Settings></Attribute></Attributes><other>keep</other>\r\n</Form>";
 
@@ -81,7 +84,20 @@ fn source_connect_version(
     locale: &str,
     minor: u32,
 ) -> Value {
-    let hello = client.request("initialize",&json!({"apiVersion":{"major":1,"minor":minor},"client":{"name":"session-test","version":"1"},"locale":locale}));
+    source_connect_options(client, root, private, locale, minor, false)
+}
+
+/// Competing-writer tests opt into actual metadata writes; ordinary source-session tests retain the read-only handshake.
+fn source_connect_options(
+    client: &mut Client,
+    root: &Path,
+    private: &Path,
+    locale: &str,
+    minor: u32,
+    allow_property_edits: bool,
+) -> Value {
+    let hello = client.request("initialize",&json!({"apiVersion":{"major":1,"minor":minor},"client":{"name":"session-test","version":"1"},"locale":locale,
+        "allowPropertyEdits":allow_property_edits}));
     assert_eq!(hello["capabilities"]["querySessions"]["schemaVersion"], 1);
     assert_eq!(hello["capabilities"]["querySessions"]["writesOwner"], false);
     assert_eq!(hello["capabilities"]["querySessions"]["bslEditing"], false);

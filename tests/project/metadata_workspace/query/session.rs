@@ -5,6 +5,8 @@ use crate::backend::project::metadata_workspace::{
 };
 use std::sync::Arc;
 
+mod protection;
+
 const XML: &str = "\u{feff}<Form xmlns='http://v8.1c.ru/8.3/xcf/logform' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\r\n<Attributes><Attribute name='List' id='1'><Settings xsi:type='DynamicList'><ManualQuery>true</ManualQuery><QueryText>SELECT 1;\n// пакет 😀\nSELECT 2</QueryText></Settings></Attribute></Attributes><other>keep</other>\r\n</Form>";
 
 /// Native-editor fixtures share the real declared metadata and support setup, with an independent XML payload.
@@ -206,6 +208,7 @@ fn query_session_checks_clean_model_and_exact_saved_xml_bytes() {
         snapshot(&format!("\u{feff}{}", prepared.plan.output()))
     );
     assert_eq!(session.base(), "SELECT saved");
+    session.close();
     let dirty = input.replace("<other>keep</other>", "<other>unsaved</other>");
     let mut false_clean = xml_session(project, &node, &path, &dirty);
     assert!(
@@ -235,9 +238,10 @@ fn query_session_recovery_is_paused_and_rebinds_only_matching_owner_state() {
     original
         .set_draft(original.revision(), Arc::from("SELECT recovered"))
         .unwrap();
+    let checkpoint = saved(project, &original);
+    original.close();
     let mut recovered =
-        QuerySession::restore(project, saved(project, &original), QueryOwnerFormat::Editor)
-            .unwrap();
+        QuerySession::restore(project, checkpoint, QueryOwnerFormat::Editor).unwrap();
     let owner_hash = snapshot(&input);
     let current = editor(1, &owner_hash, true, None);
     assert!(!recovered.resumed());
@@ -361,8 +365,16 @@ fn query_session_bsl_can_reapply_and_restore_after_normalizing_draft_line_ending
         .unwrap();
     assert_eq!(prepared.query.text, "ВЫБРАТЬ 2\nКАК Значение");
     let output = snapshot(prepared.plan.output());
+    let interrupted = saved(project, &session);
+    session
+        .applied(project, prepared.token, editor(8, &output, true, Some(19)))
+        .unwrap();
+    assert_eq!(session.base(), "ВЫБРАТЬ 2\nКАК Значение");
+    assert_eq!(session.draft(), "ВЫБРАТЬ 2\r\nКАК Значение");
+    let acknowledged = saved(project, &session);
+    session.close();
     let mut pending =
-        QuerySession::restore(project, saved(project, &session), QueryOwnerFormat::Source).unwrap();
+        QuerySession::restore(project, interrupted, QueryOwnerFormat::Source).unwrap();
     assert!(!pending.resumed());
     assert!(pending.applying());
     pending
@@ -377,13 +389,9 @@ fn query_session_bsl_can_reapply_and_restore_after_normalizing_draft_line_ending
         .unwrap();
     assert_eq!(pending.base(), "ВЫБРАТЬ 2\nКАК Значение");
     assert_eq!(pending.draft(), "ВЫБРАТЬ 2\r\nКАК Значение");
-    session
-        .applied(project, prepared.token, editor(8, &output, true, Some(19)))
-        .unwrap();
-    assert_eq!(session.base(), "ВЫБРАТЬ 2\nКАК Значение");
-    assert_eq!(session.draft(), "ВЫБРАТЬ 2\r\nКАК Значение");
+    pending.close();
     let mut restored =
-        QuerySession::restore(project, saved(project, &session), QueryOwnerFormat::Source).unwrap();
+        QuerySession::restore(project, acknowledged, QueryOwnerFormat::Source).unwrap();
     restored
         .resume(
             project,
