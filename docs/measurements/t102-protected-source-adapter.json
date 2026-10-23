@@ -473,5 +473,15 @@
     "strict BSL native owner freeze and prior user override restoration",
     "T103-T105"
   ],
-  "next": "Complete the native BSL owner-lock capability and source application under the common session contract, then proceed to T103, T104 and T105 in order."
+  "next": "Complete the native BSL owner-lock capability and source application under the common session contract, then proceed to T103, T104 and T105 in order.",
+  "review": {
+    "launcher": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/run-protected-review.sh",
+    "launcherSha256": "15344312c764601c05d47cdceced104e6bff62af1ba20504161608dc11f90ba7",
+    "project": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/review-project",
+    "isolatedProfile": true,
+    "syntaxChecked": true,
+    "vsixInstalledIntoPrivateProfile": true,
+    "sourceReadOnlyVerifiedViaRealBackend": true,
+    "usage": "Run run-protected-review.sh, then open the catalog object module from the ESKA tree. VSCODE_EXECUTABLE selects an editor; the optional locale argument defaults to ru."
+  }
 }
