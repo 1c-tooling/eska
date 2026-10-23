@@ -50,10 +50,45 @@ fn query_rpc_reads_and_plans_manual_dynamic_list_without_inventing_automatic_tex
             apply(payload, &plan),
             payload.replace("ВЫБРАТЬ &quot;😀&quot;", "ВЫБРАТЬ A &lt; 2 &amp; B")
         );
+        // A non-root descriptor is outside the application fingerprint; UUID/generation remain valid.
+        let descriptor = source.join("CommonForms/Queries.xml");
+        let original = std::fs::read_to_string(&descriptor).unwrap();
+        std::fs::write(&descriptor, format!("{original}\r\n<!-- external -->")).unwrap();
+        let stale_read = client.request(
+            "query/read",
+            with(&revision, json!({"query":list["queries"][0]["identity"]})),
+        );
+        let stale_plan = client.request(
+            "query/plan",
+            with(
+                &revision,
+                json!({"query":read["query"]["identity"],"text":"SELECT stale","comments":[]}),
+            ),
+        );
+        for result in [&stale_read, &stale_plan] {
+            assert_eq!(result["error"]["data"]["kind"], "query_failed", "{result}");
+            assert_eq!(
+                result["error"]["data"]["details"]["reason"],
+                "owner_changed"
+            );
+        }
+        std::fs::write(&descriptor, original).unwrap();
+        assert_eq!(
+            client.ok(
+                "query/read",
+                with(&revision, json!({"query":list["queries"][0]["identity"]})),
+            )["query"]["text"],
+            read["query"]["text"]
+        );
+        let result = (
+            plan,
+            stale_read["error"].clone(),
+            stale_plan["error"].clone(),
+        );
         if let Some(expected) = &expected {
-            assert_eq!(&plan, expected);
+            assert_eq!(&result, expected);
         } else {
-            expected = Some(plan);
+            expected = Some(result);
         }
         client.finish();
     }

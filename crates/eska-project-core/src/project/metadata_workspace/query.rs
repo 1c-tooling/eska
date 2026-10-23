@@ -37,6 +37,8 @@ pub struct QueryDocument {
     generation: u64,
     node: NodeId,
     path: PathBuf,
+    descriptor: PathBuf,
+    descriptor_snapshot: String,
     kind: QueryDocumentKind,
     version: u64,
     input: String,
@@ -180,6 +182,7 @@ impl ProjectSession {
             return Err(QueryError::TooLarge.into());
         }
         let kind = self.query_location(node, path)?;
+        let (descriptor, descriptor_snapshot) = self.query_descriptor(node)?;
         let (owner_uuid, writable) = self.query_access(node, path)?;
         let owner_uuid = owner_uuid.ok_or(QueryDocumentError::OwnerChanged)?;
         let disk = self.query_disk(path)?;
@@ -191,6 +194,8 @@ impl ProjectSession {
             generation: self.generation(),
             node: node.clone(),
             path: path.to_path_buf(),
+            descriptor,
+            descriptor_snapshot,
             kind,
             version,
             snapshot: snapshot(&input),
@@ -236,6 +241,11 @@ impl ProjectSession {
             return Err(QueryDocumentError::OwnerChanged);
         }
         if self.query_location(&document.node, &document.path)? != document.kind {
+            return Err(QueryDocumentError::OwnerChanged);
+        }
+        let (descriptor, descriptor_snapshot) = self.query_descriptor(&document.node)?;
+        if descriptor != document.descriptor || descriptor_snapshot != document.descriptor_snapshot
+        {
             return Err(QueryDocumentError::OwnerChanged);
         }
         let (uuid, writable) = self.query_access(&document.node, &document.path)?;
@@ -332,6 +342,25 @@ impl ProjectSession {
                 .iter()
                 .any(|file| file.path == path && !file.read_only && !file.unknown);
         Ok((uuid, writable))
+    }
+
+    /// Seal every descriptor byte, including non-UUID changes, through the checked bounded XML reader.
+    fn query_descriptor(&self, node: &NodeId) -> Result<(PathBuf, String), QueryDocumentError> {
+        let owner = match node {
+            NodeId::Object(owner) | NodeId::Module { owner, .. } => owner,
+            NodeId::Collection { .. } => return Err(QueryDocumentError::OwnerChanged),
+        };
+        let descriptor = self
+            .source
+            .object_descriptor(owner)
+            .map_err(WorkspaceError::Source)?
+            .ok_or(QueryDocumentError::OwnerChanged)?;
+        let input = self
+            .source
+            .read_xml(&descriptor.path)
+            .map_err(WorkspaceError::Source)?
+            .ok_or(QueryDocumentError::OwnerChanged)?;
+        Ok((descriptor.path, snapshot(&input)))
     }
 
     /// Read only the resolver-selected owner, with an independent limit for an unsaved query view.

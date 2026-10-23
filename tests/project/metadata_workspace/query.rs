@@ -134,6 +134,46 @@ fn query_checks_current_disk_bytes_and_owner_uuid_without_events() {
     ));
 }
 
+/// Another IDE gets the same full-descriptor guard even if it does not hash XML in its adapter.
+#[test]
+fn query_rejects_descriptor_byte_changes_with_unchanged_owner_uuid_and_generation() {
+    let (directory, mut workspace, node, path) = setup();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let document = project
+        .query_document(&node, &path, 7, Some(&INPUT.replace("// keep", "// dirty")))
+        .unwrap();
+    let generation = project.generation();
+    let descriptor = directory.0.join("src/Configuration.xml");
+    let original = fs::read_to_string(&descriptor).unwrap();
+    fs::write(&descriptor, format!("{original}\r\n")).unwrap();
+    assert!(matches!(
+        project.check_query_read(&document, revision(&document)),
+        Err(QueryDocumentError::OwnerChanged)
+    ));
+    assert!(matches!(
+        project.plan_query(
+            &document,
+            revision(&document),
+            &identity(&document),
+            "ВЫБРАТЬ 2\nКАК Значение",
+            &[],
+            None,
+        ),
+        Err(QueryDocumentError::OwnerChanged)
+    ));
+    assert_eq!(project.generation(), generation);
+    assert_eq!(
+        fs::read_to_string(directory.0.join("src").join(&path)).unwrap(),
+        INPUT
+    );
+    fs::write(&descriptor, original).unwrap();
+    assert!(
+        project
+            .check_query_read(&document, revision(&document))
+            .unwrap()
+    );
+}
+
 /// Same-scope IDs from a different workspace or another module path cannot authorize a query edit.
 #[test]
 fn query_rejects_foreign_projects_and_unresolved_source_paths() {
@@ -248,6 +288,15 @@ fn query_xml_plans_bind_form_and_template_values_to_their_declared_owner() {
             .unwrap();
         assert_eq!(result.output(), content.replace("SELECT 1", "SELECT 2"));
         assert_eq!(fs::read_to_string(source.join(&path)).unwrap(), content);
+        let original = fs::read(&descriptor).unwrap();
+        let mut changed = original.clone();
+        changed.extend_from_slice(b"\r\n");
+        fs::write(&descriptor, &changed).unwrap();
+        assert!(matches!(
+            project.check_query_read(&document, revision(&document)),
+            Err(QueryDocumentError::OwnerChanged)
+        ));
+        fs::write(&descriptor, original).unwrap();
         let wrong = if kind == MetadataKind::CommonForm {
             schema
         } else {

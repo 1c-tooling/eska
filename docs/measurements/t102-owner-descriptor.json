@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-23",
+  "part": "Full owner-descriptor conflict guard in ESKA core",
+  "ownerLockAccepted": false,
+  "sessionModelMigrationComplete": false,
+  "productionBslEditingEnabled": false,
+  "sourceParent": "44ea899f9fcfe9d42561031abec4c2c2c88e1eee",
+  "explorerCommit": "39a2482e34ea0da9ce65c54c96a4723ac737180e",
+  "sourceSha256": {
+    "crates/eska-project-core/src/project/metadata_workspace/query.rs": "db412733169a87579c061b4cec1da460ff1a2c47222e5b9a296183063d59ac77",
+    "tests/project/metadata_workspace/query.rs": "8daec8775f63e8692291bcda85fbee8ba4f96a3732d3f4d96de6dcb349c52485",
+    "tests/project/metadata_workspace/ide/query/xml.rs": "012ecd287d0df9aa39df96b825e0be84fe5c969a266a586ebedd3c16d09d05f2"
+  },
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8",
+  "backend": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/bin/eska-project",
+    "sha256": "342bb7fb83972c0a28c404170c87a1e6e949ed7d55fd251b47fd88ecc267fc5c"
+  },
+  "installedVsix": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/eska-query-recovery-api14-checked.vsix",
+    "sha256": "731501c67664d7075d3a7be4f986128529a2c9a81adb97aa191d4d9fbdededac"
+  },
+  "behavior": {
+    "before": "Retained QueryDocument checked UUID, disk source, generation and support; a child descriptor byte change with the same UUID could pass direct RPC. Explorer independently guarded its descriptor hash.",
+    "after": "Core retains the resolver-selected descriptor path and full SHA-256. Every query read/plan re-resolves and hashes it via the existing bounded checked XML reader; changed bytes return owner_changed without watcher delivery.",
+    "ownerKinds": [
+      "BSL",
+      "data composition template",
+      "form"
+    ],
+    "publicJsonSchemaChanged": false,
+    "apiMinor": 14,
+    "newDependencies": false,
+    "configurationWideScan": false,
+    "newCache": false,
+    "sourceFilesWritten": false,
+    "scope": "This checks a retained QueryDocument. Reopening creates a new binding; recovered long-lived session rebind checks still require the remaining shared session migration."
+  },
+  "validation": {
+    "cargoFmt": {
+      "command": "cargo fmt --check",
+      "exitCode": 0
+    },
+    "cargoCheck": {
+      "command": "cargo check",
+      "exitCode": 0
+    },
+    "cargoClippy": {
+      "command": "cargo clippy --all-targets --all-features -- -D warnings",
+      "exitCode": 0
+    },
+    "cargoTest": {
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test",
+      "exitCode": 0,
+      "passed": 974,
+      "failed": 0,
+      "ignored": 12
+    },
+    "focused": {
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test --test integration query_",
+      "passed": 21,
+      "failed": 0
+    },
+    "node": {
+      "command": "node --test test/*.test.mjs",
+      "passed": 237,
+      "failed": 0,
+      "skipped": 3,
+      "backend": "bin/eska-project"
+    },
+    "bun": {
+      "command": "bun test test/*.test.mjs",
+      "passed": 237,
+      "failed": 0,
+      "skipped": 3,
+      "backend": "bin/eska-project"
+    },
+    "nativeEn": [
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRemove"
+        ]
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ],
+    "nativeRu": [
+      {
+        "passed": true,
+        "suite": "language-pack-registration",
+        "locale": "en"
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRemove"
+        ]
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ],
+    "baselineAndCurrentWithoutVscode": [
+      {
+        "passed": true,
+        "suite": "descriptor-rpc-without-vscode",
+        "locale": "ru-RU",
+        "binary": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/bin-independent/eska-project",
+        "sha256": "ce6e6550a0464e48ebfc8f41be14ac284631857cb66b04e9cbc7af0f54fbf29a",
+        "expectedBlocked": false,
+        "errors": [
+          null,
+          null
+        ],
+        "payloadUnchanged": true,
+        "dirtySnapshotUnchanged": true
+      },
+      {
+        "passed": true,
+        "suite": "descriptor-rpc-without-vscode",
+        "locale": "en-US",
+        "binary": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/bin-independent/eska-project",
+        "sha256": "ce6e6550a0464e48ebfc8f41be14ac284631857cb66b04e9cbc7af0f54fbf29a",
+        "expectedBlocked": false,
+        "errors": [
+          null,
+          null
+        ],
+        "payloadUnchanged": true,
+        "dirtySnapshotUnchanged": true
+      },
+      {
+        "passed": true,
+        "suite": "descriptor-rpc-without-vscode",
+        "locale": "ru-RU",
+        "binary": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/bin/eska-project",
+        "sha256": "342bb7fb83972c0a28c404170c87a1e6e949ed7d55fd251b47fd88ecc267fc5c",
+        "expectedBlocked": true,
+        "errors": [
+          {
+            "code": "requestFailed",
+            "domain": "query_failed",
+            "reason": "owner_changed"
+          },
+          {
+            "code": "requestFailed",
+            "domain": "query_failed",
+            "reason": "owner_changed"
+          }
+        ],
+        "payloadUnchanged": true,
+        "dirtySnapshotUnchanged": true
+      },
+      {
+        "passed": true,
+        "suite": "descriptor-rpc-without-vscode",
+        "locale": "en-US",
+        "binary": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/bin/eska-project",
+        "sha256": "342bb7fb83972c0a28c404170c87a1e6e949ed7d55fd251b47fd88ecc267fc5c",
+        "expectedBlocked": true,
+        "errors": [
+          {
+            "code": "requestFailed",
+            "domain": "query_failed",
+            "reason": "owner_changed"
+          },
+          {
+            "code": "requestFailed",
+            "domain": "query_failed",
+            "reason": "owner_changed"
+          }
+        ],
+        "payloadUnchanged": true,
+        "dirtySnapshotUnchanged": true
+      }
+    ],
+    "baselineProbe": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/verify-descriptor.mjs",
+    "earlierFocusedRun": "The first focused RPC run failed before explicitly building the project executable. focused.log and project-build.log are retained; focused-current.log and the final standard workspace run passed. The separate probe identifies both copied baseline/current executables by SHA-256 and confirms their actual behavior."
+  },
+  "evidence": {
+    "fmt.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/fmt.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "check.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/check.log",
+      "sha256": "e7308e299f3e457f32dca98d9779de79f0efcbb3fa31cc67fa39be0d1c9d533a"
+    },
+    "clippy.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/clippy.log",
+      "sha256": "7d947e4adce8f94d68b70677f090279fad4230f1c8dfdbb61ebc9629888db82a"
+    },
+    "project-build.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/project-build.log",
+      "sha256": "13a4a6007c77d567717033c51b57a6d15c9451671ad07b2a5d64c2a2ba4b081e"
+    },
+    "focused.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/focused.log",
+      "sha256": "75bc8c2158c8821896a11c60a22b63e4078a573d7ef61530bc8b379bb3a2cbe8"
+    },
+    "focused-current.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/focused-current.log",
+      "sha256": "990c18aedd7bd194f7dc179b453c78d8ac39c06b2d51832f7247dd9818bdd4e2"
+    },
+    "test.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/test.log",
+      "sha256": "7021faaeed9991320f30e19dde2f37a4c922eb12e2cbd31100b31bc2b54581f9"
+    },
+    "node.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/node.log",
+      "sha256": "75be2a33e710c076e422379883a31c78374229e907266fce6450f201960815c9"
+    },
+    "bun.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/bun.log",
+      "sha256": "9a6d765f15e063d5848a9809e3c7c5887257720fcbf1baf0910eeff5bd623389"
+    },
+    "native-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/native-en-result.log",
+      "sha256": "cc75c2e4cf3f34de475f27600a3f60bbb88bbf27f7d960eac6a29a98d024ea54"
+    },
+    "native-ru-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/native-ru-result.log",
+      "sha256": "1a06c4cd231f55b85c0b55ebdf337850db2e8660a3be7836b453c24250920475"
+    },
+    "baseline-current-rpc.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-descriptor-6i5spqs8/baseline-current-rpc.log",
+      "sha256": "f681cd135d186868140cdd9c19303fd1fe53e451cf1f8f1add05e232420e28c9"
+    }
+  },
+  "environment": {
+    "os": "Linux",
+    "rust": "1.99.1",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "vscodium": "1.109.5",
+    "nativeNode": "22.21.1"
+  },
+  "remaining": [
+    "Move the long-lived query session and source-protection ownership/transitions into the common backend.",
+    "Prove temporary native owner lock/release preserving prior user restrictions before enabling BSL Apply/Cancel.",
+    "Continue T103, T104 and T105 after T102; their completion is not claimed."
+  ],
+  "unverifiedEnvironments": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ]
+}
