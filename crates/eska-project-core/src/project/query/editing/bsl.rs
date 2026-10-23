@@ -2,7 +2,7 @@
 
 use crate::project::metadata_edit::{EditPlan, Replacement};
 
-use super::{CommentPlacement, Query, QueryError, difference, replacement};
+use super::{CommentPlacement, LineEnding, Query, QueryError, difference, replacement};
 use crate::project::query::Affinity;
 
 struct Style {
@@ -17,8 +17,9 @@ pub(super) fn plan(
     value: &str,
     decisions: &[CommentPlacement],
     placed: &[CommentPlacement],
+    line_ending: Option<LineEnding>,
 ) -> Result<EditPlan, QueryError> {
-    let style = style(input, query);
+    let style = style(input, query, line_ending);
     let (old, new) = difference(&query.text, value);
     let start = query
         .map
@@ -59,9 +60,9 @@ pub(super) fn plan(
 }
 
 /// Existing continuation indentation wins; a one-line literal inherits its owner's indentation.
-fn style(input: &str, query: &Query) -> Style {
+fn style(input: &str, query: &Query, line_ending: Option<LineEnding>) -> Style {
     let original = &input[query.source.clone()];
-    let newline = original.find(['\r', '\n']).map_or("\n", |offset| {
+    let inferred = original.find(['\r', '\n']).map_or("\n", |offset| {
         if original[offset..].starts_with("\r\n") {
             "\r\n"
         } else if original[offset..].starts_with('\r') {
@@ -70,6 +71,7 @@ fn style(input: &str, query: &Query) -> Style {
             "\n"
         }
     });
+    let newline = line_ending.map_or(inferred, LineEnding::as_str);
     let prefix = original
         .lines()
         .skip(1)

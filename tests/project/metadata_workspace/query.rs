@@ -65,6 +65,7 @@ fn query_plans_use_unsaved_owner_without_writing_or_refreshing_the_project() {
             &identity(&document),
             "ВЫБРАТЬ 2\nКАК Значение",
             &[],
+            None,
         )
         .unwrap();
     assert_eq!(result.output(), dirty.replacen("ВЫБРАТЬ 1", "ВЫБРАТЬ 2", 1));
@@ -179,7 +180,8 @@ fn query_cannot_edit_after_support_policy_locks_the_owner() {
             revision(&document),
             &identity(&document),
             "ВЫБРАТЬ 2",
-            &[]
+            &[],
+            None,
         ),
         Err(QueryDocumentError::ReadOnly)
     ));
@@ -239,6 +241,7 @@ fn query_xml_plans_bind_form_and_template_values_to_their_declared_owner() {
                 &query.identity,
                 "SELECT 2",
                 &[],
+                None,
             )
             .unwrap();
         assert_eq!(result.output(), content.replace("SELECT 1", "SELECT 2"));

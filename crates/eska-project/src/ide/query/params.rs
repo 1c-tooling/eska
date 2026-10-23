@@ -98,6 +98,24 @@ pub(super) struct Plan {
     pub text: Option<String>,
     pub buffer_id: Option<String>,
     pub comments: Vec<Placement>,
+    pub line_ending: Option<LineEnding>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(super) enum LineEnding {
+    Lf,
+    Crlf,
+}
+
+impl LineEnding {
+    /// The editor specifies physical source lines independently of canonical query text.
+    pub const fn core(self) -> eska_project_core::project::query::LineEnding {
+        match self {
+            Self::Lf => eska_project_core::project::query::LineEnding::Lf,
+            Self::Crlf => eska_project_core::project::query::LineEnding::CrLf,
+        }
+    }
 }
 
 #[derive(Deserialize)]

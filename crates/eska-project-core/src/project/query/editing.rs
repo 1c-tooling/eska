@@ -16,6 +16,40 @@ pub struct CommentPlacement {
     pub query_offset: Option<usize>,
 }
 
+/// Newly inserted physical lines must match the editor model used to apply a byte plan.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LineEnding {
+    Lf,
+    CrLf,
+}
+
+impl LineEnding {
+    /// Render a physical source newline without changing decoded query characters.
+    pub(super) const fn as_str(self) -> &'static str {
+        match self {
+            Self::Lf => "\n",
+            Self::CrLf => "\r\n",
+        }
+    }
+
+    /// Normalize only newly emitted source syntax; unchanged owner bytes stay outside the plan.
+    pub(super) fn render(self, value: &str) -> String {
+        let mut output = String::with_capacity(value.len());
+        let mut characters = value.chars().peekable();
+        while let Some(character) = characters.next() {
+            if matches!(character, '\r' | '\n') {
+                if character == '\r' && characters.peek() == Some(&'\n') {
+                    characters.next();
+                }
+                output.push_str(self.as_str());
+            } else {
+                output.push(character);
+            }
+        }
+        output
+    }
+}
+
 /// Plan against exact owner bytes, independently of later filesystem/editor publication.
 ///
 /// # Errors
@@ -26,6 +60,7 @@ pub fn plan(
     identity: &QueryIdentity,
     value: &str,
     decisions: &[CommentPlacement],
+    line_ending: Option<LineEnding>,
 ) -> Result<EditPlan, QueryError> {
     super::check_size(input)?;
     super::check_size(value)?;
@@ -52,9 +87,9 @@ pub fn plan(
     }
     let placed = placements(&query, value, decisions)?;
     let result = if matches!(identity, QueryIdentity::BslLiteral(_)) {
-        bsl::plan(input, &query, value, decisions, &placed)?
+        bsl::plan(input, &query, value, decisions, &placed, line_ending)?
     } else {
-        xml::plan(input, &query, value, decisions, &placed)?
+        xml::plan(input, &query, value, decisions, &placed, line_ending)?
     };
     super::check_size(result.output())?;
     let updated_identity = match identity {

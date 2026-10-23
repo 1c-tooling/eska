@@ -704,7 +704,8 @@ commit boundary: пришедшая после неё отмена не пере
 
 При запросе minor 13 capability `queryEditing` содержит `schemaVersion:1`,
 `planOnly:true`, `writesOwner:false`, `sourceKinds:["dataCompositionSchema","form","bsl"]`
-и лимиты ниже. Эти методы доступны после `workspace/open`. Они не запускают
+и лимиты ниже. Capability `editorLineEndings:true` дополнительно разрешает
+явный формат новых физических строк в `query/plan`. Эти методы доступны после `workspace/open`. Они не запускают
 анализатор, не исполняют SDBL, не записывают XML/BSL и не меняют metadata generation.
 `allowPropertyEdits` управляет прежними командами записи свойств; получение
 query-плана само по себе не публикует правку.
@@ -818,13 +819,23 @@ positions:[{line,character}],affinity?:"before"|"after"}`.
 `invalid_position`. Affinity выбирает сторону source-only gap; default `after`.
 Этот метод работает с зафиксированным оригиналом владельца.
 
-`query/plan`: `{...binding,query:Identity,text?,bufferId?,comments:[{comment,queryOffset}]}`.
+`query/plan`: `{...binding,query:Identity,text?,bufferId?,comments:[{comment,queryOffset}],lineEnding?:"lf"|"crlf"}`.
 Нужно ровно одно значение `text`/`bufferId`. `comments` — массив явных решений:
 `queryOffset` — UTF-8 позиция в новом тексте, null означает явное удаление.
 Это обязательное поле решения; его отсутствие не означает удаление. Пропущенные
 решения сохраняют комментарии на однозначных местах неизменённого текста;
 неоднозначность даёт `comments_require_decision`. Для BSL назначение возможно
 только перед строкой после LF, внутри многострочного литерала.
+
+Редактор передаёт `lineEnding` из модели владельца, когда сервер объявляет
+`editorLineEndings:true`. Новые физические строки XML и BSL используют этот
+формат: VS Code не должен дополнительно нормализовать план и менять его хэш
+или projected map. В том числе это относится к первой вставке перевода строки
+в однострочный источник. Содержимое XML character references не меняется,
+source comments сохраняют исходные bytes. No-op не нормализует владельца.
+Без поля действует прежнее планирование; наличие capability проверяется
+перед использованием поля. Чистый SDBL XML передаётся с LF; CR в значении
+не используется для управления физическим стилем XML.
 
 Ответ: `{noOp,outputSnapshot,replacements,projectedQuery,...binding}`.
 `replacements:[{range,rangeUtf16,text}]` адресуют исходный owner snapshot;
@@ -835,7 +846,8 @@ positions:[{line,character}],affinity?:"before"|"after"}`.
 побайтно прежний источник. XML использует существующий scalar patch; при правке
 CDATA может стать escaped text, XML вокруг значения не сериализуется. Для BSL
 чистый текст использует LF, CRLF черновика нормализуется в LF; comment offsets
-задаются в этом нормализованном тексте. Физический стиль исходника сохраняется.
+задаются в этом нормализованном тексте. `lineEnding` управляет только новым
+source-синтаксисом, остальная часть владельца сохраняется побайтно.
 
 Клиент проверяет актуальные version/snapshot/context перед `WorkspaceEdit` и
 применяет план только к этому буферу. План не является командой сохранения файла

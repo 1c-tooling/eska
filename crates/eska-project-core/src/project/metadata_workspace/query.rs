@@ -259,6 +259,7 @@ impl ProjectSession {
         identity: &QueryIdentity,
         value: &str,
         decisions: &[CommentPlacement],
+        line_ending: Option<query::LineEnding>,
     ) -> Result<EditPlan, QueryDocumentError> {
         self.check_query_document(document, revision)?;
         if !document.accepts(identity) {
@@ -270,6 +271,7 @@ impl ProjectSession {
             identity,
             value,
             decisions,
+            line_ending,
         )?;
         self.check_query_document(document, revision)?;
         Ok(plan)

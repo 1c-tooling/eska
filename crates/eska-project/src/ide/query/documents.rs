@@ -157,7 +157,7 @@ impl State {
         revision: QueryRevision<'_>,
         args: &Value,
     ) -> Result<Value, Value> {
-        optional_fields(args, &["text", "bufferId"])?;
+        optional_fields(args, &["text", "bufferId", "lineEnding"])?;
         let input: params::Plan = decode(args)?;
         let value = self
             .input_text(
@@ -173,7 +173,14 @@ impl State {
             .map(params::Placement::core)
             .collect::<Result<Vec<_>, _>>()?;
         let plan = project
-            .plan_query(&entry.document, revision, &identity, value, &decisions)
+            .plan_query(
+                &entry.document,
+                revision,
+                &identity,
+                value,
+                &decisions,
+                input.line_ending.map(params::LineEnding::core),
+            )
             .map_err(|error| document_error(&error))?;
         let query = match identity {
             QueryIdentity::BslLiteral(range) => {

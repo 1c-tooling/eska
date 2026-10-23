@@ -26,6 +26,7 @@ fn edit(input: &str, value: &str, decisions: &[CommentPlacement]) -> Result<Edit
         &query(input).identity,
         value,
         decisions,
+        None,
     )
 }
 
@@ -56,6 +57,86 @@ fn xml_changes_only_the_query_scalar_and_escapes_values_with_existing_patch() {
         )
     );
     assert_eq!(result.replacements().len(), 1);
+    assert_eq!(query(result.output()).text, value);
+}
+
+/// Editor EOL normalization must not change the byte plan or the canonical decoded XML query.
+#[test]
+fn editor_line_endings_match_new_xml_lines_without_rewriting_owner_or_no_op() {
+    let input = xml("<![CDATA[old]]>");
+    let identity = query(&input).identity;
+    for ending in [LineEnding::Lf, LineEnding::CrLf] {
+        let value = "SELECT 1\nFROM Table";
+        let result = plan(
+            &input,
+            &metadata_edit::snapshot(&input),
+            &identity,
+            value,
+            &[],
+            Some(ending),
+        )
+        .expect("editor XML plan");
+        assert_eq!(
+            result.output(),
+            input.replace("<![CDATA[old]]>", &ending.render(value))
+        );
+        assert_eq!(query(result.output()).text, value);
+        let no_op = plan(
+            &input,
+            &metadata_edit::snapshot(&input),
+            &identity,
+            "old",
+            &[],
+            Some(ending),
+        )
+        .expect("no-op");
+        assert_eq!(no_op.output(), input);
+        assert!(no_op.is_empty());
+    }
+}
+
+/// Repositioned XML comments retain exact source bytes when rendering physical CRLF query lines.
+#[test]
+fn editor_line_endings_preserve_split_source_comments_and_logical_cr_entities() {
+    let input = xml("A<!--\r\nkeep\r\n-->B");
+    let value = "N\nW\r";
+    let result = plan(
+        &input,
+        &metadata_edit::snapshot(&input),
+        &query(&input).identity,
+        value,
+        &[CommentPlacement {
+            comment: 0,
+            query_offset: Some(1),
+        }],
+        Some(LineEnding::CrLf),
+    )
+    .expect("comment placement");
+    assert_eq!(
+        result.output(),
+        input.replace("A<!--\r\nkeep\r\n-->B", "N<!--\r\nkeep\r\n-->\r\nW&#13;")
+    );
+    assert_eq!(query(result.output()).text, value);
+}
+
+/// A one-line BSL literal has no local newline to infer; the editor supplies the owner style.
+#[test]
+fn editor_line_endings_control_new_bsl_continuations() {
+    let input = "\u{feff}// owner\r\nx = \"SELECT 1\"; // untouched\r\n";
+    let value = "SELECT 1\nFROM T";
+    let result = plan(
+        input,
+        &metadata_edit::snapshot(input),
+        &query(input).identity,
+        value,
+        &[],
+        Some(LineEnding::CrLf),
+    )
+    .expect("BSL CRLF");
+    assert_eq!(
+        result.output(),
+        input.replace("SELECT 1", "SELECT 1\r\n\t|FROM T")
+    );
     assert_eq!(query(result.output()).text, value);
 }
 
@@ -229,7 +310,7 @@ fn stale_ranges_invalid_values_and_forged_comment_targets_never_return_a_plan() 
     let input = "x = \"SELECT 1\";";
     let selected = query(input);
     assert_eq!(
-        plan(input, "stale", &selected.identity, "SELECT 2", &[]).err(),
+        plan(input, "stale", &selected.identity, "SELECT 2", &[], None).err(),
         Some(QueryError::Conflict)
     );
     assert_eq!(
@@ -238,7 +319,8 @@ fn stale_ranges_invalid_values_and_forged_comment_targets_never_return_a_plan() 
             &metadata_edit::snapshot(input),
             &QueryIdentity::BslLiteral(6..10),
             "SELECT 2",
-            &[]
+            &[],
+            None,
         )
         .err(),
         Some(QueryError::Conflict)

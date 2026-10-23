@@ -119,5 +119,19 @@ fn query_rpc_lists_scd_datasets_and_plans_only_the_selected_xml_scalar() {
         payload.replace("<![CDATA[ВЫБРАТЬ \"😀\"]]>", "ВЫБРАТЬ A &lt; 2 &amp; B")
     );
     assert_eq!(bytes(&directory.0), before);
+    for (ending, newline) in [("lf", "\n"), ("crlf", "\r\n")] {
+        let physical = client.ok("query/plan", with(&revision, json!({"query":read["query"]["identity"],"text":"SELECT 1\nFROM T","comments":[],"lineEnding":ending})));
+        assert_eq!(
+            apply(payload, &physical),
+            payload.replace(
+                "<![CDATA[ВЫБРАТЬ \"😀\"]]>",
+                &format!("SELECT 1{newline}FROM T")
+            )
+        );
+        assert_eq!(physical["projectedQuery"]["text"], "SELECT 1\nFROM T");
+    }
+    for ending in [json!("unknown"), Value::Null, json!(true)] {
+        assert_eq!(client.request("query/plan", with(&revision,json!({"query":read["query"]["identity"],"text":"SELECT 1","comments":[],"lineEnding":ending})))["error"]["code"], -32602);
+    }
     client.finish();
 }

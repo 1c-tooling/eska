@@ -6,7 +6,7 @@ mod mapping;
 mod xml;
 
 pub use bsl::read_bsl;
-pub use editing::{CommentPlacement, plan};
+pub use editing::{CommentPlacement, LineEnding, plan};
 pub use mapping::{Affinity, Mapping, Position, SourceMap, byte_position, position_byte};
 pub use xml::read_xml;
 pub(crate) use xml::{XmlKind, read_with_kind as read_xml_with_kind};

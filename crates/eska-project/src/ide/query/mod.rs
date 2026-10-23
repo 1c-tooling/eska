@@ -47,7 +47,7 @@ pub(super) fn is_method(method: &str) -> bool {
 
 /// Negotiate resource bounds explicitly without changing framing for older API clients.
 pub(super) fn capability() -> Value {
-    json!({"schemaVersion":1,"planOnly":true,"writesOwner":false,
+    json!({"schemaVersion":1,"planOnly":true,"writesOwner":false,"editorLineEndings":true,
         "maxSnapshotBytes":eska_project_core::project::query::MAX_SNAPSHOT_BYTES,
         "maxInlineBytes":INLINE_BYTES,"maxRetainedBytes":RETAINED_BYTES,"maxDocuments":MAX_DOCUMENTS,
         "maxRetainedEntries":64,"maxMappingPositions":64,"maxListItems":64,
