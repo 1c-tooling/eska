@@ -1,0 +1,80 @@
+//! Query views retain exact owner coordinates; they never become another source file.
+
+mod bsl;
+mod mapping;
+mod xml;
+
+pub use bsl::read_bsl;
+pub use mapping::{Affinity, Mapping, Position, SourceMap, byte_position, position_byte};
+pub use xml::read_xml;
+
+use std::ops::Range;
+
+/// Bound an unsaved owner independently of filesystem and transport limits.
+pub const MAX_SNAPSHOT_BYTES: usize = 8 * 1024 * 1024;
+
+/// Identity is meaningful only in its checked owner snapshot, never across arbitrary edits.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum QueryIdentity {
+    DataSet(Vec<String>),
+    DynamicList { name: String, id: String },
+    BslLiteral(Range<usize>),
+}
+
+/// Source comments are not part of the decoded SDBL value.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceComment {
+    pub source: Range<usize>,
+    pub query_offset: usize,
+    pub text: String,
+}
+
+/// All coordinates address UTF-8 bytes in the exact source and decoded value.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Query {
+    pub identity: QueryIdentity,
+    pub text: String,
+    pub source: Range<usize>,
+    pub map: SourceMap,
+    pub comments: Vec<SourceComment>,
+}
+
+/// Unsupported input is explicit and never authorizes a partial source replacement.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum QueryError {
+    TooLarge,
+    InvalidXml,
+    UnsupportedStructure,
+    InvalidLiteral,
+    UnsupportedExpression,
+    NotFound,
+    InvalidPosition,
+}
+
+/// Reject oversized buffers before parsing or allocating coordinate maps.
+const fn check_size(input: &str) -> Result<(), QueryError> {
+    if input.len() > MAX_SNAPSHOT_BYTES {
+        return Err(QueryError::TooLarge);
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Oversized input fails before either language parser allocates token or position maps.
+    #[test]
+    fn bounds_unsaved_owner_size() {
+        let input = " ".repeat(MAX_SNAPSHOT_BYTES + 1);
+        assert_eq!(read_xml(&input), Err(QueryError::TooLarge));
+        assert_eq!(read_bsl(&input, 0), Err(QueryError::TooLarge));
+    }
+
+    /// A small but escape-dense query cannot produce an unbounded coordinate response.
+    #[test]
+    fn bounds_mapping_expansion_independently_of_source_size() {
+        let input = format!("x = \"{}\";", "\"\"".repeat(65_537));
+        assert_eq!(read_bsl(&input, 5), Err(QueryError::TooLarge));
+    }
+}

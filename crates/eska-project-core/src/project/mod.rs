@@ -17,6 +17,7 @@ pub mod metadata_workspace;
 pub mod model;
 pub mod object_model;
 pub mod onboarding;
+pub mod query;
 pub mod selection;
 pub mod support;
 pub mod templates;
