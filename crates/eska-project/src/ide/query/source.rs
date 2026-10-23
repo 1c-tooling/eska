@@ -16,7 +16,7 @@ use crate::ide::{
 };
 
 pub(super) struct Entry {
-    key: Key,
+    key: Option<Key>,
     view: SourceSnapshot,
 }
 
@@ -28,11 +28,19 @@ impl Entry {
 }
 
 /// This optional API does not change the framing or opt older clients into protected-source handles.
-pub(super) fn capability() -> Value {
+pub(super) fn capability(rooted_previews: bool) -> Value {
     json!({"schemaVersion":1,"writesOwner":false,"sessionOwnerPriority":true,"binarySnapshots":true,
         "maxSnapshotBytes":MAX_SOURCE_SNAPSHOT_BYTES,"maxSnapshots":MAX_DOCUMENTS,
         "maxRetainedBytes":RETAINED_BYTES,"sharedQueryBudget":true,"maxChunkBytes":INLINE_BYTES,
-        "maxPaths":128,"maxRetainedEntries":64})
+        "maxPaths":128,"maxRetainedEntries":64,"rootedPreviews":rooted_previews})
+}
+
+/// Project-independent previews cannot address metadata handles or supply a query/native owner.
+pub(super) fn is_preview_method(method: &str) -> bool {
+    matches!(
+        method,
+        "source/previewOpen" | "source/previewRead" | "source/previewClose"
+    )
 }
 
 /// Keep source buffer aliases request-only and behind their separately negotiated minor.
@@ -53,7 +61,7 @@ impl State {
     /// Stale metadata cannot revoke already captured bytes or prevent exact cleanup of a foreign-checked handle.
     pub(super) fn source_cleanup(
         &mut self,
-        key: &Key,
+        key: Option<&Key>,
         method: &str,
         args: &Value,
     ) -> Result<Value, Value> {
@@ -70,10 +78,14 @@ impl State {
         }
         let input: Input = metadata_params::decode(args)?;
         let entry = self.source_snapshots.get(&input.snapshot_id);
-        if entry.is_some_and(|entry| !entry.key.same_owner(key)) {
+        if entry.is_some_and(|entry| match (&entry.key, key) {
+            (Some(entry), Some(key)) => !entry.same_owner(key),
+            (None, None) => false,
+            _ => true,
+        }) {
             return Err(failure("unknown_snapshot"));
         }
-        if method == "source/snapshotClose" {
+        if matches!(method, "source/snapshotClose" | "source/previewClose") {
             return Ok(
                 json!({"released":self.source_snapshots.remove(&input.snapshot_id).is_some()}),
             );
@@ -92,6 +104,34 @@ impl State {
             json!({"snapshotId":args["snapshotId"],"snapshot":entry.view.snapshot,"offset":input.offset,
             "data":STANDARD.encode(&body[input.offset..end]),"nextOffset":end,"complete":end==body.len()}),
         )
+    }
+
+    /// The served folder is fixed by the process entry point; a protocol request cannot choose a different root.
+    pub(super) fn source_preview(
+        &mut self,
+        root: Option<&std::path::Path>,
+        method: &str,
+        args: &Value,
+    ) -> Result<Value, Value> {
+        #[derive(Deserialize)]
+        struct Input {
+            path: metadata_params::Path,
+        }
+        if method != "source/previewOpen" {
+            return self.source_cleanup(None, method, args);
+        }
+        let input: Input = metadata_params::decode(args)?;
+        let path = input.path.native()?;
+        if self.source_snapshots.len() >= MAX_DOCUMENTS {
+            return Err(super::resource());
+        }
+        let root = root.ok_or_else(|| failure("preview_unavailable"))?;
+        let view = SourceSnapshot::preview(root, &path).map_err(snapshot_error)?;
+        self.admit(view.bytes().len())?;
+        let id = self.next_id("s")?;
+        let result = header(&id, &path, &view);
+        self.source_snapshots.insert(id, Entry { key: None, view });
+        Ok(result)
     }
 
     /// Source admission reuses the current project and never selects an arbitrary path outside its declared source.
@@ -171,21 +211,26 @@ impl State {
             self.admit(view.bytes().len())?;
         }
         let id = self.next_id("s")?;
-        let result = json!({"snapshotId":id,"path":dto::path(&path),"bytes":view.bytes().len(),"snapshot":view.snapshot,
-            "origin":match view.origin { SourceSnapshotOrigin::Disk=>"disk",SourceSnapshotOrigin::Editor=>"editor",SourceSnapshotOrigin::QuerySession=>"querySession" },
-            "version":view.version.map(|version|version.to_string()),"protection":describe(&view.protection)});
+        let result = header(&id, &path, &view);
         if let Some(buffer) = buffer {
             self.buffers.remove(buffer);
         }
         self.source_snapshots.insert(
             id,
             Entry {
-                key: key.clone(),
+                key: Some(key.clone()),
                 view,
             },
         );
         Ok(result)
     }
+}
+
+/// Both view namespaces retain exact binary snapshots but only metadata views carry project authority.
+fn header(id: &str, path: &std::path::Path, view: &SourceSnapshot) -> Value {
+    json!({"snapshotId":id,"path":dto::path(path),"bytes":view.bytes().len(),"snapshot":view.snapshot,
+        "origin":match view.origin { SourceSnapshotOrigin::Disk=>"disk",SourceSnapshotOrigin::Editor=>"editor",SourceSnapshotOrigin::QuerySession=>"querySession" },
+        "version":view.version.map(|version|version.to_string()),"protection":describe(&view.protection)})
 }
 
 #[derive(Deserialize)]

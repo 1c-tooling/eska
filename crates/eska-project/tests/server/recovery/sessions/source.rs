@@ -1,6 +1,9 @@
 use super::*;
 use base64::{Engine, engine::general_purpose::STANDARD};
 
+#[path = "source/preview.rs"]
+mod preview;
+
 /// Read bounded binary chunks through independent framing, checking exact offsets and immutable handle identities.
 fn source_bytes(client: &mut Client, binding: &Value, header: &Value, chunk: usize) -> Vec<u8> {
     let mut bytes = Vec::new();

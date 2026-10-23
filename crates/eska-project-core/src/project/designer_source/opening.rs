@@ -347,7 +347,7 @@ pub(super) fn read_descriptor(path: &Path) -> Result<String, SourceError> {
 }
 
 /// Check a source-relative candidate without treating a missing file as an existing location.
-pub(super) fn existing_file(
+pub fn existing_file(
     source: &Path,
     relative: &Path,
     stats: &mut SourceIoStats,

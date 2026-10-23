@@ -1,7 +1,7 @@
 use super::*;
 use crate::backend::project::metadata_workspace::{
     MAX_SOURCE_SNAPSHOT_BYTES, NativeSourceSnapshot, QueryOwnerFormat, QueryOwnerRestrictions,
-    QuerySession, SourceAccessRequest, SourceSnapshotError, SourceSnapshotOrigin,
+    QuerySession, SourceAccessRequest, SourceSnapshot, SourceSnapshotError, SourceSnapshotOrigin,
 };
 use std::sync::Arc;
 
@@ -230,6 +230,65 @@ fn common_source_snapshots_reject_aliased_source_files() {
     std::os::unix::fs::symlink(target, module).unwrap();
     let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
     assert!(project.source_snapshot(&path, None).is_err());
+}
+
+/// Unclassified views restore exact bytes without manufacturing known metadata identity or write permission.
+#[test]
+fn rooted_source_preview_is_binary_safe_and_always_read_only() {
+    let (directory, _, _, _) = setup();
+    let root = directory.0.join("src");
+    let path = Path::new("unknown.txt");
+    let bytes = b"\xff\x00\xef\xbb\xbf\r\n";
+    fs::write(root.join(path), bytes).unwrap();
+    let view = SourceSnapshot::preview(&root, path).unwrap();
+    assert_eq!(view.bytes(), bytes);
+    assert_eq!(view.origin, SourceSnapshotOrigin::Disk);
+    assert_eq!(view.version, None);
+    assert_eq!(view.protection.support.path, path);
+    assert_eq!(view.protection.support.objects.len(), 0);
+    assert!(view.protection.support.unknown);
+    assert_eq!(view.protection.diagnostics, ["source_preview_only"]);
+    assert!(!view.protection.writable());
+    fs::write(root.join(path), "changed").unwrap();
+    assert_eq!(view.bytes(), bytes);
+}
+
+/// A preview has one explicit containment root and the same exact 8 MiB bound as a project snapshot.
+#[test]
+fn rooted_source_preview_rejects_escapes_missing_files_and_oversized_bodies() {
+    let (directory, _, _, _) = setup();
+    let root = directory.0.join("src");
+    for path in [
+        Path::new("../eska.toml"),
+        Path::new("missing.txt"),
+        root.as_path(),
+        Path::new("Ext"),
+    ] {
+        assert!(SourceSnapshot::preview(&root, path).is_err(), "{path:?}");
+    }
+    let path = Path::new("maximum.bin");
+    fs::write(root.join(path), vec![0xff; MAX_SOURCE_SNAPSHOT_BYTES]).unwrap();
+    assert_eq!(
+        SourceSnapshot::preview(&root, path).unwrap().bytes().len(),
+        MAX_SOURCE_SNAPSHOT_BYTES
+    );
+    fs::write(root.join(path), vec![0xff; MAX_SOURCE_SNAPSHOT_BYTES + 1]).unwrap();
+    assert!(matches!(
+        SourceSnapshot::preview(&root, path),
+        Err(SourceSnapshotError::TooLarge)
+    ));
+}
+
+/// A path lexically inside the served folder cannot expose a different canonical root through a symlink.
+#[cfg(unix)]
+#[test]
+fn rooted_source_preview_rejects_aliased_outside_files() {
+    let (directory, _, _, _) = setup();
+    let root = directory.0.join("src");
+    let outside = directory.0.join("outside.bin");
+    fs::write(&outside, [0xff, 0x00]).unwrap();
+    std::os::unix::fs::symlink(outside, root.join("alias.bin")).unwrap();
+    assert!(SourceSnapshot::preview(&root, Path::new("alias.bin")).is_err());
 }
 
 /// Reading current policy before a delayed file notification must not consume that notification's invalidation.

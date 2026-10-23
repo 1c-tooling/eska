@@ -56,6 +56,7 @@ pub(super) struct Server {
     pub(super) queries: super::query::State,
     pub(super) recovery: super::query::RecoveryState,
     pub(super) recovery_root: Option<std::path::PathBuf>,
+    pub(super) source_root: Option<std::path::PathBuf>,
     property_editing: bool,
     serial: u64,
     round_robin: usize,
@@ -75,6 +76,9 @@ impl Server {
             labels: dto::Labels::new()?,
             client_minor: 0,
             queries: super::query::State::default(),
+            source_root: std::env::current_dir()
+                .ok()
+                .and_then(|path| std::fs::canonicalize(path).ok()),
             recovery: super::query::RecoveryState::default(),
             recovery_root: std::env::current_dir().ok().and_then(|start| {
                 start
@@ -136,13 +140,13 @@ impl Server {
             "workspace/close" => {
                 self.check_session(args)?;
                 self.analyzer_lease = None;
-                self.queries = super::query::State::default();
+                self.queries.clear();
                 self.session = None;
                 Ok(Value::Null)
             }
             "shutdown" => {
                 self.analyzer_lease = None;
-                self.queries = super::query::State::default();
+                self.queries.clear();
                 self.recovery = super::query::RecoveryState::default();
                 self.session = None;
                 self.closing = true;
@@ -156,6 +160,13 @@ impl Server {
                     Err(error(-32601))
                 } else {
                     self.query_recovery(method, args)
+                }
+            }
+            method if super::query::is_source_preview_method(method) => {
+                if self.client_minor < 18 {
+                    Err(error(-32601))
+                } else {
+                    self.source_preview(method, args)
                 }
             }
             method if super::query::is_source_method(method) && self.client_minor < 17 => {
@@ -230,7 +241,8 @@ impl Server {
                 super::query::session_capability(self.client_minor >= 16);
         }
         if self.client_minor >= 17 {
-            result["capabilities"]["sourceProtection"] = super::query::source_capability();
+            result["capabilities"]["sourceProtection"] =
+                super::query::source_capability(self.client_minor >= 18);
         }
         Ok(result)
     }

@@ -69,8 +69,13 @@ pub(super) fn is_source_method(method: &str) -> bool {
 }
 
 /// Source snapshots reuse the existing upload and retained-text limits.
-pub(super) fn source_capability() -> Value {
-    source::capability()
+pub(super) fn source_capability(rooted_previews: bool) -> Value {
+    source::capability(rooted_previews)
+}
+
+/// Manifest-independent preview requests remain read-only and have no metadata session authority.
+pub(super) fn is_source_preview_method(method: &str) -> bool {
+    source::is_preview_method(method)
 }
 
 /// Existing query extraction remains independent from optional lifecycle/checkpoint ownership.
@@ -99,7 +104,23 @@ pub(super) fn capability() -> Value {
         "sourceKinds":["dataCompositionSchema","form","bsl"]})
 }
 
+impl Server {
+    /// Preserve protected-view restoration without a manifest; the server owns the fixed containment root.
+    pub(super) fn source_preview(&mut self, method: &str, args: &Value) -> Result<Value, Value> {
+        self.queries
+            .source_preview(self.source_root.as_deref(), method, args)
+    }
+}
+
 impl State {
+    /// Workspace teardown drops every owned resource without reusing a connection's immutable preview identifiers.
+    pub(super) fn clear(&mut self) {
+        *self = Self {
+            serial: self.serial,
+            ..Self::default()
+        };
+    }
+
     /// Include reserved upload capacity so unfinished requests cannot evade the byte budget.
     fn admit(&self, bytes: usize) -> Result<(), Value> {
         if self.buffers.len()
@@ -247,7 +268,7 @@ impl Server {
             return self.queries.close("query/bufferClose", &key, args);
         }
         if matches!(method, "source/snapshotRead" | "source/snapshotClose") {
-            return self.queries.source_cleanup(&key, method, args);
+            return self.queries.source_cleanup(Some(&key), method, args);
         }
         if matches!(method, "query/sessionClose" | "query/sessionGet") {
             return self.queries.session_cleanup(method, &key, args);

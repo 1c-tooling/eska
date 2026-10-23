@@ -1,0 +1,477 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-24",
+  "part": "Protected source provider migrated to ESKA snapshots; rooted read-only previews preserve manifest-independent restoration",
+  "sourceParent": "0256956c31b566348700891527d280f0f1fcfd6d",
+  "priorSourceApiAcceptance": "t102-source-view-api.json",
+  "supportEventFixCommit": "0256956c31b566348700891527d280f0f1fcfd6d",
+  "explorerCommit": "39a5c8f21c9f5eca3edce6d39ac9436259401151",
+  "generalProtectedProviderUsesBackend": true,
+  "sourceProtectionBackendAndReaderComplete": true,
+  "ownerLockAccepted": false,
+  "productionBslEditingEnabled": false,
+  "sourceSha256": {
+    "crates/eska-project-core/src/project/designer_source/mod.rs": "bd306bb847fe9198c4c76655b4c2c64a66806ebd4b5200907285fda024c316e3",
+    "crates/eska-project-core/src/project/designer_source/opening.rs": "32fc599e605a7170a36528fb35304ad0a2554aa541c123b331772e5bf363babb",
+    "crates/eska-project-core/src/project/metadata_workspace/refresh.rs": "a88c44b2abaebc2abebb57dee4338302ba7b7f02329f41450f48e02f2caa5b5a",
+    "crates/eska-project-core/src/project/metadata_workspace/source_view.rs": "0e0eaf0e1ff9efe2d3fc50878e69bd7cd17100d87ba9482876d5a0828236cc81",
+    "crates/eska-project-core/src/project/metadata_workspace/support/rules.rs": "55d659b12a471992f6ba7dbb766bca3b67cc8abd50bf5aee661f50f1a2875163",
+    "crates/eska-project/src/ide/mod.rs": "02351cd9658eb7628b2ca602c435ea4025f0e0f2c45e64e06f8bae1bfb0f3227",
+    "crates/eska-project/src/ide/query/mod.rs": "5509e1c3248859f5f8a769be3d70df0dae10889e88edbe2140058f8b8cd256a7",
+    "crates/eska-project/src/ide/query/source.rs": "fb903f657c037ca091efb28432e868f3c94a819dd3eea4c84665a048767690e0",
+    "crates/eska-project/src/ide/server.rs": "56d65543ee944232fa5848a8139baec93a8ac9c921e25e8695e1730d9d3bc4b0",
+    "crates/eska-project/tests/server/recovery/sessions/source.rs": "08777a5fe2886d2aacd4d3041ce43a27fd31bac70e48da51683f2e88ecdaeffa",
+    "crates/eska-project/tests/server/recovery/sessions/source/preview.rs": "15df7f3aadb78347ba77d5516578524a100462f3105fe6eef9aa48abb2b30f83",
+    "docs/ide-protocol.md": "53ee7279e66db9e79c70daf26d5cc18e634a0e8240f607f996d8bb15cd141f08",
+    "docs/project-cli.md": "756cc98f8677c4ece03a5a9d30296652827cec8aee5fea8136ee17675900071b",
+    "docs/roadmap/16-query-editing.md": "cea0af3c755516ba5c635283bb41dfc7e2cdc41edaafaba66fc01fb6ae3f1a2e",
+    "tests/project/metadata_workspace/ide.rs": "99c31faaa49dda4710f4d03d9a7fd7703470e6bc52df34a31d89ca8073ffd75e",
+    "tests/project/metadata_workspace/ide/picture.rs": "33c8e903eaa7b8ff974982a65f89327066af174e8c41895c3414400d512ac597",
+    "tests/project/metadata_workspace/query/source_view.rs": "da869725d8ba5c8ee309ab44815bea4bd63ff9f4a01707683645f3e0aac30fe7"
+  },
+  "explorerSourceSha256": {
+    "README.md": "1bcb2032bd92abe97fcc1675aaec2a95cb96be90aeacc8c0ec453c329588b58f",
+    "docs/query-editing.md": "044d53b133e4ba58216edbd225f6c1f91a4a45741deb235867ee70787977c18e",
+    "docs/support-policy.md": "6c66f62ae1be0382b6be167b4fe158283df1dc151edcbe08cd9c82b6497cf691",
+    "src/connection.ts": "0f350b16d628c1f485e848bb0973ab687aec07836f7597b5a884decaf4891722",
+    "src/extension.ts": "2173faab62ae9e78670bd56f15817b70df1220e10034694b663e8b68f1d5b7cd",
+    "src/language/service.ts": "5474942983276143256d22324e2872810a23a210fd52bb6cb1ba642a07953188",
+    "src/messages.ts": "dec0025c306528d16b71cf8a863c6fe205371a5875a0891ddab154cda439e155",
+    "src/protected-source.ts": "c329bc10f6ed8127e4e0c19dcc66e0af75c598cb5cb549ec03939edee0f93752",
+    "src/protocol.ts": "c88a48447235c11fc5f00d82e165cb4d22b21fe5669b47c25dda708da6db8e91",
+    "src/source-access.ts": "ee9625b837163efcc9fd48d9b803c08a61435934cf96083d6fcdb82370698a18",
+    "src/support.ts": "1bcd8268aab515e0247206f8316615742e4f408b3f53eb277e748c3ab4bd8f65",
+    "src/watch.ts": "ccc16a4df51457195f910fafa2d0e15e2f9e4ed7cbce0843e015d08385ce9d71",
+    "test/fake-backend.mjs": "8f6653baa392ca8b44dfd6db7cb6d5afa37bdbe6f30a238b999d84b1fa455a9e",
+    "test/language-conflict.test.mjs": "f569c55b3197c9e619664a94293bbb4ce170bdf8a7f4fe338e25ed0f2434f911",
+    "test/protected-language-guards-host.cjs": "e51051bc095ea99d188ed5c3d449729d7248ce894dca9c6e8e465b4a97bbb8bf",
+    "test/protected-language-host.cjs": "1819b039f32f0b9750681127f7b6e4496e278866af33f9acbfeca720fee18c37",
+    "test/query-session-host.cjs": "bbe0026d9287d6666a25b497c678e8a91efbe376a48948e1f9259860b979345a",
+    "test/source-access.test.mjs": "e20f0470379dee2bfa59a4158a52a5015121ab1805be52ad2beb6024e00e78cc",
+    "test/support-protected-host.cjs": "5825b4e73f767d69587b8d5ee1b0e72f23a44584ba32b18118d020769caa923d",
+    "test/support-restore-host.cjs": "ea624f922d62711c3392f6664582ffdfb4793d8ceef5b00e50e01874f25c7549",
+    "test/transport.test.mjs": "724c5e1e1fd410749f188c5073095f749b09e6f57e8e7c1e9f26f454c871c06c"
+  },
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b",
+  "backend": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/bin/eska-project-fixed",
+    "sha256": "15e3de4796feaf54f23f2ae1de433c909f7bd52ae0617468625acc295788877a",
+    "api": "1.18"
+  },
+  "installedVsix": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/eska-protected-api18-final.vsix",
+    "sha256": "94ccbc7354474073f47105884581286cb76ca89a12ca17f80ae9e68141723f78",
+    "runtimeMatchesCommittedExplorer": true,
+    "comparedRuntimeAndDocumentationFiles": 1286
+  },
+  "analyzer": {
+    "path": "/home/akalsin/.local/bin/bsl-analyzer-app",
+    "version": "0.3.2",
+    "contract": "3.4",
+    "sha256": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+    "publishedExternalBinary": true
+  },
+  "behavior": {
+    "sourceSelection": "Known sources use Metadata API 1.17. ESKA selects the full retained query owner, then the explicitly supplied dirty native buffer, then disk. The adapter verifies binary chunk offsets, canonical base64 and the full SHA-256, and closes all temporary handles.",
+    "adapter": "eska-protected no longer reads file content through workspace.fs. Its Native provider implements URI translation, readonly capability, presentation stat times/sizes, event routing and bounded readonly retry. Native directory metadata/listing remain IDE presentation operations. There is no persistent source-body cache or new backend process per view.",
+    "unclassifiedPreview": "Opt-in API 1.18 source/previewOpen/Read/Close serves disk-only snapshots below the process working directory captured at startup. It works after initialize even if the manifest is absent or invalid. Traversal, absolute paths, directories and aliases escaping the canonical root are rejected. Protection is unknown/unclassified and always writable:false; a preview grants no metadata, source-session or write authority.",
+    "authority": "Metadata and unclassified view handles cannot read/close each other. Workspace close drops handles without recycling connection IDs; EOF/shutdown frees all state. The existing 16-view, 32 MiB and 64-entry budgets remain shared with query documents/sessions/uploads.",
+    "retainedOwner": "An active source session outranks a newer ordinary native buffer. The installed provider shows its exact full dirty parent; stat size matches that body. Session release refreshes the view to the current native buffer/disk and does not save the owner or prolong the source lease.",
+    "supportEvents": "Parsed rule bytes and the acknowledged filesystem-event fingerprint are separate. A source read cannot consume a pending rule change. An acknowledged repeated event with unchanged bytes retains the existing no-rebuild optimization.",
+    "virtualEvents": "Physical source, manifest, analyzer-config, shallow-directory and provider mirror watchers check URI scheme. Virtual events with the same fsPath cannot become workspace/didChangeFiles notifications, trigger metadata feedback or restart the owned LSP.",
+    "compatibility": "The same-process 1.17 fallback retains ordinary source snapshots and native write protection. Metadata-independent previews require 1.18. Durable XML sessions retain their 1.16 contract.",
+    "nativeBoundary": "Readonly provider acceptance does not prove a freeze of every ordinary file: BSL tab or preservation/restoration of a native session override. Source application for BSL remains disabled; the earlier strict native-lock findings are unchanged.",
+    "backendWritesOwner": false,
+    "newDependencies": false
+  },
+  "validation": {
+    "cargoFmt": {
+      "command": "cargo fmt --check",
+      "exitCode": 0
+    },
+    "cargoCheck": {
+      "command": "cargo check",
+      "exitCode": 0
+    },
+    "cargoClippy": {
+      "command": "cargo clippy --all-targets --all-features -- -D warnings",
+      "exitCode": 0
+    },
+    "cargoTest": {
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test",
+      "exitCode": 0,
+      "passed": 1019,
+      "failed": 0,
+      "ignored": 12,
+      "suites": 35
+    },
+    "rustdoc": {
+      "command": "RUSTDOCFLAGS='-D warnings' cargo doc --no-deps",
+      "exitCode": 0
+    },
+    "sourceCore": {
+      "passed": 9,
+      "failed": 0,
+      "includes": "five existing project/query snapshot cases, three rooted preview cases and the delayed support-event regression in both initially present/missing states"
+    },
+    "sourceRpc": {
+      "passed": 7,
+      "failed": 0,
+      "includes": "four existing 1.17 cases plus three 1.18 preview/namespace/budget cases; machine contracts verified in ru/en"
+    },
+    "sourceSdk": {
+      "passed": 8,
+      "failed": 0,
+      "realBackend": true,
+      "vscodeRequired": false
+    },
+    "typecheck": {
+      "command": "npm run check",
+      "exitCode": 0
+    },
+    "compile": {
+      "command": "npm run compile",
+      "exitCode": 0
+    },
+    "node": {
+      "command": "node --test test/*.test.mjs",
+      "exitCode": 0,
+      "passed": 255,
+      "failed": 0,
+      "skipped": 3
+    },
+    "bun": {
+      "command": "bun test",
+      "exitCode": 0,
+      "passed": 255,
+      "failed": 0,
+      "skipped": 3
+    },
+    "realApi17Compatibility": {
+      "exitCode": 0,
+      "passed": 4,
+      "failed": 0,
+      "backendPath": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/bin/eska-project",
+      "backendSha256": "b1a22be132fecc7f72cf245e2e40d2136d3bb9ddfd7fe6f2248a46039b2333a2"
+    },
+    "nativeInstalled": {
+      "native-support-protected-en-accepted-result.log": [
+        {
+          "passed": true,
+          "vscode": "1.109.5",
+          "locale": "en",
+          "protectedSessionOverride": true,
+          "protectedXml": true,
+          "sourceRefresh": true,
+          "voluntaryLock": true,
+          "virtualEventsObserved": 1,
+          "virtualEventsDoNotInvalidateSource": true
+        }
+      ],
+      "native-support-restore-en-final-result.log": [
+        {
+          "passed": true,
+          "suite": "support-restore",
+          "run": "0",
+          "vscode": "1.109.5"
+        },
+        {
+          "passed": true,
+          "suite": "support-restore",
+          "run": "1",
+          "vscode": "1.109.5"
+        }
+      ],
+      "native-protected-language-guards-en-final-result.log": [
+        {
+          "passed": true,
+          "suite": "protected-language-guards",
+          "vscode": "1.109.5",
+          "nestedSymbols": true,
+          "literalPaths": true,
+          "dirtyBuffer": true,
+          "staleResponse": true,
+          "providerRestart": true
+        }
+      ],
+      "native-protected-language-en-final-result.log": [
+        {
+          "passed": true,
+          "suite": "protected-language",
+          "vscode": "1.109.5",
+          "locale": "en",
+          "analyzer": "0.3.2 (own LSP)",
+          "semanticTokens": 13,
+          "outline": true,
+          "hover": true,
+          "definitions": true,
+          "references": true,
+          "folding": true,
+          "diagnostics": true,
+          "readonly": true,
+          "own_lsp": true,
+          "late_real_hover_rejected": true,
+          "own_restart": true,
+          "native_alias_rename_denied": true,
+          "shutdownPids": [
+            764280,
+            764370,
+            764241
+          ]
+        }
+      ],
+      "native-query-session-en-final-result.log": [
+        {
+          "passed": true,
+          "suite": "query-source-sessions",
+          "vscode": "1.109.5",
+          "locale": "en",
+          "backendSourceSessions": true,
+          "newerInputDuringReceipt": true,
+          "interruptedNativeReceipt": true,
+          "latestDraftPreserved": true,
+          "explicitReconciliation": true,
+          "cleanDraftMarkedDirty": true,
+          "noAutomaticReplay": true,
+          "cleanCloseReleasesCheckpoint": true,
+          "backendSourceWriteFence": true,
+          "backendFenceReleasedOnError": true,
+          "restoredFenceUntilClose": true,
+          "languageWritesRespectSourceOwnership": true,
+          "supportDisabledDoesNotReleaseOwnership": true,
+          "staleNativeAuthorizationRejected": true,
+          "protectedViewUsesRetainedDirtyOwner": true,
+          "protectedViewFollowsRelease": true,
+          "snapshotStatExact": true,
+          "injectedErrors": [
+            {
+              "message": "Error: simulated interrupted native receipt"
+            }
+          ]
+        }
+      ],
+      "native-support-protected-ru-accepted-result.log": [
+        {
+          "passed": true,
+          "vscode": "1.109.5",
+          "locale": "ru",
+          "protectedSessionOverride": true,
+          "protectedXml": true,
+          "sourceRefresh": true,
+          "voluntaryLock": true,
+          "virtualEventsObserved": 1,
+          "virtualEventsDoNotInvalidateSource": true
+        }
+      ],
+      "native-support-restore-ru-final-result.log": [
+        {
+          "passed": true,
+          "suite": "support-restore",
+          "run": "0",
+          "vscode": "1.109.5"
+        },
+        {
+          "passed": true,
+          "suite": "support-restore",
+          "run": "1",
+          "vscode": "1.109.5"
+        }
+      ],
+      "native-protected-language-guards-ru-final-result.log": [
+        {
+          "passed": true,
+          "suite": "protected-language-guards",
+          "vscode": "1.109.5",
+          "nestedSymbols": true,
+          "literalPaths": true,
+          "dirtyBuffer": true,
+          "staleResponse": true,
+          "providerRestart": true
+        }
+      ],
+      "native-protected-language-ru-final-result.log": [
+        {
+          "passed": true,
+          "suite": "protected-language",
+          "vscode": "1.109.5",
+          "locale": "ru",
+          "analyzer": "0.3.2 (own LSP)",
+          "semanticTokens": 13,
+          "outline": true,
+          "hover": true,
+          "definitions": true,
+          "references": true,
+          "folding": true,
+          "diagnostics": true,
+          "readonly": true,
+          "own_lsp": true,
+          "late_real_hover_rejected": true,
+          "own_restart": true,
+          "native_alias_rename_denied": true,
+          "shutdownPids": [
+            768247,
+            768336,
+            768181
+          ]
+        }
+      ],
+      "native-query-session-ru-final-result.log": [
+        {
+          "passed": true,
+          "suite": "query-source-sessions",
+          "vscode": "1.109.5",
+          "locale": "ru",
+          "backendSourceSessions": true,
+          "newerInputDuringReceipt": true,
+          "interruptedNativeReceipt": true,
+          "latestDraftPreserved": true,
+          "explicitReconciliation": true,
+          "cleanDraftMarkedDirty": true,
+          "noAutomaticReplay": true,
+          "cleanCloseReleasesCheckpoint": true,
+          "backendSourceWriteFence": true,
+          "backendFenceReleasedOnError": true,
+          "restoredFenceUntilClose": true,
+          "languageWritesRespectSourceOwnership": true,
+          "supportDisabledDoesNotReleaseOwnership": true,
+          "staleNativeAuthorizationRejected": true,
+          "protectedViewUsesRetainedDirtyOwner": true,
+          "protectedViewFollowsRelease": true,
+          "snapshotStatExact": true,
+          "injectedErrors": [
+            {
+              "message": "Error: simulated interrupted native receipt"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "fixedFailures": [
+    {
+      "problem": "Reading new support rules ahead of the filesystem event hid a real invalidation.",
+      "evidence": "support-race-before.log fails, support-race-after.log and the full fixed suite pass.",
+      "fix": "Separate event_hash from parsed hash; acknowledge only filesystem notifications, preserving duplicate-event optimization."
+    },
+    {
+      "problem": "Virtual provider events matched native fsPath watchers, producing 293 metadata invalidations in a failing support UI run and starving fresh policy publication.",
+      "evidence": "native-support-diagnostic-en-full.log.result.json records repeated XML notifications and a fresh editable backend policy while the published UI policy remained locked.",
+      "fix": "Filter every relevant physical watcher by file scheme. Native acceptance explicitly observes a virtual event while confirming no physical notification or generation change."
+    },
+    {
+      "problem": "The older Russian protected-language test treated the localized empty-rename result as an unexpected error.",
+      "fix": "Accept the observed Russian translation, assert requested UI locale and rerun English/Russian against the unchanged packaged runtime."
+    },
+    {
+      "problem": "The watcher test double emitted undefined or schemeless values rather than native URI objects.",
+      "fix": "Supply file scheme in the double; add an explicit protected-scheme regression for config and uncovered sources."
+    }
+  ],
+  "logs": {
+    "fmt-fixed.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/fmt-fixed.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "check-fixed.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/check-fixed.log",
+      "sha256": "26d365e4777e7145fd2814e0347d8486a94ec95831f17e18cab115290e9f1e40"
+    },
+    "clippy-fixed.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/clippy-fixed.log",
+      "sha256": "a8a684f9ea644754f636a3dbd79cef9fee66951fd6d31840055208c02ba867ec"
+    },
+    "test-fixed.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/test-fixed.log",
+      "sha256": "1abb572cea34996baa0dd3dc34c99fe9988709f4592b037795e0bfcd47db84c3"
+    },
+    "rustdoc-fixed.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/rustdoc-fixed.log",
+      "sha256": "bdfdd013386e2cba50c5fc10ef5163c11be83cea67c7c4cc5ff1dbc691842483"
+    },
+    "support-race-before.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/support-race-before.log",
+      "sha256": "b29bdc3c23ede28ff6aa23dbdd8d42d1ecab4adf3af60769e625c75a2f7a80bf"
+    },
+    "support-race-after.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/support-race-after.log",
+      "sha256": "cf58cbad6f18c8afb3cfad837241f3319c93e5271669a208ce828282dd7e130f"
+    },
+    "node-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/node-final.log",
+      "sha256": "0417c12c1579fcff465f1b20bc3ec76ba98b9446d2ae6d8568e3294de7e2c2b2"
+    },
+    "bun-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/bun-final.log",
+      "sha256": "9215cc5db8be42b2d9121a041fdfcba45d74fcf68a82d3e3005dadc303329cb6"
+    },
+    "api17-compatibility.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/api17-compatibility.log",
+      "sha256": "c0c61492e78b16b750e0cd4e9bf02cccb714dc44f9c1041add843d215f39b12a"
+    },
+    "explorer-compile-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/explorer-compile-final.log",
+      "sha256": "aacc76ba29050ec4640c8c2766f813765565ba00278fa226d6072f11f59695bf"
+    },
+    "explorer-typecheck-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/explorer-typecheck-final.log",
+      "sha256": "5062faef2ef40eb366b4a0a37c2b49bd34f9990ce7448c0e7dcc53401761fba0"
+    },
+    "package-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/package-final.log",
+      "sha256": "acc2581025ea8f7323ae180deba2582ccde66a7678892fc3dc329c71528db958"
+    },
+    "native-support-protected-en-accepted-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/native-support-protected-en-accepted-result.log",
+      "sha256": "5c371c598a4d779f411e0b3cf4619ebfc6b67c9dc124815c9de38beb4f907f6c"
+    },
+    "native-support-restore-en-final-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/native-support-restore-en-final-result.log",
+      "sha256": "67ab2b57bd4cffe5f96c75d103551efde5b49ff87974f38740d741b0a29bf39d"
+    },
+    "native-protected-language-guards-en-final-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/native-protected-language-guards-en-final-result.log",
+      "sha256": "156dd0f02d53afcaa2e0a822ce0e632ae3afea9acd758068d8798df864201136"
+    },
+    "native-protected-language-en-final-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/native-protected-language-en-final-result.log",
+      "sha256": "d67695f4a8a04954b2ca27d5548cb7dbb3f6599c8315211360e72a18bb380b6e"
+    },
+    "native-query-session-en-final-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/native-query-session-en-final-result.log",
+      "sha256": "d0bdee45606cb05ab45f85a649748d7700442223576b73fdb4f6a935f3f107d5"
+    },
+    "native-support-protected-ru-accepted-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/native-support-protected-ru-accepted-result.log",
+      "sha256": "e661f8413579225f73fe354e0a478a8a86d4fa668e724e87abc19db3f8230324"
+    },
+    "native-support-restore-ru-final-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/native-support-restore-ru-final-result.log",
+      "sha256": "f21c10f5dea40676029c0891a61774fe7198bb2a415ddaf728ca9de586a8f366"
+    },
+    "native-protected-language-guards-ru-final-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/native-protected-language-guards-ru-final-result.log",
+      "sha256": "0dde3002db821919cf9f3491e13647b06548d79ae998d896341af619b44b1a71"
+    },
+    "native-protected-language-ru-final-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/native-protected-language-ru-final-result.log",
+      "sha256": "05e473f2daf5399639e09b5299f6473f9a32c73a057b7c18ee294865ad554f31"
+    },
+    "native-query-session-ru-final-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-protected-backend-pycaaz0b/native-query-session-ru-final-result.log",
+      "sha256": "3916759a7c7275e8e76e2bb43faa50990bca6cfd869bc73ed5f5b7598a55b193"
+    }
+  },
+  "primaryReference": "https://raw.githubusercontent.com/microsoft/vscode/1.109.5/src/vs/workbench/api/common/extHostFileSystemEventService.ts",
+  "unverified": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote",
+    "other IDE adapters",
+    "strict BSL native owner freeze and prior user override restoration",
+    "T103-T105"
+  ],
+  "next": "Complete the native BSL owner-lock capability and source application under the common session contract, then proceed to T103, T104 and T105 in order."
+}

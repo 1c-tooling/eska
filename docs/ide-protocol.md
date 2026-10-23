@@ -1276,5 +1276,56 @@ Source bytes и локальные IO diagnostics в ошибках не воз�
 и заново проверяют native versions и transport freshness перед передачей IDE.
 Запрос, способный изменить source ownership, заранее инвалидирует старый
 preflight в своём процессе. Нативная блокировка BSL-владельца этим не принимается.
-Провайдер `eska-protected:` ещё читает файл через IDE; его переход на source
-reader остаётся следующей частью T102.
+Провайдер `eska-protected:` использует тот же source reader. Адаптер передаёт
+существующий dirty native-буфер и версии, не читает содержимое файла сам и
+следит за событиями IDE. Завершение source-сессии обновляет представление;
+view не удерживает её ограничение. Это не подтверждение блокировки file URI.
+
+### API 1.18: защищённый просмотр без метаданных
+
+Capability `sourceProtection.rootedPreviews:true` доступна клиенту 1.18;
+клиенту 1.17 возвращается false. Она сохраняет восстановление защищённой вкладки
+при отсутствующем или невалидном manifest и чтение нераспознанных файлов.
+Чтение выполняет ESKA, обходного file reader в расширении нет.
+
+`source/previewOpen`: `{path:Path}`. Path задаётся относительно **рабочей папки
+процесса serve**, которая фиксируется при его создании. Запрос не выбирает
+другую корневую папку. Метод доступен после initialize, до workspace/open,
+после его ошибки и после workspace/close. Метод не использует native-буфер,
+query identity и metadata context. Проверяются обычные относительные
+компоненты пути, canonical containment, regular file и предел 8 MiB.
+Абсолютный путь, traversal и symlink за пределы корня отклоняются.
+
+Ответ имеет поля обычного SourceView без metadata envelope: snapshotId, path,
+bytes, SHA-256 snapshot, `origin:"disk"`, `version:null` и Protection.
+В таком Protection `objects:[]`, `supportUnknown:true`, `supportReadOnly:true`,
+`writable:false`, diagnostics содержит `source_preview_only`. Права физического
+файла остаются отдельным фактом. Просмотр не подтверждает владение метаданными,
+не получает source lease и не авторизует применение правки.
+
+`source/previewRead`: `{snapshotId,snapshot,offset,bytes}` и
+`source/previewClose`: `{snapshotId}` используют прежние бинарные chunks и
+правила close, без metadata context. Preview и project snapshot не могут
+читать или освобождать handles друг друга. IDs не переиспользуются в течение
+соединения, включая workspace/close. Закрытие workspace уничтожает прежние
+handles; новый preview можно открыть по тому же фиксированному корню.
+Shutdown и EOF освобождают все данные. Предварительное чтение не требует
+установленного анализатора, Git, платформы или сканирования проекта.
+
+Лимиты 16 source views, 32 MiB и 64 entries остаются общими с API 1.17/query.
+Отдельного хранилища или квоты для preview нет. `preview_unavailable` означает,
+что серверу не удалось установить корень; действуют остальные source view errors.
+
+Для известного источника адаптер сначала вызывает `source/snapshotOpen` с
+точным context и native snapshot. Preview используется только без доступного
+проекта либо для `unknown_source`; он не подменяет ошибки свежести, IO или
+удерживаемый owner активной query-сессии. SDK дополнительно проверяет, что
+preview действительно остался disk-only, unclassified и `writable:false`.
+Нативная приёмка каждого адаптера остаётся отдельной от headless core/RPC.
+
+Наблюдатели физических источников в адаптере должны проверять схему URI,
+включая собственные file watchers, manifest и analyzer-config watchers.
+[Проверенная реализация VS Code 1.109.5](https://raw.githubusercontent.com/microsoft/vscode/1.109.5/src/vs/workbench/api/common/extHostFileSystemEventService.ts)
+сопоставляет glob с `uri.fsPath`: одинаковый путь другого provider тоже может
+доставить событие наблюдателю. Уведомление о read-only представлении не является
+изменением его физического исходника и не должно подаваться обратно в ESKA/LSP.

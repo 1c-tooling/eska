@@ -118,6 +118,48 @@ impl From<WorkspaceError> for SourceSnapshotError {
 }
 
 impl SourceSnapshot {
+    /// Restore an immutable view under an explicitly served folder without claiming a valid project or write permission.
+    ///
+    /// # Errors
+    /// Rejects absolute/traversing paths, directory reads, canonical escapes, missing files and bodies over 8 MiB.
+    pub fn preview(root: &Path, path: &Path) -> Result<Self, SourceSnapshotError> {
+        let root = std::fs::canonicalize(root).map_err(|source| SourceSnapshotError::Io {
+            path: path.to_path_buf(),
+            source,
+        })?;
+        let physical = crate::project::designer_source::existing_file(
+            &root,
+            path,
+            &mut crate::project::designer_source::SourceIoStats::default(),
+        )
+        .map_err(WorkspaceError::Source)?
+        .ok_or(SourceSnapshotError::Missing)?;
+        let metadata = std::fs::metadata(&physical).map_err(|source| SourceSnapshotError::Io {
+            path: path.to_path_buf(),
+            source,
+        })?;
+        let protection = SourceProtection {
+            support: FileSupport {
+                path: path.to_path_buf(),
+                objects: Vec::new(),
+                read_only: true,
+                reason: super::FileReason::Unavailable,
+                mixed: false,
+                unknown: true,
+            },
+            restrictions: Vec::new(),
+            user_read_only: false,
+            filesystem: if metadata.permissions().readonly() {
+                SourceFileState::ReadOnly
+            } else {
+                SourceFileState::Writable
+            },
+            support_enforced: true,
+            diagnostics: vec!["source_preview_only".to_owned()],
+        };
+        Self::disk(protection, &physical, path)
+    }
+
     /// Source bytes remain exact, including a disk encoding signature or native-model line endings.
     #[must_use]
     pub fn bytes(&self) -> &[u8] {
@@ -166,6 +208,33 @@ impl SourceSnapshot {
             snapshot,
             body,
         }
+    }
+
+    /// Both project snapshots and unclassified previews use the same bounded exact-byte reader.
+    fn disk(
+        protection: SourceProtection,
+        physical: &Path,
+        path: &Path,
+    ) -> Result<Self, SourceSnapshotError> {
+        let mut bytes = Vec::new();
+        File::open(physical)
+            .and_then(|file| {
+                file.take(MAX_SOURCE_SNAPSHOT_BYTES as u64 + 1)
+                    .read_to_end(&mut bytes)
+            })
+            .map_err(|source| SourceSnapshotError::Io {
+                path: path.to_path_buf(),
+                source,
+            })?;
+        if bytes.len() > MAX_SOURCE_SNAPSHOT_BYTES {
+            return Err(SourceSnapshotError::TooLarge);
+        }
+        Ok(Self::new(
+            protection,
+            SourceSnapshotOrigin::Disk,
+            None,
+            Body::Bytes(bytes.into()),
+        ))
     }
 }
 
@@ -262,24 +331,6 @@ impl ProjectSession {
             .checked_file(path)
             .map_err(WorkspaceError::Source)?
             .ok_or(SourceSnapshotError::Missing)?;
-        let mut bytes = Vec::new();
-        File::open(physical)
-            .and_then(|file| {
-                file.take(MAX_SOURCE_SNAPSHOT_BYTES as u64 + 1)
-                    .read_to_end(&mut bytes)
-            })
-            .map_err(|source| SourceSnapshotError::Io {
-                path: path.to_path_buf(),
-                source,
-            })?;
-        if bytes.len() > MAX_SOURCE_SNAPSHOT_BYTES {
-            return Err(SourceSnapshotError::TooLarge);
-        }
-        Ok(SourceSnapshot::new(
-            protection,
-            SourceSnapshotOrigin::Disk,
-            None,
-            Body::Bytes(bytes.into()),
-        ))
+        SourceSnapshot::disk(protection, &physical, path)
     }
 }
