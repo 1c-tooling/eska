@@ -64,6 +64,7 @@ pub fn read_bsl(input: &str, offset: usize) -> Result<Query, QueryError> {
             }
         }
     }
+    let mapped = mapped.finish(literal.range.end - 1);
     Ok(Query {
         identity: QueryIdentity::BslLiteral(literal.range.clone()),
         text: mapped.text,

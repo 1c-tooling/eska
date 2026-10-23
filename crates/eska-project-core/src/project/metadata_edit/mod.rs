@@ -9,6 +9,7 @@ mod hierarchy;
 pub(crate) mod lengths;
 pub(crate) mod numbering;
 mod patch;
+pub(crate) use patch::{escape as escape_xml, replacements_plan as xml_replacements, text_plan};
 pub(crate) mod references;
 mod schema;
 mod standard;
@@ -84,6 +85,33 @@ pub fn snapshot(input: &str) -> String {
 }
 
 impl EditPlan {
+    /// Validate byte boundaries once for both XML property edits and checked BSL query plans.
+    pub(crate) fn from_replacements(
+        input: &str,
+        mut replacements: Vec<Replacement>,
+    ) -> Result<Self, EditError> {
+        replacements.retain(|replacement| {
+            input.get(replacement.range.clone()) != Some(replacement.text.as_str())
+        });
+        replacements.sort_by_key(|replacement| (replacement.range.start, replacement.range.end));
+        let mut end = 0;
+        for replacement in &replacements {
+            if replacement.range.start < end || input.get(replacement.range.clone()).is_none() {
+                return Err(EditError::UnsupportedValue);
+            }
+            end = replacement.range.end;
+        }
+        let mut updated = input.to_owned();
+        for replacement in replacements.iter().rev() {
+            updated.replace_range(replacement.range.clone(), &replacement.text);
+        }
+        Ok(Self {
+            original: input.to_owned(),
+            updated,
+            replacements,
+        })
+    }
+
     /// Dependency checks compare the planned source, including during history replay.
     #[must_use]
     pub fn original(&self) -> &str {

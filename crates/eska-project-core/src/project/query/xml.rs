@@ -210,6 +210,7 @@ fn value(input: &str, node: Node<'_, '_>, identity: QueryIdentity) -> Result<Que
             offset = end;
         }
     }
+    let mapped = mapped.finish(inner.end);
     if expected != mapped.text {
         return Err(QueryError::UnsupportedStructure);
     }
@@ -223,7 +224,7 @@ fn value(input: &str, node: Node<'_, '_>, identity: QueryIdentity) -> Result<Que
 }
 
 /// Locate markup boundaries without treating a quoted '>' attribute as the opening tag's end.
-fn content_range(input: &str, range: Range<usize>) -> Result<Range<usize>, QueryError> {
+pub(super) fn content_range(input: &str, range: Range<usize>) -> Result<Range<usize>, QueryError> {
     let source = &input[range.clone()];
     if source.ends_with("/>") {
         return Ok(range.end - 2..range.end - 2);

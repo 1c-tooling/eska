@@ -1,0 +1,211 @@
+use super::*;
+
+/// Keep the full XML owner, including bytes outside the chosen scalar, in every patch assertion.
+fn xml(content: &str) -> String {
+    format!(
+        "\u{feff}<?xml version='1.0'?>\r\n<DataCompositionSchema xmlns='http://v8.1c.ru/8.1/data-composition-system/schema' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\r\n<dataSet xsi:type='DataSetQuery'><name>A</name><query>{content}</query><other>unchanged</other></dataSet>\r\n</DataCompositionSchema>\r\n"
+    )
+}
+
+/// Select through the same readers used by a query session, rather than trusting test ranges.
+fn query(input: &str) -> Query {
+    if input.starts_with('\u{feff}') && input.contains("DataCompositionSchema") {
+        crate::project::query::read_xml(input)
+            .expect("XML")
+            .remove(0)
+    } else {
+        crate::project::query::read_bsl(input, input.find('"').expect("quote")).expect("BSL")
+    }
+}
+
+/// An extraction is also the source of the exact-byte snapshot sent by an editor.
+fn edit(input: &str, value: &str, decisions: &[CommentPlacement]) -> Result<EditPlan, QueryError> {
+    plan(
+        input,
+        &metadata_edit::snapshot(input),
+        &query(input).identity,
+        value,
+        decisions,
+    )
+}
+
+#[test]
+fn unchanged_apply_preserves_every_source_byte_and_creates_no_replacements() {
+    for input in [
+        xml("<!--before--><![CDATA[ВЫБРАТЬ \"😀\"\r\n{ПОЛЕ}]]>&amp;<!--after-->"),
+        xml("A<!--between-->B"),
+        xml(""),
+        "\u{feff}\tq = \"ВЫБРАТЬ \"\"😀\"\"\r\n\t// BSL\r\n\r\n\t|\r\n\t|| // SDBL\"; // outside\r\n".to_owned(),
+    ] {
+        let result = edit(&input, &query(&input).text, &[]).expect("no-op");
+        assert_eq!(result.output().as_bytes(), input.as_bytes());
+        assert!(result.is_empty());
+    }
+}
+
+#[test]
+fn xml_changes_only_the_query_scalar_and_escapes_values_with_existing_patch() {
+    let input = xml("<!--before--><![CDATA[old]]><!--after-->");
+    let value = "ВЫБРАТЬ \"😀\"\n{ГДЕ A < 2 & B}\r\n";
+    let result = edit(&input, value, &[]).expect("edit");
+    assert_eq!(
+        result.output(),
+        input.replace(
+            "<![CDATA[old]]>",
+            "ВЫБРАТЬ \"😀\"\n{ГДЕ A &lt; 2 &amp; B}&#13;\n"
+        )
+    );
+    assert_eq!(result.replacements().len(), 1);
+    assert_eq!(query(result.output()).text, value);
+}
+
+#[test]
+fn bsl_changes_only_differing_bytes_and_preserves_comment_lines_and_undo() {
+    let input =
+        "\u{feff}\tWhatever = \"ВЫБРАТЬ 1\r\n\t// keep\r\n\r\n\t|ИЗ Таблица\"; // outside\r\n";
+    let value = "ВЫБРАТЬ 2\nИЗ Таблица";
+    let result = edit(input, value, &[]).expect("edit");
+    assert_eq!(result.output(), input.replacen("ВЫБРАТЬ 1", "ВЫБРАТЬ 2", 1));
+    assert_eq!(result.replacements()[0].text, "2");
+    let history = result.history();
+    assert_eq!(
+        history
+            .replay(result.output(), true)
+            .expect("undo")
+            .output(),
+        input
+    );
+}
+
+#[test]
+fn bsl_handles_inserted_removed_and_empty_final_lines_without_leaking_service_bars() {
+    for (input, value) in [
+        ("x = \"old\";", "\"😀\"\n\n| // query comment\n"),
+        ("x = \"old\r\n\t|\";", ""),
+        ("x = \"a\n\t|b\";", "a\nnew\nb"),
+        ("x = \"a\n\t|\";", "a\nend"),
+        ("x = \"\";", "a\n\n"),
+    ] {
+        let original = query(input);
+        let result = edit(input, value, &[]).expect("edit");
+        let updated = query(result.output());
+        assert_eq!(updated.text, value, "{}", result.output());
+        assert_eq!(
+            &result.output()[..original.source.start],
+            &input[..original.source.start]
+        );
+        assert_eq!(
+            &result.output()[updated.source.end..],
+            &input[original.source.end..]
+        );
+    }
+}
+
+#[test]
+fn source_comment_relocation_requires_explicit_valid_decisions() {
+    let input = "x = \"a\n\t// owner comment\n\t|b\n\t|c\";";
+    let value = "new\ntext";
+    assert_eq!(
+        edit(input, value, &[]).err(),
+        Some(QueryError::CommentsRequireDecision)
+    );
+    let offset = value.find('\n').expect("line") + 1;
+    let result = edit(
+        input,
+        value,
+        &[CommentPlacement {
+            comment: 0,
+            query_offset: Some(offset),
+        }],
+    )
+    .expect("explicit move");
+    assert_eq!(query(result.output()).text, value);
+    assert_eq!(
+        query(result.output()).comments[0].text,
+        "\t// owner comment"
+    );
+    let removed = edit(
+        input,
+        value,
+        &[CommentPlacement {
+            comment: 0,
+            query_offset: None,
+        }],
+    )
+    .expect("explicit delete");
+    assert_eq!(query(removed.output()).comments.len(), 0);
+    assert_eq!(
+        edit(
+            input,
+            value,
+            &[CommentPlacement {
+                comment: 0,
+                query_offset: Some(1)
+            }]
+        )
+        .err(),
+        Some(QueryError::CommentsRequireDecision)
+    );
+}
+
+#[test]
+fn split_xml_comments_are_preserved_or_require_a_decision_when_crossed() {
+    let input = xml("A<!--keep-->B<![CDATA[&]]>&amp;");
+    let result = edit(&input, "ZB&&", &[]).expect("unambiguous anchor");
+    assert!(result.output().contains("Z<!--keep-->B&amp;&amp;"));
+    assert_eq!(
+        edit(&input, "new", &[]).err(),
+        Some(QueryError::CommentsRequireDecision)
+    );
+    let result = edit(
+        &input,
+        "new",
+        &[CommentPlacement {
+            comment: 0,
+            query_offset: Some(3),
+        }],
+    )
+    .expect("move XML comment");
+    assert!(result.output().contains("new<!--keep-->"));
+}
+
+#[test]
+fn stale_ranges_invalid_values_and_forged_comment_targets_never_return_a_plan() {
+    let input = "x = \"SELECT 1\";";
+    let selected = query(input);
+    assert_eq!(
+        plan(input, "stale", &selected.identity, "SELECT 2", &[]).err(),
+        Some(QueryError::Conflict)
+    );
+    assert_eq!(
+        plan(
+            input,
+            &metadata_edit::snapshot(input),
+            &QueryIdentity::BslLiteral(6..10),
+            "SELECT 2",
+            &[]
+        )
+        .err(),
+        Some(QueryError::Conflict)
+    );
+    assert_eq!(
+        edit(input, "bad\rvalue", &[]).err(),
+        Some(QueryError::InvalidValue)
+    );
+    assert_eq!(
+        edit(
+            input,
+            "SELECT 2",
+            &[CommentPlacement {
+                comment: 1,
+                query_offset: None
+            }]
+        )
+        .err(),
+        Some(QueryError::InvalidValue)
+    );
+    assert_eq!(
+        edit(&xml("old"), "bad\0value", &[]).err(),
+        Some(QueryError::InvalidValue)
+    );
+}

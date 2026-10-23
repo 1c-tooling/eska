@@ -1,10 +1,12 @@
 //! Query views retain exact owner coordinates; they never become another source file.
 
 mod bsl;
+mod editing;
 mod mapping;
 mod xml;
 
 pub use bsl::read_bsl;
+pub use editing::{CommentPlacement, plan};
 pub use mapping::{Affinity, Mapping, Position, SourceMap, byte_position, position_byte};
 pub use xml::read_xml;
 
@@ -49,6 +51,9 @@ pub enum QueryError {
     UnsupportedExpression,
     NotFound,
     InvalidPosition,
+    InvalidValue,
+    Conflict,
+    CommentsRequireDecision,
 }
 
 /// Reject oversized buffers before parsing or allocating coordinate maps.

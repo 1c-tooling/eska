@@ -15,6 +15,7 @@ use std::{
 };
 
 mod editing;
+mod query;
 mod renaming;
 
 /// Copy static fixtures into a uniquely owned playground directory.

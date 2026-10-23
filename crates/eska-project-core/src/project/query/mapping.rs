@@ -29,6 +29,7 @@ pub struct Mapping {
 pub struct SourceMap {
     spans: Vec<Mapping>,
     empty_anchor: usize,
+    end_anchor: usize,
 }
 
 impl SourceMap {
@@ -46,6 +47,9 @@ impl SourceMap {
         }
         if query.is_empty() && offset == 0 {
             return Some(self.empty_anchor);
+        }
+        if offset == query.len() && affinity == Affinity::After {
+            return Some(self.end_anchor);
         }
         let start = self.spans.partition_point(|span| span.query.end < offset);
         let mut candidates = self.spans[start..]
@@ -66,6 +70,9 @@ impl SourceMap {
         }
         if self.spans.is_empty() && offset == self.empty_anchor {
             return Some(0);
+        }
+        if offset == self.end_anchor {
+            return Some(self.spans.last().map_or(0, |span| span.query.end));
         }
         let start = self.spans.partition_point(|span| span.source.end < offset);
         self.spans[start..]
@@ -170,8 +177,18 @@ impl MappedText {
             map: SourceMap {
                 spans: Vec::new(),
                 empty_anchor: anchor,
+                end_anchor: anchor,
             },
         }
+    }
+
+    /// Empty final lines still map after their continuation prefix or CDATA delimiters.
+    pub const fn finish(mut self, anchor: usize) -> Self {
+        self.map.end_anchor = anchor;
+        if self.text.is_empty() {
+            self.map.empty_anchor = anchor;
+        }
+        self
     }
 
     /// Merge only contiguous byte-identical runs; omitted markup remains a real gap.
@@ -193,6 +210,7 @@ impl MappedText {
         }
         let start = self.text.len();
         self.text.push(character);
+        self.map.end_anchor = source.end;
         if direct
             && let Some(last) = self.map.spans.last_mut()
             && last.direct
