@@ -1,0 +1,759 @@
+//! A query session owns its draft, resume decision and one native-application receipt, independently of an IDE.
+
+use std::{path::PathBuf, sync::Arc};
+
+use crate::{
+    application::{self, ContextError, ContextSnapshot},
+    project::{metadata_edit::EditPlan, metadata_model::ProjectScope, query},
+};
+
+use super::{
+    CommentPlacement, NodeId, ProjectSession, Query, QueryDocument, QueryDocumentError,
+    QueryDocumentKind, QueryError, QueryIdentity, QueryRevision, snapshot,
+};
+
+/// The encoding signature is independent from the exact characters exposed by an editor model.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum QueryOwnerFormat {
+    Editor,
+    Source,
+}
+
+/// User restrictions and this query's temporary restriction have separate owners and lifetimes.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct QueryOwnerRestrictions {
+    pub user_read_only: bool,
+    pub owner_lock: Option<u64>,
+}
+
+/// Only the IDE knows native versions and dirty markers; source hashes and permissions are checked by ESKA.
+#[derive(Clone, Copy, Debug)]
+pub struct QueryEditorState<'a> {
+    pub version: u64,
+    pub snapshot: &'a str,
+    pub is_dirty: bool,
+    pub user_read_only: bool,
+    pub owner_lock: Option<u64>,
+    pub application: Option<&'a str>,
+}
+
+/// A retained checkpoint is inert data; restoring it never grants permission to apply automatically.
+#[derive(Clone, Debug)]
+pub struct QuerySessionRestore {
+    pub root: PathBuf,
+    pub scope: ProjectScope,
+    pub node: NodeId,
+    pub path: PathBuf,
+    pub descriptor: PathBuf,
+    pub descriptor_snapshot: String,
+    pub disk_snapshot: String,
+    pub owner_snapshot: String,
+    pub owner_version: u64,
+    pub context_fingerprint: String,
+    pub application: Option<String>,
+    pub identity: QueryIdentity,
+    pub owner_text: Arc<str>,
+    pub base: Arc<str>,
+    pub draft: Arc<str>,
+    pub writable: bool,
+}
+
+/// A plan is not a source write; its token must be acknowledged against the resulting native model.
+#[derive(Debug)]
+pub struct QueryApplyPlan {
+    pub token: u64,
+    pub save_owner: bool,
+    pub plan: EditPlan,
+    pub query: Query,
+}
+
+/// Structured failures keep editor presentation and transport details outside the session model.
+#[derive(Debug)]
+pub enum QuerySessionError {
+    Document(Box<QueryDocumentError>),
+    Context(Box<ContextError>),
+    ContextMemberMismatch,
+    ContextChanged,
+    ResumeRequired,
+    OwnerLockRequired,
+    UserReadOnly,
+    StaleDraft,
+    ApplyBusy,
+    UnknownApply,
+    InvalidReceipt,
+    Closed,
+    RevisionExhausted,
+}
+
+impl From<QueryDocumentError> for QuerySessionError {
+    /// Preserve the checked source boundary instead of flattening it to a display message.
+    fn from(error: QueryDocumentError) -> Self {
+        Self::Document(Box::new(error))
+    }
+}
+
+impl From<QueryError> for QuerySessionError {
+    /// Codec errors remain distinguishable from lifecycle and context failures.
+    fn from(error: QueryError) -> Self {
+        QueryDocumentError::Query(error).into()
+    }
+}
+
+#[derive(Clone, Debug)]
+struct Pending {
+    token: u64,
+    output: Arc<str>,
+    identity: QueryIdentity,
+    applied_draft: Arc<str>,
+    save_owner: bool,
+    no_op: bool,
+}
+
+#[derive(Clone, Debug)]
+enum Phase {
+    Paused,
+    Ready,
+    Applying(Pending),
+    Closed,
+}
+
+/// Immutable text sharing permits a proposed state to be published only after its checkpoint CAS succeeds.
+#[derive(Clone, Debug)]
+pub struct QuerySession {
+    document: QueryDocument,
+    application: Option<String>,
+    fingerprint: String,
+    identity: QueryIdentity,
+    base: Arc<str>,
+    draft: Arc<str>,
+    format: QueryOwnerFormat,
+    restrictions: QueryOwnerRestrictions,
+    phase: Phase,
+    revision: u64,
+    plan_serial: u64,
+}
+
+impl QuerySession {
+    /// Start with a freshly checked owner; an editable BSL session requires its own acknowledged native lock.
+    ///
+    /// # Errors
+    /// Rejects stale source/context, an unsupported query and a missing BSL owner lock.
+    pub fn open(
+        project: &mut ProjectSession,
+        document: QueryDocument,
+        identity: QueryIdentity,
+        application: Option<&str>,
+        format: QueryOwnerFormat,
+        restrictions: QueryOwnerRestrictions,
+    ) -> Result<Self, QuerySessionError> {
+        require_lock(document.kind, restrictions)?;
+        let context = project.query_context(application)?;
+        let query = selected(&document, &identity)?;
+        project.check_query_read(&document, revision(&document))?;
+        let application = context.context.name().map(|name| name.as_str().to_owned());
+        let base: Arc<str> = query.text.into();
+        let session = Self {
+            document,
+            application,
+            fingerprint: context.fingerprint,
+            identity,
+            draft: Arc::clone(&base),
+            base,
+            format,
+            restrictions,
+            phase: Phase::Ready,
+            revision: 1,
+            plan_serial: 0,
+        };
+        session.check_context(project, session.application.as_deref())?;
+        Ok(session)
+    }
+
+    /// Recovered source text remains available even when current source bytes cannot be resumed.
+    ///
+    /// # Errors
+    /// Rejects a foreign project, malformed saved source binding or inconsistent base query.
+    pub fn restore(
+        project: &mut ProjectSession,
+        saved: QuerySessionRestore,
+        format: QueryOwnerFormat,
+    ) -> Result<Self, QuerySessionError> {
+        if saved.root != project.project().root() || &saved.scope != project.scope() {
+            return Err(QueryDocumentError::OwnerChanged.into());
+        }
+        if saved.owner_text.len() > query::MAX_SNAPSHOT_BYTES
+            || saved.base.len() > query::MAX_SNAPSHOT_BYTES
+            || saved.draft.len() > query::MAX_SNAPSHOT_BYTES
+        {
+            return Err(QueryError::TooLarge.into());
+        }
+        if saved.owner_snapshot != snapshot(&saved.owner_text) {
+            return Err(QueryError::Conflict.into());
+        }
+        let mut document = project.query_document_shared(
+            &saved.node,
+            &saved.path,
+            saved.owner_version,
+            Some(saved.owner_text),
+        )?;
+        if document.descriptor != saved.descriptor {
+            return Err(QueryDocumentError::OwnerChanged.into());
+        }
+        if selected(&document, &saved.identity)?.text.as_str() != saved.base.as_ref() {
+            return Err(QueryError::Conflict.into());
+        }
+        // These are remembered guards, not fresh permission. Every resume/plan resolves a new checked document.
+        document.descriptor_snapshot = saved.descriptor_snapshot;
+        document.disk_snapshot = saved.disk_snapshot;
+        document.writable = saved.writable;
+        Ok(Self {
+            document,
+            application: saved.application,
+            fingerprint: saved.context_fingerprint,
+            identity: saved.identity,
+            base: saved.base,
+            draft: saved.draft,
+            format,
+            restrictions: QueryOwnerRestrictions::default(),
+            phase: Phase::Paused,
+            revision: 1,
+            plan_serial: 0,
+        })
+    }
+
+    /// Read the remembered owner without treating its initial writable flag as present authority.
+    #[must_use]
+    pub const fn document(&self) -> &QueryDocument {
+        &self.document
+    }
+
+    /// Query identity always belongs to the retained full-owner snapshot.
+    #[must_use]
+    pub const fn identity(&self) -> &QueryIdentity {
+        &self.identity
+    }
+
+    /// The baseline changes only after a checked native application receipt.
+    #[must_use]
+    pub fn base(&self) -> &str {
+        &self.base
+    }
+
+    /// Unfinished query text is retained independently of its source representation.
+    #[must_use]
+    pub fn draft(&self) -> &str {
+        &self.draft
+    }
+
+    /// Private checkpoints share the three immutable texts instead of copying the full owner on each edit.
+    #[must_use]
+    pub fn texts(&self) -> [Arc<str>; 3] {
+        [
+            Arc::clone(&self.document.input),
+            Arc::clone(&self.base),
+            Arc::clone(&self.draft),
+        ]
+    }
+
+    /// A recovered BSL snapshot is inspectable until its adapter proves a new owner lock.
+    #[must_use]
+    pub fn draft_writable(&self) -> bool {
+        !matches!(self.phase, Phase::Closed)
+            && self.document.writable
+            && !self.restrictions.user_read_only
+            && (self.document.kind != QueryDocumentKind::Bsl
+                || self.restrictions.owner_lock.is_some())
+    }
+
+    /// A selected application never silently follows a later client preference.
+    #[must_use]
+    pub fn application(&self) -> Option<&str> {
+        self.application.as_deref()
+    }
+
+    /// Context inputs, rather than a generated analyzer configuration, identify the session.
+    #[must_use]
+    pub fn context_fingerprint(&self) -> &str {
+        &self.fingerprint
+    }
+
+    /// Revisions compare acknowledged state rather than native per-process editor counters.
+    #[must_use]
+    pub const fn revision(&self) -> u64 {
+        self.revision
+    }
+
+    /// Recovery and a context replacement require explicit resumption before another source plan.
+    #[must_use]
+    pub const fn resumed(&self) -> bool {
+        matches!(self.phase, Phase::Ready | Phase::Applying(_))
+    }
+
+    /// Only one native application may await a receipt for this session.
+    #[must_use]
+    pub const fn applying(&self) -> bool {
+        matches!(self.phase, Phase::Applying(_))
+    }
+
+    /// The adapter declares how its exact native buffer represents the encoding signature.
+    #[must_use]
+    pub const fn owner_format(&self) -> QueryOwnerFormat {
+        self.format
+    }
+
+    /// Independent user restrictions are retained after this session releases its own lock.
+    #[must_use]
+    pub const fn restrictions(&self) -> QueryOwnerRestrictions {
+        self.restrictions
+    }
+
+    /// Include an unfinished plan's output and an older applied draft still awaiting its receipt.
+    #[must_use]
+    pub fn retained_bytes(&self) -> usize {
+        self.document.input.len()
+            + self.base.len()
+            + self.draft.len()
+            + match &self.phase {
+                Phase::Applying(pending) => {
+                    let retained_draft = if Arc::ptr_eq(&pending.applied_draft, &self.draft)
+                        || Arc::ptr_eq(&pending.applied_draft, &self.base)
+                    {
+                        0
+                    } else {
+                        pending.applied_draft.len()
+                    };
+                    retained_draft
+                        + if pending.no_op {
+                            0
+                        } else {
+                            pending.output.len()
+                        }
+                }
+                _ => 0,
+            }
+    }
+
+    /// Coalesced transport updates can replace only the draft, never its owner or baseline.
+    ///
+    /// # Errors
+    /// Rejects stale revisions, oversized drafts and callbacks for closed sessions.
+    pub fn set_draft(&mut self, expected: u64, draft: Arc<str>) -> Result<(), QuerySessionError> {
+        self.check_revision(expected)?;
+        if draft.len() > query::MAX_SNAPSHOT_BYTES {
+            return Err(QueryError::TooLarge.into());
+        }
+        if self.draft != draft {
+            self.advance()?;
+            self.draft = draft;
+        }
+        Ok(())
+    }
+
+    /// Rebind a remembered buffer only by explicit user intent, including a separately saved matching XML owner.
+    ///
+    /// # Errors
+    /// Rejects changed owner/descriptor/context, current restrictions and an absent native BSL lock.
+    pub fn resume(
+        &mut self,
+        project: &mut ProjectSession,
+        current: QueryEditorState<'_>,
+        restrictions: QueryOwnerRestrictions,
+    ) -> Result<(), QuerySessionError> {
+        self.not_closed()?;
+        if matches!(self.phase, Phase::Applying(_)) {
+            return Err(QuerySessionError::ApplyBusy);
+        }
+        self.phase = Phase::Paused;
+        self.restrictions.user_read_only = restrictions.user_read_only;
+        if self.restrictions.owner_lock.is_some()
+            && self.restrictions.owner_lock != restrictions.owner_lock
+        {
+            return Err(QuerySessionError::OwnerLockRequired);
+        }
+        require_lock(self.document.kind, restrictions)?;
+        if restrictions.user_read_only || current.user_read_only {
+            self.restrictions.user_read_only = true;
+            return Err(QuerySessionError::UserReadOnly);
+        }
+        if restrictions.owner_lock != current.owner_lock {
+            return Err(QuerySessionError::OwnerLockRequired);
+        }
+        let document = self.checked_document(project, current, true)?;
+        self.advance()?;
+        self.document = document;
+        self.restrictions = restrictions;
+        self.phase = Phase::Ready;
+        Ok(())
+    }
+
+    /// Return a minimal plan and retain its exact output until the native editor acknowledges the result.
+    ///
+    /// # Errors
+    /// Rejects unresumed/stale/forbidden sessions and competing application attempts.
+    pub fn prepare(
+        &mut self,
+        project: &mut ProjectSession,
+        expected: u64,
+        current: QueryEditorState<'_>,
+        decisions: &[CommentPlacement],
+        line_ending: Option<query::LineEnding>,
+    ) -> Result<QueryApplyPlan, QuerySessionError> {
+        self.check_revision(expected)?;
+        match self.phase {
+            Phase::Paused => return Err(QuerySessionError::ResumeRequired),
+            Phase::Applying(_) => return Err(QuerySessionError::ApplyBusy),
+            Phase::Closed => return Err(QuerySessionError::Closed),
+            Phase::Ready => (),
+        }
+        if current.user_read_only {
+            self.restrictions.user_read_only = true;
+        }
+        let checked = self.checked_plan(project, current, decisions, line_ending);
+        let (document, plan, projected) = match checked {
+            Ok(checked) => checked,
+            Err(error) => {
+                self.phase = Phase::Paused;
+                return Err(error);
+            }
+        };
+        let token = self
+            .plan_serial
+            .checked_add(1)
+            .ok_or(QuerySessionError::RevisionExhausted)?;
+        let save_owner =
+            document.kind != QueryDocumentKind::Bsl && !current.is_dirty && !plan.is_empty();
+        self.phase = Phase::Applying(Pending {
+            token,
+            output: if plan.is_empty() {
+                Arc::clone(&self.document.input)
+            } else {
+                Arc::from(plan.output())
+            },
+            identity: projected.identity.clone(),
+            applied_draft: if projected.text.as_str() == self.draft.as_ref() {
+                Arc::clone(&self.draft)
+            } else {
+                Arc::from(projected.text.as_str())
+            },
+            save_owner,
+            no_op: plan.is_empty(),
+        });
+        self.plan_serial = token;
+        Ok(QueryApplyPlan {
+            token,
+            save_owner,
+            plan,
+            query: projected,
+        })
+    }
+
+    /// A valid receipt advances the owner/base while preserving a newer draft typed during application.
+    ///
+    /// # Errors
+    /// Rejects a wrong token/output, stale native version and unexpected disk/context/policy changes.
+    pub fn applied(
+        &mut self,
+        project: &mut ProjectSession,
+        token: u64,
+        current: QueryEditorState<'_>,
+    ) -> Result<(), QuerySessionError> {
+        self.not_closed()?;
+        if current.user_read_only {
+            self.restrictions.user_read_only = true;
+        }
+        self.check_restrictions(current)?;
+        let pending = match &self.phase {
+            Phase::Applying(pending) if pending.token == token => pending,
+            _ => return Err(QuerySessionError::UnknownApply),
+        };
+        if current.snapshot != snapshot(&pending.output)
+            || current.version < self.document.version
+            || (!pending.no_op && current.version == self.document.version)
+        {
+            return Err(QuerySessionError::InvalidReceipt);
+        }
+        self.check_project(project)?;
+        self.check_context(project, current.application)?;
+        let document = project.query_document_shared(
+            &self.document.node,
+            &self.document.path,
+            current.version,
+            Some(Arc::clone(&pending.output)),
+        )?;
+        self.check_descriptor(&document)?;
+        if !self.document.writable || !document.writable {
+            return Err(QueryDocumentError::ReadOnly.into());
+        }
+        let output_disk = disk_snapshot(&pending.output, self.document.disk_bom, self.format);
+        if (pending.save_owner && document.disk_snapshot != output_disk)
+            || (!pending.save_owner
+                && document.disk_snapshot != self.document.disk_snapshot
+                && (current.is_dirty || document.disk_snapshot != output_disk))
+        {
+            return Err(QueryError::Conflict.into());
+        }
+        let base = Arc::clone(&pending.applied_draft);
+        let identity = pending.identity.clone();
+        self.check_context(project, current.application)?;
+        self.advance()?;
+        self.document = document;
+        self.identity = identity;
+        self.base = base;
+        self.phase = Phase::Ready;
+        Ok(())
+    }
+
+    /// Errors/cancel release only this planned operation; later application needs another explicit resume.
+    ///
+    /// # Errors
+    /// Rejects a token belonging to a different or already released application.
+    pub fn abort_apply(&mut self, token: u64) -> Result<(), QuerySessionError> {
+        self.not_closed()?;
+        if !matches!(&self.phase, Phase::Applying(pending) if pending.token == token) {
+            return Err(QuerySessionError::UnknownApply);
+        }
+        self.phase = Phase::Paused;
+        Ok(())
+    }
+
+    /// A source connection replacement invalidates authority while keeping both dirty snapshots intact.
+    pub fn pause(&mut self) {
+        if !matches!(self.phase, Phase::Closed) {
+            self.phase = Phase::Paused;
+        }
+    }
+
+    /// Only the owned query restriction is released; the user's independent restriction remains unchanged.
+    pub fn close(&mut self) -> Option<u64> {
+        if matches!(self.phase, Phase::Closed) {
+            return None;
+        }
+        self.phase = Phase::Closed;
+        self.restrictions.owner_lock.take()
+    }
+
+    /// Every operation resolves current source ownership rather than reusing a stale metadata generation.
+    fn checked_plan(
+        &self,
+        project: &mut ProjectSession,
+        current: QueryEditorState<'_>,
+        decisions: &[CommentPlacement],
+        line_ending: Option<query::LineEnding>,
+    ) -> Result<(QueryDocument, EditPlan, Query), QuerySessionError> {
+        self.check_restrictions(current)?;
+        let document = self.checked_document(project, current, false)?;
+        let plan = project.plan_query(
+            &document,
+            revision(&document),
+            &self.identity,
+            &self.draft,
+            decisions,
+            line_ending,
+        )?;
+        self.check_context(project, current.application)?;
+        let query = projected(&plan, &self.identity)?;
+        Ok((document, plan, query))
+    }
+
+    /// Every operation resolves current source ownership rather than reusing a stale metadata generation.
+    fn checked_document(
+        &self,
+        project: &mut ProjectSession,
+        current: QueryEditorState<'_>,
+        resuming: bool,
+    ) -> Result<QueryDocument, QuerySessionError> {
+        if current.snapshot != self.document.snapshot
+            || (!resuming && current.version != self.document.version)
+        {
+            return Err(QueryDocumentError::StaleVersion.into());
+        }
+        self.check_project(project)?;
+        self.check_context(project, current.application)?;
+        let document = project.query_document_shared(
+            &self.document.node,
+            &self.document.path,
+            current.version,
+            Some(Arc::clone(&self.document.input)),
+        )?;
+        self.check_descriptor(&document)?;
+        if !self.document.writable || !document.writable {
+            return Err(QueryDocumentError::ReadOnly.into());
+        }
+        let matching_disk = document.disk_snapshot
+            == disk_snapshot(&document.input, document.disk_bom, self.format);
+        if (!current.is_dirty && !matching_disk)
+            || (document.disk_snapshot != self.document.disk_snapshot
+                && (!resuming || current.is_dirty || !matching_disk))
+        {
+            return Err(QueryError::Conflict.into());
+        }
+        if selected(&document, &self.identity)?.text.as_str() != self.base.as_ref() {
+            return Err(QueryError::Conflict.into());
+        }
+        self.check_context(project, current.application)?;
+        Ok(document)
+    }
+
+    /// Logical identity and full descriptor bytes are checked independently from application composition.
+    fn check_descriptor(&self, document: &QueryDocument) -> Result<(), QuerySessionError> {
+        if document.kind != self.document.kind
+            || document.descriptor != self.document.descriptor
+            || document.descriptor_snapshot != self.document.descriptor_snapshot
+        {
+            return Err(QueryDocumentError::OwnerChanged.into());
+        }
+        Ok(())
+    }
+
+    /// Restored data cannot be rebound to a different project/source/member merely because node IDs match.
+    fn check_project(&self, project: &ProjectSession) -> Result<(), QuerySessionError> {
+        if self.document.root != project.project().root()
+            || self.document.source_root != project.project().source()
+            || &self.document.scope != project.scope()
+        {
+            return Err(QueryDocumentError::OwnerChanged.into());
+        }
+        Ok(())
+    }
+
+    /// Keep the same context across changed paths, a new connection and independent analyzer configuration.
+    fn check_context(
+        &self,
+        project: &ProjectSession,
+        requested: Option<&str>,
+    ) -> Result<(), QuerySessionError> {
+        if project.query_context(requested)?.fingerprint != self.fingerprint {
+            return Err(QuerySessionError::ContextChanged);
+        }
+        Ok(())
+    }
+
+    /// A query-owned lock never overrides a user's restriction or a missing lock acknowledgement.
+    fn check_restrictions(&self, current: QueryEditorState<'_>) -> Result<(), QuerySessionError> {
+        if self.restrictions.user_read_only || current.user_read_only {
+            return Err(QuerySessionError::UserReadOnly);
+        }
+        require_lock(self.document.kind, self.restrictions)?;
+        if current.owner_lock != self.restrictions.owner_lock {
+            return Err(QuerySessionError::OwnerLockRequired);
+        }
+        Ok(())
+    }
+
+    /// All mutable callbacks must identify the acknowledged draft revision.
+    fn check_revision(&self, expected: u64) -> Result<(), QuerySessionError> {
+        self.not_closed()?;
+        if expected != self.revision {
+            return Err(QuerySessionError::StaleDraft);
+        }
+        Ok(())
+    }
+
+    /// A released session cannot be revived by a delayed save or receipt.
+    const fn not_closed(&self) -> Result<(), QuerySessionError> {
+        if matches!(self.phase, Phase::Closed) {
+            return Err(QuerySessionError::Closed);
+        }
+        Ok(())
+    }
+
+    /// Checked advancement makes revision exhaustion an error rather than an alias of older state.
+    fn advance(&mut self) -> Result<(), QuerySessionError> {
+        self.revision = self
+            .revision
+            .checked_add(1)
+            .ok_or(QuerySessionError::RevisionExhausted)?;
+        Ok(())
+    }
+}
+
+impl ProjectSession {
+    /// Resolve current application inputs without requiring an analyzer or generated configuration.
+    ///
+    /// # Errors
+    /// Rejects unavailable composition and a selected project outside the resolved application.
+    pub fn query_context(
+        &self,
+        application: Option<&str>,
+    ) -> Result<ContextSnapshot, QuerySessionError> {
+        let context = application::resolve_snapshot(self.project().root(), application)
+            .map_err(|error| QuerySessionError::Context(Box::new(error)))?;
+        if !context.context.sources().iter().any(|source| {
+            source.project().root() == self.project().root()
+                && source.project().source() == self.project().source()
+        }) {
+            return Err(QuerySessionError::ContextMemberMismatch);
+        }
+        Ok(context)
+    }
+}
+
+/// Native input prevention is a required adapter guarantee; a version check cannot substitute for it.
+fn require_lock(
+    kind: QueryDocumentKind,
+    restrictions: QueryOwnerRestrictions,
+) -> Result<(), QuerySessionError> {
+    if restrictions.owner_lock == Some(0)
+        || (kind == QueryDocumentKind::Bsl && restrictions.owner_lock.is_none())
+    {
+        return Err(QuerySessionError::OwnerLockRequired);
+    }
+    Ok(())
+}
+
+/// Codec reads never accept a caller-supplied range/value as a replacement for checked source syntax.
+fn selected(document: &QueryDocument, identity: &QueryIdentity) -> Result<Query, QueryError> {
+    if !document.accepts(identity) {
+        return Err(QueryError::UnsupportedStructure);
+    }
+    let query = match identity {
+        QueryIdentity::BslLiteral(range) => document.bsl_query(range.start)?,
+        _ => document
+            .xml_queries()?
+            .into_iter()
+            .find(|query| &query.identity == identity)
+            .ok_or(QueryError::NotFound)?,
+    };
+    if &query.identity != identity {
+        return Err(QueryError::Conflict);
+    }
+    Ok(query)
+}
+
+/// The BSL identity's end changes after an edit; XML logical identity remains stable.
+fn projected(plan: &EditPlan, identity: &QueryIdentity) -> Result<Query, QueryError> {
+    match identity {
+        QueryIdentity::BslLiteral(range) => query::read_bsl(plan.output(), range.start),
+        _ => query::read_xml(plan.output())?
+            .into_iter()
+            .find(|query| &query.identity == identity)
+            .ok_or(QueryError::NotFound),
+    }
+}
+
+/// An encoding signature is restored only when the supplied editor model deliberately omits it.
+fn disk_snapshot(text: &str, bom: bool, format: QueryOwnerFormat) -> String {
+    use sha2::{Digest as _, Sha256};
+    if bom && format == QueryOwnerFormat::Editor {
+        use std::fmt::Write as _;
+        Sha256::new()
+            .chain_update(b"\xef\xbb\xbf")
+            .chain_update(text.as_bytes())
+            .finalize()
+            .iter()
+            .fold(String::with_capacity(64), |mut value, byte| {
+                let _ = write!(value, "{byte:02x}");
+                value
+            })
+    } else {
+        snapshot(text)
+    }
+}
+
+/// Source revisions and draft revisions deliberately use different counters.
+fn revision(document: &QueryDocument) -> QueryRevision<'_> {
+    QueryRevision {
+        version: document.version,
+        snapshot: &document.snapshot,
+    }
+}

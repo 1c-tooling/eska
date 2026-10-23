@@ -160,6 +160,20 @@ impl Store {
         Ok(true)
     }
 
+    /// A source plan must notice another window's checkpoint before it reaches the native editor.
+    ///
+    /// # Errors
+    /// Rejects an invalid ID, an aliased path or any changed/missing acknowledged file.
+    pub fn verify(&self, id: &str, expected: &str) -> Result<(), Error> {
+        if !is_id(id) {
+            return Err(Error::InvalidRecord);
+        }
+        if !checked_directory(&self.directory, false)? {
+            return Err(Error::Conflict);
+        }
+        compare_revision(&self.path(id), Some(expected))
+    }
+
     /// Only validated canonical IDs can be joined to the private store path.
     fn path(&self, id: &str) -> PathBuf {
         self.directory.join(format!("{id}.json"))

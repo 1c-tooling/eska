@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use eska_project_core::project::query::recovery::{self as core, Store, Stored};
+use eska_project_core::project::query::recovery::{self as core, Record, Store, Stored};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -58,6 +58,7 @@ impl State {
         method: &str,
         args: &Value,
         forbidden: &[PathBuf],
+        queries: &mut super::State,
     ) -> Result<Value, Value> {
         if method == "query/recoveryOpen" {
             return self.open(args, forbidden);
@@ -85,7 +86,7 @@ impl State {
             "query/recoveryRead" => self.read(args),
             "query/recoveryBegin" => self.begin(args),
             "query/recoveryAppend" => self.append(args),
-            "query/recoveryCommit" => self.commit(args),
+            "query/recoveryCommit" => self.commit(args, queries),
             "query/recoveryRemove" => self.remove(args),
             "query/recoveryCancel" => {
                 let input: UpdateId = decode(args)?;
@@ -219,7 +220,7 @@ impl State {
     }
 
     /// Core validates the record, checks disk revision/quota and publishes a single atomic checkpoint.
-    fn commit(&mut self, args: &Value) -> Result<Value, Value> {
+    fn commit(&mut self, args: &Value, queries: &mut super::State) -> Result<Value, Value> {
         let input: UpdateId = decode(args)?;
         let upload = self
             .upload
@@ -235,6 +236,7 @@ impl State {
             .ok_or_else(|| failure("unknown_update"))?;
         let expected = upload.expected_revision.clone();
         let record = upload.record()?;
+        let staged = queries.stage_checkpoint(&record, expected.as_deref())?;
         let store = &self
             .store
             .as_ref()
@@ -244,8 +246,73 @@ impl State {
             .save(record, expected.as_deref())
             .map_err(|error| storage_error(&error))?;
         let result = header(&stored)?;
+        queries.accept_checkpoint(staged, &stored);
         self.records.insert(stored.record.id().to_owned(), stored);
         Ok(result)
+    }
+
+    /// Source-session mutations reuse the exact selected private store and never choose a fallback path.
+    pub(super) fn checked_record(
+        &self,
+        store_id: &str,
+        id: &str,
+        expected: Option<&str>,
+        fresh: bool,
+    ) -> Result<&Stored, Value> {
+        let store = self.selected(store_id)?;
+        let stored = self
+            .records
+            .get(id)
+            .ok_or_else(|| failure("recovery_conflict"))?;
+        if expected.is_some_and(|expected| expected != stored.revision) {
+            return Err(failure("recovery_conflict"));
+        }
+        if fresh {
+            store
+                .verify(id, &stored.revision)
+                .map_err(|error| storage_error(&error))?;
+        }
+        Ok(stored)
+    }
+
+    /// Publish a state already validated by the common session, with the same disk CAS and location guard.
+    pub(super) fn publish(
+        &mut self,
+        store_id: &str,
+        record: Record,
+        expected: Option<&str>,
+        forbidden: &[PathBuf],
+    ) -> Result<Stored, Value> {
+        let store = self.selected(store_id)?;
+        let directory = &self
+            .store
+            .as_ref()
+            .ok_or_else(|| failure("unknown_store"))?
+            .1;
+        check_location(directory, forbidden)?;
+        if self
+            .records
+            .get(record.id())
+            .map(|stored| stored.revision.as_str())
+            != expected
+        {
+            return Err(failure("recovery_conflict"));
+        }
+        let stored = store
+            .save(record, expected)
+            .map_err(|error| storage_error(&error))?;
+        self.records
+            .insert(stored.record.id().to_owned(), stored.clone());
+        Ok(stored)
+    }
+
+    /// A stale handle cannot address the same directory after an explicit recovery reopen.
+    fn selected(&self, store_id: &str) -> Result<&Store, Value> {
+        self.store
+            .as_ref()
+            .filter(|(id, _, _)| id == store_id)
+            .map(|(_, _, store)| store)
+            .ok_or_else(|| failure("unknown_store"))
     }
 
     /// Removal cancels a queued update and cannot remove a checkpoint changed by a second window.
@@ -307,7 +374,7 @@ struct UpdateId {
 }
 
 /// Headers keep startup responses bounded; complete owner text is read only in small requested chunks.
-fn header(stored: &Stored) -> Result<Value, Value> {
+pub(super) fn header(stored: &Stored) -> Result<Value, Value> {
     Ok(
         json!({"id":stored.record.id(),"metadata":stored.record.metadata(),"revision":stored.revision,
         "parts":transfer::descriptions(&stored.record)?}),

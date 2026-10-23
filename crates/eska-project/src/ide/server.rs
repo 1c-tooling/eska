@@ -156,6 +156,9 @@ impl Server {
                     self.query_recovery(method, args)
                 }
             }
+            method if super::query::is_session_method(method) && self.client_minor < 15 => {
+                Err(error(-32601))
+            }
             method if super::query::is_method(method) && self.client_minor >= 13 => {
                 self.query(method, args)
             }
@@ -216,6 +219,9 @@ impl Server {
         }
         if self.client_minor >= 14 {
             result["capabilities"]["queryRecovery"] = super::query::recovery_capability();
+        }
+        if self.client_minor >= 15 {
+            result["capabilities"]["querySessions"] = super::query::session_capability();
         }
         Ok(result)
     }

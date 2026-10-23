@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-23",
+  "part": "Common source-session model, checked native receipt and optional Metadata API 1.15",
+  "sourceParent": "463b798430079b723094e9f2efb20ba8aebd943e",
+  "explorerCommit": "39a2482e34ea0da9ce65c54c96a4723ac737180e",
+  "ownerLockAccepted": false,
+  "productionBslEditingEnabled": false,
+  "productionClientUsesSourceSessions": false,
+  "sessionModelMigrationComplete": false,
+  "preparedStateDurable": false,
+  "sourceSha256": {
+    "crates/eska-project-core/src/project/metadata_workspace/mod.rs": "4120acd92bb3306bae6ea9169b2868f08c85b787b5ba6787c7db52abbf7ebbf9",
+    "crates/eska-project-core/src/project/metadata_workspace/query.rs": "2202e8e40972a02645fa91eb9e25ebcb9bf20066c058088bfb4bf1d167f5bd77",
+    "crates/eska-project-core/src/project/query/recovery/store.rs": "f4203fda67dc32dc6c4f747c52d10673e0cf01af44cd2f556858f3620c099875",
+    "crates/eska-project/src/ide/mod.rs": "abeaacc4694baad8ed802a3de3f639b7b45a7f571043fe1d8fbc2fc330dd64e0",
+    "crates/eska-project/src/ide/query/documents.rs": "125a2fc64eaba8539653804c728cd4f576a429207c8f568eabb0892190a92a38",
+    "crates/eska-project/src/ide/query/mod.rs": "a93f1e8b250ebd1f2281dff85dcd31a95887b982eca5f849db83d3672a3b1fa8",
+    "crates/eska-project/src/ide/query/recovery.rs": "c04bddbe3785c27cf058947b58f7c315c0d3f5235500f2479bb795540ce4bea9",
+    "crates/eska-project/src/ide/runtime.rs": "2d24404d9c08361fb6d69fcd1ef874a3d36a1d90c94c50459d13a295baeecc31",
+    "crates/eska-project/src/ide/server.rs": "608ae9b8cf2489ce11a94e47664b07918c95cccbef6c77a00efa7cf2811d89cb",
+    "crates/eska-project/tests/server/recovery.rs": "dc6fec79c6fe06a191d10f1064bd147eab39c15b6c2817fe8be90ed27798de52",
+    "docs/ide-protocol.md": "dfabf636381126bd6cff351410995c52b4822cff145c438bcb381a68ce706327",
+    "docs/project-cli.md": "d70af8d16fc2fccd7e2d00bb232ffaa42ba83e08759c1fd01c3f190df5740a88",
+    "docs/roadmap/16-query-editing.md": "cff40b212ed19c8dbbbe13f1422d124716009299e2e05dc2e6cdcbc8c852dc95",
+    "tests/project/metadata_workspace/ide.rs": "2d6eece1870c4a6d5b74c6db62e403638ae3e1770552815c66f46fdc08498e79",
+    "tests/project/metadata_workspace/ide/picture.rs": "4f679fa71f0f743bcb102894d48c4971973400b2ac0941e7d29e2bf43c80797d",
+    "tests/project/metadata_workspace/query.rs": "a7bc0e6d45c01fc535f7e68cd0fb325c8210522538ab65ef752a91f684dd540e",
+    "crates/eska-project-core/src/project/metadata_workspace/query/session.rs": "37a594bb8c4849b0f7a7351581297f44a6008714ea7e3837485c76cc9395bd95",
+    "crates/eska-project/src/ide/query/sessions.rs": "af3e6369534d0870cb9fb257e242e7056c5921d195376a7421d13792154a6713",
+    "crates/eska-project/tests/server/recovery/sessions.rs": "ef5da62fc11b93ebdccb7f6b1882917e054ba839d9da52db446676d68afbf3e1",
+    "tests/project/metadata_workspace/query/session.rs": "74bcadb81d8becd60c21dd4238e5d2192837d9cb94f5562397f7076c40cb9012"
+  },
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz",
+  "backend": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/bin/eska-project",
+    "sha256": "c4dfabea4df8971fd43caa6405ffb1f556aa4619517f366ad3f6d12ed794e4d7"
+  },
+  "installedVsix": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/eska-query-recovery-api14-checked.vsix",
+    "sha256": "731501c67664d7075d3a7be4f986128529a2c9a81adb97aa191d4d9fbdededac",
+    "compiledRuntimeFilesCompared": 39,
+    "runtimeMatchesWorkingExplorer": true
+  },
+  "behavior": {
+    "core": "QuerySession owns checked source/context binding, full owner/base/draft, explicit resume, a single prepare token, independent user restriction and the exact native application receipt. No editor URI or native API is used in core.",
+    "rpc": "Optional querySessions capability for API 1.15. XML sessionOpen publishes an initial v1 checkpoint, restore is paused, owner/base update only after checked native receipt and successful checkpoint CAS. Generic recovery may update only the active session draft.",
+    "checks": [
+      "Current selected application and fingerprint",
+      "Full resolved owner descriptor bytes",
+      "Current support policy and source path containment",
+      "Exact native version/snapshot/dirty facts and disk/BOM relation",
+      "Private checkpoint revision changed by another process",
+      "One owner session and one pending application",
+      "Connection quota includes pending output and an older applied draft"
+    ],
+    "dirtyXml": "No automatic owner disk save. A newer draft typed during application survives the earlier receipt.",
+    "headlessBsl": "Core requires a positive caller-owned lock acknowledgement and never requests module disk save. Receipt baseline uses the decoded LF query; the exact CRLF draft remains retained. This is a library/synthetic adapter test, not proof of native input prevention.",
+    "sourceFilesWrittenByBackend": false,
+    "newDependencies": false,
+    "publicProtocol": "API minor 1.15 adds opt-in session methods; API 1.14 recovery and 1.13 query extraction/planning remain available.",
+    "preparedRecoveryLimit": "The exact pending output and applied draft are currently memory-only. The original full owner/base and latest acknowledged draft survive; the latest draft can differ from the draft being applied. A durable prepared intent is required before production client migration."
+  },
+  "validation": {
+    "cargoFmt": {
+      "command": "cargo fmt --check",
+      "exitCode": 0
+    },
+    "cargoCheck": {
+      "command": "cargo check",
+      "exitCode": 0
+    },
+    "cargoClippy": {
+      "command": "cargo clippy --all-targets --all-features -- -D warnings",
+      "exitCode": 0
+    },
+    "cargoTest": {
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test",
+      "exitCode": 0,
+      "passed": 989,
+      "failed": 0,
+      "ignored": 12
+    },
+    "focusedCore": {
+      "passed": 6,
+      "failed": 0,
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test --test integration query_session_"
+    },
+    "focusedStandaloneRpc": {
+      "passed": 9,
+      "failed": 0,
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test -p eska-project --test server sessions::",
+      "nativeIdeUsed": false,
+      "bothLocalesChecked": true
+    },
+    "node": {
+      "command": "node --test test/*.test.mjs",
+      "passed": 237,
+      "failed": 0,
+      "skipped": 3,
+      "backend": "bin/eska-project"
+    },
+    "bun": {
+      "command": "bun test test/*.test.mjs",
+      "passed": 237,
+      "failed": 0,
+      "skipped": 3,
+      "backend": "bin/eska-project"
+    },
+    "nativeScope": "Unchanged installed API 1.14 Explorer with the new backend; this verifies compatibility, not production use of session 1.15.",
+    "nativeEn": [
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRemove"
+        ]
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ],
+    "nativeRu": [
+      {
+        "passed": true,
+        "suite": "language-pack-registration",
+        "locale": "en"
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRemove"
+        ]
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ]
+  },
+  "evidence": {
+    "fmt-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/fmt-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "check-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/check-final.log",
+      "sha256": "53a6b48400982e3a48b825db34770e89d9b8c9a88f201c86868fd17b5b2f0fe1"
+    },
+    "clippy-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/clippy-final.log",
+      "sha256": "5651b8e0be8216777319f172b2929eee9177732dc9984bb4c612e7bb72e83e1d"
+    },
+    "test-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/test-final.log",
+      "sha256": "52b6f48035ea763904cd51c3301e01eb8d050ad3e65971e319e9a24e0a6efeb3"
+    },
+    "core-focused.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/core-focused.log",
+      "sha256": "7eb80912ddb9c6fbbb0f44461bcfb7c5c9f970273a38454976d11a7108bf0cf4"
+    },
+    "rpc-focused.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/rpc-focused.log",
+      "sha256": "2bf5dcffb05b712b917a79ae2a69af73c4b8889e811059cc7a91f659a1d9db0c"
+    },
+    "project-build.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/project-build.log",
+      "sha256": "64bc7eb3f8a51dc799a301cef4daef39a857e7a229ec5db64810caf190bec7e2"
+    },
+    "node-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/node-final.log",
+      "sha256": "3e54f4d2620e77b0c3f46acc98140afbf79dd2fcb6fd62613f9061c2091b22e6"
+    },
+    "bun-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/bun-final.log",
+      "sha256": "f5469086366add7aeb0ace3c17e57e9d37a9ada3e94f804e8af1c3023d0d8273"
+    },
+    "native-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/native-en-result.log",
+      "sha256": "cc75c2e4cf3f34de475f27600a3f60bbb88bbf27f7d960eac6a29a98d024ea54"
+    },
+    "native-ru-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-sessions-b71yg4oz/native-ru-result.log",
+      "sha256": "1a06c4cd231f55b85c0b55ebdf337850db2e8660a3be7836b453c24250920475"
+    }
+  },
+  "environment": {
+    "os": "Linux",
+    "rust": "1.99.1",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "vscodium": "1.109.5",
+    "nativeNode": "22.21.1"
+  },
+  "remaining": [
+    "Persist the exact prepared intent before returning a native plan, and reconcile it explicitly after a crash.",
+    "Migrate the production Explorer source-session model to the common API.",
+    "Complete shared protection ownership and prove native owner lock/release preserving prior user restrictions before enabling BSL Apply/Cancel.",
+    "Continue T103, T104 and T105 after T102."
+  ],
+  "unverifiedEnvironments": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ]
+}

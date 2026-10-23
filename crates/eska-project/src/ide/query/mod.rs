@@ -5,10 +5,14 @@ mod documents;
 mod dto;
 mod params;
 mod recovery;
+mod sessions;
 
 use std::collections::BTreeMap;
 
-use eska_project_core::project::{metadata_workspace::QueryDocumentError, query::QueryError};
+use eska_project_core::project::{
+    metadata_workspace::{QueryDocumentError, QuerySessionError},
+    query::QueryError,
+};
 use serde_json::{Value, json};
 
 use super::{
@@ -28,12 +32,14 @@ const MAX_DOCUMENTS: usize = 16;
 pub(super) struct State {
     buffers: BTreeMap<String, buffers::Upload>,
     documents: BTreeMap<String, documents::Entry>,
+    sessions: BTreeMap<String, sessions::Entry>,
     serial: u64,
 }
 
 /// Request-only routing prevents notifications from allocating retained source snapshots.
 pub(super) fn is_method(method: &str) -> bool {
     recovery::is_method(method)
+        || sessions::is_method(method)
         || matches!(
             method,
             "query/bufferBegin"
@@ -46,6 +52,16 @@ pub(super) fn is_method(method: &str) -> bool {
                 | "query/map"
                 | "query/plan"
         )
+}
+
+/// Stateful session methods require their separately negotiated contract.
+pub(super) fn is_session_method(method: &str) -> bool {
+    sessions::is_method(method)
+}
+
+/// Existing query extraction remains independent from optional lifecycle/checkpoint ownership.
+pub(super) fn session_capability() -> Value {
+    sessions::capability()
 }
 
 /// Recovery is independent of source generations and never writes a project owner.
@@ -72,8 +88,30 @@ pub(super) fn capability() -> Value {
 impl State {
     /// Include reserved upload capacity so unfinished requests cannot evade the byte budget.
     fn admit(&self, bytes: usize) -> Result<(), Value> {
-        let used: usize = self
-            .buffers
+        if self.buffers.len() + self.documents.len() + self.sessions.len() >= 64
+            || self.retained_bytes().saturating_add(bytes) > RETAINED_BYTES
+        {
+            return Err(resource());
+        }
+        Ok(())
+    }
+
+    /// Replacing state must not charge its unchanged shared owner twice or allocate another entry.
+    fn admit_change(&self, previous: usize, next: usize) -> Result<(), Value> {
+        if self
+            .retained_bytes()
+            .saturating_sub(previous)
+            .saturating_add(next)
+            > RETAINED_BYTES
+        {
+            return Err(resource());
+        }
+        Ok(())
+    }
+
+    /// Budgets cover reserved uploads, transient documents and all persistent-in-connection session texts.
+    fn retained_bytes(&self) -> usize {
+        self.buffers
             .values()
             .map(|buffer| buffer.bytes)
             .sum::<usize>()
@@ -81,13 +119,12 @@ impl State {
                 .documents
                 .values()
                 .map(|entry| entry.document.input().len())
-                .sum::<usize>();
-        if self.buffers.len() + self.documents.len() >= 64
-            || used.saturating_add(bytes) > RETAINED_BYTES
-        {
-            return Err(resource());
-        }
-        Ok(())
+                .sum::<usize>()
+            + self
+                .sessions
+                .values()
+                .map(|entry| entry.core.retained_bytes())
+                .sum::<usize>()
     }
 
     /// IDs are never reused within the connection's live query state.
@@ -117,6 +154,23 @@ impl State {
 impl Server {
     /// A broken manifest cannot prevent inspection or preservation of an inert private checkpoint.
     pub(super) fn query_recovery(&mut self, method: &str, args: &Value) -> Result<Value, Value> {
+        let forbidden = self.recovery_forbidden();
+        let result = self
+            .recovery
+            .request(method, args, &forbidden, &mut self.queries)?;
+        if matches!(method, "query/recoveryOpen" | "query/recoveryClose") {
+            self.queries.sessions.clear();
+        }
+        if method == "query/recoveryRemove"
+            && let Some(id) = args["id"].as_str()
+        {
+            self.queries.release_record(id);
+        }
+        Ok(result)
+    }
+
+    /// Session checkpoint writes use the same complete source-location guard as generic recovery writes.
+    fn recovery_forbidden(&self) -> Vec<std::path::PathBuf> {
         let mut forbidden = self.recovery_root.iter().cloned().collect::<Vec<_>>();
         if let Some(session) = &self.session {
             forbidden.extend(session.workspace.projects().iter().flat_map(|project| {
@@ -126,11 +180,12 @@ impl Server {
                 ]
             }));
         }
-        self.recovery.request(method, args, &forbidden)
+        forbidden
     }
 
     /// Share the metadata session's refresh/reopen boundary while retaining query state separately.
     pub(super) fn query(&mut self, method: &str, args: &Value) -> Result<Value, Value> {
+        let forbidden = self.recovery_forbidden();
         let key = Key::decode(args)?;
         self.check_session(args)?;
         let session = self.session.as_mut().ok_or_else(|| error(-32603))?;
@@ -142,32 +197,50 @@ impl Server {
         if matches!(method, "query/close" | "query/bufferClose") {
             return self.queries.close(method, &key, args);
         }
-        if state.reopen {
+        if matches!(method, "query/sessionClose" | "query/sessionGet") {
+            return self.queries.session_cleanup(method, &key, args);
+        }
+        let receipt = matches!(method, "query/sessionApplied" | "query/sessionAbort");
+        if state.reopen && !receipt {
             return Err(domain(
                 "reopen_required",
                 json!({"reason":"manifest_changed"}),
             ));
         }
-        if state.refresh {
+        if state.refresh && !receipt {
             return Err(domain("resync_required", json!({"reason":"file_events"})));
         }
         let project = session
             .workspace
             .project_mut(&state.scope)
             .map_err(|failure| errors::workspace(&failure))?;
-        project
-            .check_generation(super::params::counter(&key.generation)?)
-            .map_err(|failure| errors::workspace(&failure))?;
+        if !receipt {
+            project
+                .check_generation(super::params::counter(&key.generation)?)
+                .map_err(|failure| errors::workspace(&failure))?;
+        }
         let result = match method {
             "query/bufferBegin" => self.queries.begin_buffer(&key, args),
             "query/bufferAppend" => self.queries.append_buffer(&key, args),
             "query/open" => self.queries.open_document(project, &key, args),
+            method if sessions::is_method(method) => self.queries.session_request(
+                project,
+                &key,
+                method,
+                args,
+                &mut self.recovery,
+                &forbidden,
+            ),
             _ => self.queries.document_request(project, &key, method, args),
         };
         result.map(|mut result| {
             result["sessionId"] = json!(key.session);
             result["projectId"] = json!(key.project);
-            result["generation"] = json!(key.generation);
+            result["generation"] = json!(if receipt {
+                project.generation().to_string()
+            } else {
+                key.generation.clone()
+            });
             result
         })
     }
@@ -198,6 +271,28 @@ fn document_error(error: &QueryDocumentError) -> Value {
             "source_invalid",
             json!({"path":super::dto::path(path),"reason":if source.kind() == std::io::ErrorKind::NotFound {"missing"} else {"io"}}),
         ),
+    }
+}
+
+/// The core owns lifecycle/context decisions; transport supplies only stable machine categories.
+fn session_error(error: QuerySessionError) -> Value {
+    match error {
+        QuerySessionError::Document(error) => document_error(&error),
+        QuerySessionError::Context(error) => domain(
+            "query_context_unavailable",
+            crate::analyzer_config::error_document(&eska_analyzer::Error::Context(error)),
+        ),
+        QuerySessionError::ContextMemberMismatch => failure("context_member_mismatch"),
+        QuerySessionError::ContextChanged => failure("context_changed"),
+        QuerySessionError::ResumeRequired => failure("resume_required"),
+        QuerySessionError::OwnerLockRequired => failure("owner_lock_required"),
+        QuerySessionError::UserReadOnly => failure("user_read_only"),
+        QuerySessionError::StaleDraft => failure("stale_draft"),
+        QuerySessionError::ApplyBusy => failure("apply_busy"),
+        QuerySessionError::UnknownApply => failure("unknown_apply"),
+        QuerySessionError::InvalidReceipt => failure("invalid_receipt"),
+        QuerySessionError::Closed => failure("closed_session"),
+        QuerySessionError::RevisionExhausted => failure("session_limit"),
     }
 }
 

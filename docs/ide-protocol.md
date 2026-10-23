@@ -978,3 +978,123 @@ ESKA проверяет текущую дисковую revision и общую �
 `recovery_io`, `recovery_limit`; используются также прежние `upload_offset` и
 `snapshot_mismatch`. `resource_limit` обозначает `query_recovery` или
 `query_recovery_part`. Ошибки не содержат исходного текста или локальных IO messages.
+
+### API 1.15: общая модель сессии запроса
+
+Опциональная capability `querySessions` доступна при handshake 1.15:
+`{schemaVersion:1,writesOwner:false,checkpointStorageVersion:1,maxSessions:16,
+maxRetainedBytes:33554432,nativeApplicationReceipt:true,explicitResume:true,
+preparedStateDurable:false,bslEditing:false,sourceKinds:["dataCompositionSchema","form"]}`.
+Клиенты 1.14 сохраняют прежнее поведение; методы session для них недоступны.
+Рабочий Explorer пока использует клиентские сессии с recovery 1.14.
+Этот контракт проверен прямым клиентом `eska-project`, без API конкретной IDE.
+
+Core `QuerySession` владеет полным owner snapshot, base, draft, identity,
+выбранным приложением и fingerprint, проверками версии/дескриптора/прав,
+явным возобновлением и одной операцией применения. Backend никогда не пишет
+файл владельца. Адаптер передаёт факты native-модели, показывает результат,
+применяет проверенный план штатной отменяемой правкой и подтверждает его.
+Это не подтверждение нативной блокировки BSL-владельца: sessionOpen для BSL
+возвращает `owner_lock_required`, даже когда обычное чтение литерала доступно.
+
+Методы request-only используют общий metadata context
+`{sessionId,projectId,generation}`. Изменение generation само по себе не меняет
+identity: после resync клиент передаёт актуальный context. Полный источник,
+дескриптор и application fingerprint всё равно проверяются заново перед планом.
+`querySessionId` — непрозрачный handle текущего процесса; `revision` сессии —
+положительный u64 строкой, отдельный от native version и SHA-256 checkpoint.
+Одна активная сессия на физический путь владельца в member; повторное открытие
+возвращает `already_open` с существующими `querySessionId` и recovery `id`.
+
+`query/sessionOpen`: `{...context,documentId,storeId,id,query:Identity,
+format:"editor"|"source",userReadOnly:boolean}`.
+Document получают через query/open 1.13 из текущего полного буфера владельца.
+`id` — новый canonical UUID v4; `storeId` — открытый recovery store 1.14.
+Успех атомарно сохраняет полный начальный checkpoint, поглощает document handle
+и возвращает SessionHeader. При ошибке document остаётся доступным.
+`editor` означает, что native-текст не содержит дисковую UTF-8 signature BOM;
+`source` — что он содержит точный исходный текст, включая signature при её наличии.
+Остальные символы текста не нормализуются.
+
+SessionHeader: `{querySessionId,storeId,id,revision,resumed,applyPending,
+draftWritable,format,protection:{capturedSourceWritable,userReadOnly,ownerLock},
+record:Header}`. `record` — прежний recovery Header; полные компоненты читаются
+через recoveryRead. `capturedSourceWritable` — запомненная доступность источника,
+а не разрешение пропустить повторную проверку. `ownerLock` пока null в RPC;
+модель core различает собственное временное ограничение и независимый запрет
+пользователя. Изменить draft можно через recoveryBegin/Append/Commit: для активной
+сессии metadata, ownerText и base должны совпадать с подтверждёнными данными,
+а expectedRevision — с её текущим checkpoint. Обновление draft продвигает revision
+сессии и не меняет разрешение на применение. Лимит памяти учитывает также
+ожидающий применения output и прежний draft, если пользователь уже ввёл новый.
+
+`query/sessionRestore`: `{...context,storeId,id,revision,format}`.
+`revision` здесь — SHA-256 существующего checkpoint. Backend проверяет его
+привязку к проекту, member, владельцу и исходному запросу; выдаёт SessionHeader
+с `resumed:false`. Данные checkpoint не предоставляют права применить правку.
+Для восстановления source-сессии нужен доступный metadata context; чтение
+неприменяемых данных recovery по-прежнему доступно при невалидном manifest.
+
+`query/sessionGet`: `{...context,querySessionId}` → SessionHeader.
+Чтение собственного состояния допускает устаревшую generation и metadata flags.
+
+OwnerFacts: `{version:string,snapshot:string,isDirty:boolean,
+userReadOnly:boolean,application:string|null}`. Snapshot — SHA-256 точного
+native-текста в выбранном format, version — текущий положительный счётчик IDE.
+Application обязателен: null означает текущий выбор по умолчанию, строка —
+текущее явно выбранное приложение. Backend разрешает этот выбор заново;
+не следует незаметно применять запрос в ранее сохранённом контексте.
+
+`query/sessionResume`: `{...context,querySessionId,revision,owner:OwnerFacts}`.
+Требует явного действия пользователя, полного совпадения исходного буфера,
+дескриптора, контекста и разрешений. Новый native version после перезапуска
+допустим. Если XML-владелец был отдельно сохранён, чистая модель должна точно
+совпадать с текущим диском с учётом BOM; dirty-модель не маскирует дисковый конфликт.
+Успех сохраняет обновлённый checkpoint до выдачи SessionHeader.
+
+`query/sessionPrepare`: `{...context,querySessionId,revision,owner:OwnerFacts,
+comments:[{comment,queryOffset}],lineEnding?:"lf"|"crlf"}`.
+Планирует текущий подтверждённый draft; comments и lineEnding имеют семантику
+query/plan 1.13. Ответ — SessionHeader с `applyPending:true` и
+`plan:{applyToken:string,saveOwner:boolean,noOp,outputSnapshot,replacements,projectedQuery}`.
+Формат правок и projectedQuery прежний. Второй prepare даёт `apply_busy`.
+`saveOwner:true` бывает только для изменённого XML из первоначально чистой
+native-модели; dirty-владелец не сохраняется автоматически. No-op не сохраняет файл.
+План привязан к исходным version/snapshot: адаптер повторно проверяет модель
+непосредственно перед штатной правкой. До выдачи плана ESKA проверяет также
+дисковую revision checkpoint, включая изменение другим backend-процессом.
+
+`query/sessionApplied`: `{...context,querySessionId,applyToken,owner:OwnerFacts}`.
+Подтверждает точный outputSnapshot и увеличение native version после реальной
+правки. Для saveOwner дополнительно требуется точное сохранённое содержимое
+диска; для dirty-владельца — прежний диск либо отдельно сохранённый точный output
+с чистой native-моделью. Привязка, контекст и права проверяются заново.
+Успех атомарно публикует новые owner/base и возвращает SessionHeader;
+draft, изменённый после prepare, сохраняется. Второе подтверждение того же токена
+отклоняется. Ошибка CAS не продвигает owner/base в памяти.
+Метод допускает устаревшую generation и flags после собственной записи XML,
+но это не отменяет перечисленных проверок. В ответе приходит текущая generation.
+
+`query/sessionAbort`: `{...context,querySessionId,applyToken}`.
+Освобождает только ожидающую операцию в памяти, оставляет checkpoint и требует
+нового явного resume. Допускает устаревшие metadata flags и checkpoint;
+поздняя отмена чужого/завершённого токена не принимается.
+`query/sessionClose`: `{...context,querySessionId}` →
+`{released,releasedOwnerLock:string|null,userReadOnly:boolean|null}`.
+Освобождает только свою сессию/ограничение, сохраняя независимый userReadOnly
+и checkpoint. При отсутствии сессии оба значения null. Close допускает stale
+generation. RecoveryRemove освобождает связанную source-сессию; повторный
+recoveryOpen, recoveryClose, workspace/close, shutdown и EOF инвалидируют handles.
+
+`preparedStateDurable:false` означает, что точный незавершённый output и
+применяемая версия draft не журналируются отдельно. При остановке процесса
+сохраняются исходные owner/base и последний подтверждённый draft, который уже
+может отличаться от применяемого. Поэтому рабочий адаптер ещё не переключён
+на эти методы: сначала нужен устойчивый журнал незавершённого применения.
+Восстановление никогда автоматически не применяет исходник.
+
+Добавлены reasons `unknown_query_session`, `resume_required`, `owner_lock_required`,
+`user_read_only`, `stale_draft`, `apply_busy`, `unknown_apply`, `invalid_receipt`,
+`closed_session`, `session_limit`; действуют прежние source/context/recovery errors.
+`resource_limit` использует `query_sessions` или прежний `query_snapshots`.
+JSON-схема и машинные причины одинаковы в ru-RU и en-US.

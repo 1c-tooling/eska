@@ -1,8 +1,16 @@
 //! Unsaved query owners use the same checked Designer paths and current support rules as other edits.
 
+mod session;
+
+pub use session::{
+    QueryApplyPlan, QueryEditorState, QueryOwnerFormat, QueryOwnerRestrictions, QuerySession,
+    QuerySessionError, QuerySessionRestore,
+};
+
 use std::{
     io::{self, Read},
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use super::{ProjectSession, WorkspaceError};
@@ -29,7 +37,7 @@ pub struct QueryRevision<'a> {
 }
 
 /// A document binds unsaved text to an existing logical owner and the disk bytes it overlaid.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct QueryDocument {
     root: PathBuf,
     source_root: PathBuf,
@@ -41,9 +49,10 @@ pub struct QueryDocument {
     descriptor_snapshot: String,
     kind: QueryDocumentKind,
     version: u64,
-    input: String,
+    input: Arc<str>,
     snapshot: String,
     disk_snapshot: String,
+    disk_bom: bool,
     owner_uuid: String,
     writable: bool,
 }
@@ -90,6 +99,18 @@ impl QueryDocument {
     #[must_use]
     pub fn disk_snapshot(&self) -> &str {
         &self.disk_snapshot
+    }
+
+    /// Recovery records use the resolver-selected descriptor rather than an adapter's XML lookup.
+    #[must_use]
+    pub fn descriptor(&self) -> (&Path, &str) {
+        (&self.descriptor, &self.descriptor_snapshot)
+    }
+
+    /// A checked node identity remains independent of any editor URI or tab label.
+    #[must_use]
+    pub const fn node(&self) -> &NodeId {
+        &self.node
     }
 
     /// This version belongs to the editor buffer, independently of metadata generations.
@@ -175,10 +196,24 @@ impl ProjectSession {
         version: u64,
         buffer: Option<&str>,
     ) -> Result<QueryDocument, QueryDocumentError> {
+        self.query_document_shared(node, path, version, buffer.map(Arc::from))
+    }
+
+    /// Active sessions and their private checkpoint share immutable owner bytes without another full copy.
+    fn query_document_shared(
+        &mut self,
+        node: &NodeId,
+        path: &Path,
+        version: u64,
+        buffer: Option<Arc<str>>,
+    ) -> Result<QueryDocument, QueryDocumentError> {
         if version == 0 {
             return Err(QueryDocumentError::StaleVersion);
         }
-        if buffer.is_some_and(|input| input.len() > query::MAX_SNAPSHOT_BYTES) {
+        if buffer
+            .as_ref()
+            .is_some_and(|input| input.len() > query::MAX_SNAPSHOT_BYTES)
+        {
             return Err(QueryError::TooLarge.into());
         }
         let kind = self.query_location(node, path)?;
@@ -186,7 +221,9 @@ impl ProjectSession {
         let (owner_uuid, writable) = self.query_access(node, path)?;
         let owner_uuid = owner_uuid.ok_or(QueryDocumentError::OwnerChanged)?;
         let disk = self.query_disk(path)?;
-        let input = buffer.unwrap_or(&disk).to_owned();
+        let disk_snapshot = snapshot(&disk);
+        let disk_bom = disk.starts_with('\u{feff}');
+        let input = buffer.unwrap_or_else(|| Arc::from(disk));
         Ok(QueryDocument {
             root: self.project().root().to_path_buf(),
             source_root: self.project().source().to_path_buf(),
@@ -199,7 +236,8 @@ impl ProjectSession {
             kind,
             version,
             snapshot: snapshot(&input),
-            disk_snapshot: snapshot(&disk),
+            disk_snapshot,
+            disk_bom,
             input,
             owner_uuid,
             writable,

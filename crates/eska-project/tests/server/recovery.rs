@@ -6,6 +6,9 @@ use eska_project_core::project::metadata_edit::snapshot;
 const ID: &str = "10000000-0000-4000-8000-000000000001";
 const PARTS: [&str; 4] = ["metadata", "ownerText", "base", "draft"];
 
+#[path = "recovery/sessions.rs"]
+mod sessions;
+
 /// Each test owns a project and a separate private checkpoint directory in the sibling playground.
 fn fixture() -> (support::TestDir, std::path::PathBuf, std::path::PathBuf) {
     let directory = support::TestDir::new();

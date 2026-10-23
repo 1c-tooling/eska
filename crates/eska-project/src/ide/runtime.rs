@@ -462,6 +462,13 @@ fn commits_state(method: &str) -> bool {
             | "query/recoveryCancel"
             | "query/recoveryRemove"
             | "query/recoveryClose"
+            | "query/sessionOpen"
+            | "query/sessionRestore"
+            | "query/sessionResume"
+            | "query/sessionPrepare"
+            | "query/sessionApplied"
+            | "query/sessionAbort"
+            | "query/sessionClose"
     )
 }
 

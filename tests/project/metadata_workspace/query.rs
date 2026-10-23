@@ -6,6 +6,7 @@ use crate::backend::project::{
 };
 
 mod recovery;
+mod session;
 
 const INPUT: &str = "\u{feff}Процедура Тест()\r\n\tТекст = \"ВЫБРАТЬ 1\r\n\t\t|КАК Значение\"; // keep\r\nКонецПроцедуры\r\n";
 

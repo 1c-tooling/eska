@@ -1,6 +1,6 @@
 //! A query document binds checked application composition to the original unsaved owner.
 
-use eska_project_core::application::{self, ContextSnapshot};
+use eska_project_core::application::ContextSnapshot;
 use eska_project_core::project::{
     metadata_edit::snapshot,
     metadata_workspace::{ProjectSession, QueryDocument, QueryDocumentKind, QueryRevision},
@@ -204,22 +204,9 @@ impl State {
 
 /// Selected member membership is proved from manifests and root descriptors, not a caller's path.
 fn context(project: &ProjectSession, application: Option<&str>) -> Result<ContextSnapshot, Value> {
-    let plan =
-        application::resolve_snapshot(project.project().root(), application).map_err(|error| {
-            domain(
-                "query_context_unavailable",
-                crate::analyzer_config::error_document(&eska_analyzer::Error::Context(Box::new(
-                    error,
-                ))),
-            )
-        })?;
-    if !plan.context.sources().iter().any(|source| {
-        source.project().root() == project.project().root()
-            && source.project().source() == project.project().source()
-    }) {
-        return Err(failure("context_member_mismatch"));
-    }
-    Ok(plan)
+    project
+        .query_context(application)
+        .map_err(super::session_error)
 }
 
 /// An initial BSL cursor and a retained query identity are mutually exclusive selectors.
