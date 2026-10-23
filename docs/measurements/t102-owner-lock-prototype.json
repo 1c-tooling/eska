@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-23",
+  "part": "public API native-owner-lock feasibility",
+  "ownerLockAccepted": false,
+  "productionBslEditingEnabled": false,
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17",
+  "environment": {
+    "os": "Linux",
+    "vscodium": "1.109.5",
+    "locale": "en",
+    "typesVscode": "1.109.0"
+  },
+  "blockingInvariant": "Release only the query session lock, preserving any previous native session-readonly override and permanent user restrictions.",
+  "observations": {
+    "nativeSessionActions": {
+      "passed": true,
+      "suite": "query-owner-lock-public-api-prototype",
+      "vscode": "1.109.5",
+      "locale": "en",
+      "observations": {
+        "writableEmptyEdit": true,
+        "readonlyCommandReturns": "undefined",
+        "cleanTypingBlocked": true,
+        "readonlyEmptyEdit": true,
+        "readonlyEmptyInsert": true,
+        "emptyInsertChangedVersion": false,
+        "readonlyNativeFilePermissions": null,
+        "readonlyNativeFileSystemWritable": true,
+        "readonlyCommands": [
+          "workbench.action.files.setActiveEditorReadonlyInSession",
+          "workbench.action.files.setActiveEditorWriteableInSession",
+          "workbench.action.files.toggleActiveEditorReadonlyInSession",
+          "workbench.action.files.resetActiveEditorReadonlyInSession"
+        ],
+        "dirtyTypingBlocked": true,
+        "splitTypingBlocked": true,
+        "splitViews": 2,
+        "nativeReopenSharesDocument": true,
+        "reopenedTypingBlocked": true,
+        "otherOwnerRemainsWritable": true,
+        "ownerStillLockedAfterOtherFile": true,
+        "builtinWritableBypassesSessionLock": true,
+        "undoRestoresDirtySnapshot": false,
+        "undoWhileReadonlyChangesOwner": false,
+        "builtinOverrideRegistration": true,
+        "builtinOverrideCalls": 3,
+        "overrideBlocksNativeTyping": true,
+        "resetClearsPreexistingSessionReadonly": true,
+        "snapshotIncludesDirtyOwner": true,
+        "snapshotTypingBlocked": true,
+        "originalFileEditableBesideSnapshot": true,
+        "workspaceEditAppliedWhileReadonly": true,
+        "workspaceEditChangesOwner": true
+      },
+      "diskUnchanged": true,
+      "osPermissionsUnchanged": true,
+      "settingsUnchanged": true,
+      "productionBslEditingEnabled": false
+    },
+    "realHostAndWindowRestarts": [
+      {
+        "passed": true,
+        "suite": "query-lock-extension-host-restart",
+        "vscode": "1.109.5",
+        "oldPid": 571476,
+        "newPid": 571595,
+        "dirtyOwnerRetained": true,
+        "nativeSessionLockSurvivesHostRestart": true,
+        "explicitCleanupIssued": true,
+        "sourceDiskUnchanged": true,
+        "productionBslEditingEnabled": false
+      },
+      {
+        "passed": true,
+        "suite": "query-lock-window-restart",
+        "vscode": "1.109.5",
+        "nativeHotExitRetainedOwner": false,
+        "freshWindowWritableAfterCleanup": true,
+        "sourceDiskUnchanged": true,
+        "productionBslEditingEnabled": false
+      }
+    ]
+  },
+  "assessment": [
+    {
+      "candidate": "native session-readonly",
+      "proven": [
+        "clean/dirty, split and reopened native views block typing",
+        "other owner remains editable"
+      ],
+      "notSatisfied": [
+        "builtin Writeable bypasses the lock",
+        "Reset deletes the same native override used by a previous user restriction"
+      ]
+    },
+    {
+      "candidate": "session-readonly with public command interception",
+      "proven": [
+        "three builtin override handlers can block unlock requests in the probe"
+      ],
+      "notSatisfied": [
+        "previous native session override is still unavailable; owned acquisition/release is unproven",
+        "full multi-owner routing, all UI entry paths and crash cleanup remain unproven"
+      ]
+    },
+    {
+      "candidate": "readonly dirty-owner content provider",
+      "proven": [
+        "snapshot preserves dirty text and blocks typing"
+      ],
+      "notSatisfied": [
+        "ordinary native file URI remains editable"
+      ]
+    },
+    {
+      "candidate": "public getters and no-op edits",
+      "proven": [
+        "TextEditor.edit and empty insert return true while readonly",
+        "empty insert leaves the version unchanged",
+        "native FileStat has no readonly permissions and native filesystem remains writable"
+      ],
+      "notSatisfied": [
+        "these observations cannot determine the previous session override"
+      ]
+    }
+  ],
+  "restartAssessment": [
+    "A real extension-host PID change preserves the dirty native owner and its session-readonly state; explicit cleanup is needed.",
+    "In the fast close/reopen development-host fixture native hot exit did not retain the dirty owner. This is an observed fixture result, not a universal claim about production hot exit; private owner recovery remains required.",
+    "The Undo sample in the public API probe is not a full T102 single-apply Undo/Redo acceptance. That requirement remains unproven."
+  ],
+  "apiSources": {
+    "vscode-current.d.ts": {
+      "url": "https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.d.ts",
+      "sha256": "1fc60f012cdde89eceaf26cfe4401e9d0862d9d38062115224fee1564e6ee774",
+      "bytes": 742500
+    },
+    "filesConfigurationService-1.109.5.ts": {
+      "url": "https://raw.githubusercontent.com/microsoft/vscode/1.109.5/src/vs/workbench/services/filesConfiguration/common/filesConfigurationService.ts",
+      "sha256": "1f080204603e778b476d6fed618935dab1aa78cdb5c5c68c741d5e1f498eff00",
+      "bytes": 22674
+    },
+    "textEditorOptionFields": [
+      "tabSize",
+      "indentSize",
+      "insertSpaces",
+      "cursorStyle",
+      "lineNumbers"
+    ]
+  },
+  "sourceInterpretation": "The checked current public TextEditorOptions has tabSize, indentSize, insertSpaces, cursorStyle and lineNumbers. The native 1.109.5 FilesConfigurationService keeps one session override per resource; Set replaces it and Reset deletes it. No supported owned readonly lease has been identified in the checked API. This is a feasibility gap, not proof that every possible editor integration is impossible.",
+  "sources": [
+    {
+      "url": "https://code.visualstudio.com/api/references/vscode-api#TextEditorOptions",
+      "use": "public editor option contract"
+    },
+    {
+      "url": "https://code.visualstudio.com/api/extension-guides/virtual-documents",
+      "use": "readonly snapshot contract"
+    }
+  ],
+  "logs": {
+    "public": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-public-complete-result.log",
+    "hostRestartAndWindow": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-restart-observed-result.log",
+    "earlierColdOwnerAssertion": "/home/akalsin/Documents/Projects/eska-playground/t102-query-lock-id2wnm17/lock-restart-result.log"
+  },
+  "testedFiles": {
+    "test/query-lock-host.cjs": "ef8718540442ed4931c4be20610c4b2451266b7f5892e0be7dc99b1dbe255be3",
+    "test/query-lock-restart-host.cjs": "69b3374bba45b10fccc843cc938dcdff1fb16a31cc2d5c78d7cec0ea3ac1b9dd",
+    "test/run-host.mjs": "a5cb95c3d741328e1c708abea61bd8455c68002e810b37ba6f06a8f0853f9754"
+  },
+  "explorerCommit": "73d7c8a55fc5ef40da8611f12e83aa3cc6ec2983",
+  "checks": {
+    "nodeSyntax": true,
+    "nativePublicApiProbeCompleted": true,
+    "nativeHostAndWindowProbeCompleted": true,
+    "applicationCodeChanged": false,
+    "rustChecksRequired": false
+  },
+  "remaining": [
+    "A verified public mechanism to preserve/reinstate previous native readonly state and release only the owned lock, or an explicit change to the T102 requirement.",
+    "Production BSL sessions, selection/unavailable-expression UI, explicit Apply/Cancel, unchanged dirty owner on cancel, one-edit Undo/Redo and close-cancellation flow.",
+    "Full locked-owner rejection for Explorer/LSP mutations, support/context/source conflicts, independent windows and fail-safe journal recovery.",
+    "T103, T104 and T105 remain in the requested sequence after T102; their completion is not claimed."
+  ],
+  "unverifiedEnvironments": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ]
+}
