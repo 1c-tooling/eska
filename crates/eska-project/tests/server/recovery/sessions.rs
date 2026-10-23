@@ -6,6 +6,9 @@ mod prepared;
 #[path = "sessions/protection.rs"]
 mod protection;
 
+#[path = "sessions/source.rs"]
+mod source;
+
 const SOURCE: &str = "CommonForms/Queries/Ext/Form.xml";
 const XML: &str = "\u{feff}<Form xmlns='http://v8.1c.ru/8.3/xcf/logform' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\r\n<Attributes><Attribute name='List' id='1'><Settings xsi:type='DynamicList'><ManualQuery>true</ManualQuery><QueryText>SELECT 1</QueryText></Settings></Attribute></Attributes><other>keep</other>\r\n</Form>";
 

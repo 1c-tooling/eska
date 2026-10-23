@@ -14,6 +14,7 @@ mod renaming;
 pub mod search;
 mod session;
 mod source_protection;
+mod source_view;
 mod support;
 pub use super::metadata_disk_cache::DiskCacheStats;
 pub use super::metadata_rename::transaction::RecoveryStatus as RenameRecovery;
@@ -30,6 +31,11 @@ pub use query::{
 };
 pub use refresh::RefreshReport;
 pub use renaming::RenameError;
+pub use source_protection::SourceRestrictionInfo;
+pub use source_view::{
+    MAX_SOURCE_SNAPSHOT_BYTES, NativeSourceSnapshot, SourceAccessRequest, SourceFileState,
+    SourceProtection, SourceSnapshot, SourceSnapshotError, SourceSnapshotOrigin,
+};
 pub use support::{FileReason, FileSupport, ObjectSupport, SupportSnapshot};
 
 use std::path::Path;

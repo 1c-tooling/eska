@@ -55,7 +55,10 @@ impl DesignerSource {
     }
 
     /// Count containment/existence probes at the shared resolver boundary.
-    fn checked_file(&self, relative: &std::path::Path) -> Result<Option<PathBuf>, SourceError> {
+    pub(crate) fn checked_file(
+        &self,
+        relative: &std::path::Path,
+    ) -> Result<Option<PathBuf>, SourceError> {
         let mut stats = self.io_stats.get();
         let result = opening::existing_file(self.project.source(), relative, &mut stats);
         self.io_stats.set(stats);

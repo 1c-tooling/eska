@@ -1,0 +1,463 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-24",
+  "part": "Common source protection and immutable binary snapshots, Metadata API 1.17",
+  "sourceParent": "54ec4fb0b6ebf3137bfbe570b81a1041ccd95fb4",
+  "explorerCommit": "c0e45cfa656df07abb5dac278e63776c75d730d1",
+  "commonSourceApiComplete": true,
+  "languageWritesUseCommonProtection": true,
+  "sourceProtectionMigrationComplete": false,
+  "generalProtectedProviderUsesBackend": false,
+  "ownerLockAccepted": false,
+  "productionBslEditingEnabled": false,
+  "sourceSha256": {
+    "crates/eska-project-core/src/project/designer_source/mod.rs": "8d4cf7f8f703910850b66956dcf682227c89a8a60d6c99f64e283d1a4403e95b",
+    "crates/eska-project-core/src/project/metadata_workspace/mod.rs": "38828c0dfb814cc00da1ce918366e9afec058c20da58194d33b03bab2e89a82a",
+    "crates/eska-project-core/src/project/metadata_workspace/query/session.rs": "1c6bbdc503251aa64a5a74df6877855094955b04da9ce3f810b780510cbfd53b",
+    "crates/eska-project-core/src/project/metadata_workspace/source_protection.rs": "ef45f90a82dc495852f2d2caa8f1c925889d39d249c53e06e9f7605d8ce34fe2",
+    "crates/eska-project-core/src/project/metadata_workspace/source_view.rs": "c93733ed7675d2ab05774b63f0dc98369ee1b4057e6bafa6800c5e5102ac77be",
+    "crates/eska-project/src/ide/mod.rs": "1b5e74c3de65064d27092bc976d68f620cfcb4caaa265a1294a4683dcfc89bb0",
+    "crates/eska-project/src/ide/query/mod.rs": "7640710d9fb015fa6cdf86fb3f849b2f8127a2f8614221905f9012f1603c2d1f",
+    "crates/eska-project/src/ide/query/source.rs": "575aece4cc4510a0a6c3f03c524f5d42caff7f13d9f5313211efeb00ee22badb",
+    "crates/eska-project/src/ide/server.rs": "c650826e3ddfa38e9826f362c32d673ef5caf5417c9084c7faaca5cbfd29bbfa",
+    "crates/eska-project/tests/server/recovery/sessions.rs": "a1f84d4b9891c28125406b62fecdfb241ec6aad8c61e1009db88ff9e5a8e4b6a",
+    "crates/eska-project/tests/server/recovery/sessions/source.rs": "c7fcb3a2454fa73c07556dec5323844fbda1f297a1b1d57313a5dd1a58d47b2d",
+    "docs/ide-protocol.md": "e894353459d0ab9bdbbffbe196f508e4c9e48ecd8953366e303e48d1d036ee4b",
+    "docs/project-cli.md": "db428924702af73a8cafa4bbda6147baeb7d70e4f119eace0d1af687914386f7",
+    "docs/roadmap/16-query-editing.md": "bf5c97a77fe435ca1c32ff7e2173445ddccb996605a440963c173a79e7394eac",
+    "tests/project/metadata_workspace/ide.rs": "9125c1381b7c3a37ba73762d25527e7da5d218bcc8d6575057529f20f400fd1b",
+    "tests/project/metadata_workspace/ide/picture.rs": "e6ce3518b4316dac39a8a1ec766bbd05ade70830c359cb24600abbf8cec824d1",
+    "tests/project/metadata_workspace/query.rs": "3352df084094eaba49a1e9c95a0d0159055a0ced3bea92f283c48e79fe74f4ec",
+    "tests/project/metadata_workspace/query/source_view.rs": "6af4b7f52a4db9205d534cd22b54ce7499c42f1478f8e114c1f4ac0cc5b1e513"
+  },
+  "explorerSourceSha256": {
+    "README.md": "35c95bbfacedeba195aa764eb506e383df86cde780bab9d0d58a918dcd0e6252",
+    "docs/query-editing.md": "bde763445cdac3e1925a2dc27d3e43758951fd74c0168f06ba4d101e29ddbe92",
+    "src/connection.ts": "556b9a14748ad7398c524b8941d93594d1eceeb59d4a3a58572633f3568e5be8",
+    "src/extension.ts": "0b57c95be77a4c159d32ca9309141323bd410d0ccfa447fc6b17c44432711a94",
+    "src/language/edits.ts": "80c12d59ada45bf0c8a2c712d8c8722859456803125dd462126ffa357c752b1c",
+    "src/messages.ts": "685e5eb19e978ccf782d8dd7f71b26e20ad3bac843d1bcb815fda614a4fdfa32",
+    "src/protocol.ts": "0898a760a4f21253564b05653f0131e9b1f887f0b8487259fca67ecdba7348d4",
+    "src/source-access.ts": "55cc20e4335681656554c1dcbacc429f1d71272fdfa150a76a4a331e9bdf40df",
+    "src/support-contexts.ts": "33c21b7ddae13fee7911efcf654e0520a6fdb9bb807e67d6c668fa82fe1bfd8b",
+    "src/support.ts": "19dd2f191db0486d4dd6665f16e32886b56c483d94840c25c535bd33ba4ac53f",
+    "test/fake-backend.mjs": "f04c5441bd1c0975406e984aeea47d741f4d16a59084ac1fb6297300ad0a3a02",
+    "test/language-edits-host.cjs": "6090e7e99a7942478b2b0c06915995d9331e4267e086b8249afe13d6e4afe6b0",
+    "test/query-session-host.cjs": "fda3f2d1e3b37035ab45bd221a2b804f22f5feb000d2bccb9751d435909f0afd",
+    "test/source-access.test.mjs": "5f19716593f1cbc4e6e61a50e172b7f3bcb8b6fa2d1a93d8f1fb3e443cabe484",
+    "test/transport.test.mjs": "19dcb3473b36c0b3c65274e4d1ef017cc533f672b20feaa9fbf75e4d1f04db96"
+  },
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x",
+  "backend": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/bin/eska-project",
+    "sha256": "b1a22be132fecc7f72cf245e2e40d2136d3bb9ddfd7fe6f2248a46039b2333a2"
+  },
+  "installedVsix": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/eska-source-api17.vsix",
+    "sha256": "1fd8e61e13b721ce724481a2c175e080eec0e6346d6e22df3a9f942fc292e37d",
+    "runtimeMatchesCommittedExplorer": true,
+    "comparedRuntimeAndQueryDocFiles": 1285
+  },
+  "analyzer": {
+    "path": "/home/akalsin/.local/bin/bsl-analyzer-app",
+    "version": "0.3.2",
+    "contract": "3.4",
+    "sha256": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+    "publishedExternalBinary": true
+  },
+  "behavior": {
+    "policy": "Core combines known Designer ownership, support policy, filesystem state, adapter-reported user restriction and all live source-session owners. The explicit ordinary support opt-out never bypasses source ownership. Query application has no support opt-out.",
+    "snapshot": "A read-only immutable view returns exact raw disk bytes, an explicitly supplied native UTF-8 buffer, or the full retained query owner in that priority order reversed: active query owner, supplied native buffer, disk. Query views retain text, not an owned write lease.",
+    "bounds": "8 MiB per snapshot, 16 live views, 128 KiB per chunk, 128 protection paths, 32 MiB retained bytes and 64 entries shared with query sessions/uploads; no new unbounded memory store.",
+    "scope": "Source identities and exact project context stay in core/RPC. Views reject foreign process/member handles, wrong hashes, oversized or non-canonical chunks; immutable reads and cleanup permit stale generations. Binary content is not silently decoded.",
+    "nativeWrites": "Explorer requests the common decision before language write operations and checks captured process, source ownership epoch, metadata generation/event sequence and native versions before applying. Support disabled still requires common ownership checks.",
+    "compatibility": "API 1.16 fallback keeps durable XML sessions on the same child. Older backend language read providers remain available; language writes require the new protection capability.",
+    "remaining": "The general eska-protected FileSystemProvider still reads through workspace.fs. Its backend migration and native BSL owner freeze preserving user overrides are not accepted by this part.",
+    "backendWritesOwner": false,
+    "newDependencies": false
+  },
+  "validation": {
+    "cargoFmt": {
+      "command": "cargo fmt --check",
+      "exitCode": 0
+    },
+    "cargoCheck": {
+      "command": "cargo check",
+      "exitCode": 0
+    },
+    "cargoClippy": {
+      "command": "cargo clippy --all-targets --all-features -- -D warnings",
+      "exitCode": 0
+    },
+    "cargoTest": {
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test",
+      "exitCode": 0,
+      "passed": 1012,
+      "failed": 0,
+      "ignored": 12,
+      "suites": 35
+    },
+    "rustdoc": {
+      "command": "RUSTDOCFLAGS='-D warnings' cargo doc --no-deps",
+      "exitCode": 0
+    },
+    "targetedCore": {
+      "passed": 5,
+      "failed": 0
+    },
+    "targetedRpc": {
+      "passed": 4,
+      "failed": 0,
+      "locales": [
+        "ru-RU",
+        "en-US"
+      ],
+      "realBackend": true
+    },
+    "sdk": {
+      "passed": 6,
+      "failed": 0,
+      "realBackend": true,
+      "vscodeRequired": false
+    },
+    "transport": {
+      "passed": 23,
+      "failed": 0
+    },
+    "typecheck": {
+      "command": "npm run check",
+      "exitCode": 0
+    },
+    "compile": {
+      "command": "npm run compile",
+      "exitCode": 0
+    },
+    "node": {
+      "command": "node --test test/*.test.mjs",
+      "exitCode": 0,
+      "passed": 251,
+      "failed": 0,
+      "skipped": 3
+    },
+    "bun": {
+      "command": "bun test",
+      "exitCode": 0,
+      "passed": 251,
+      "failed": 0,
+      "skipped": 3
+    },
+    "nativeInstalled": {
+      "native-query-en-result.log": [
+        {
+          "passed": true,
+          "suite": "query-source-sessions",
+          "vscode": "1.109.5",
+          "locale": "en",
+          "backendSourceSessions": true,
+          "newerInputDuringReceipt": true,
+          "interruptedNativeReceipt": true,
+          "latestDraftPreserved": true,
+          "explicitReconciliation": true,
+          "cleanDraftMarkedDirty": true,
+          "noAutomaticReplay": true,
+          "cleanCloseReleasesCheckpoint": true,
+          "backendSourceWriteFence": true,
+          "backendFenceReleasedOnError": true,
+          "restoredFenceUntilClose": true,
+          "languageWritesRespectSourceOwnership": true,
+          "supportDisabledDoesNotReleaseOwnership": true,
+          "staleNativeAuthorizationRejected": true,
+          "injectedErrors": [
+            {
+              "message": "Error: simulated interrupted native receipt"
+            }
+          ]
+        }
+      ],
+      "native-query-ru-result.log": [
+        {
+          "passed": true,
+          "suite": "query-source-sessions",
+          "vscode": "1.109.5",
+          "locale": "ru",
+          "backendSourceSessions": true,
+          "newerInputDuringReceipt": true,
+          "interruptedNativeReceipt": true,
+          "latestDraftPreserved": true,
+          "explicitReconciliation": true,
+          "cleanDraftMarkedDirty": true,
+          "noAutomaticReplay": true,
+          "cleanCloseReleasesCheckpoint": true,
+          "backendSourceWriteFence": true,
+          "backendFenceReleasedOnError": true,
+          "restoredFenceUntilClose": true,
+          "languageWritesRespectSourceOwnership": true,
+          "supportDisabledDoesNotReleaseOwnership": true,
+          "staleNativeAuthorizationRejected": true,
+          "injectedErrors": [
+            {
+              "message": "Error: simulated interrupted native receipt"
+            }
+          ]
+        }
+      ],
+      "native-language-en-result.log": [
+        {
+          "passed": true,
+          "suite": "language-edits",
+          "vscode": "1.109.5",
+          "real_backend_policy": true,
+          "mixed_xml_atomic_rejection": true,
+          "protected_uri_rejected": true,
+          "stale_version_rejected": true,
+          "unversioned_server_edit_rejected": true,
+          "resource_edit_rejected": true,
+          "versioned_server_text_edit_applied": true,
+          "server_apply_payloads": "injected through public middleware; native editor transaction",
+          "rename": true,
+          "formatter_edits": 1,
+          "code_action": true,
+          "late_code_action_rejected": true,
+          "user_readonly_preserved": true,
+          "disk_unchanged": true,
+          "shutdownPids": [
+            655581,
+            655536
+          ]
+        }
+      ],
+      "native-language-ru-final-result.log": [
+        {
+          "passed": true,
+          "suite": "language-edits",
+          "vscode": "1.109.5",
+          "locale": "ru",
+          "real_backend_policy": true,
+          "mixed_xml_atomic_rejection": true,
+          "protected_uri_rejected": true,
+          "stale_version_rejected": true,
+          "unversioned_server_edit_rejected": true,
+          "resource_edit_rejected": true,
+          "versioned_server_text_edit_applied": true,
+          "server_apply_payloads": "injected through public middleware; native editor transaction",
+          "rename": true,
+          "formatter_edits": 1,
+          "code_action": true,
+          "late_code_action_rejected": true,
+          "user_readonly_preserved": true,
+          "disk_unchanged": true,
+          "shutdownPids": [
+            658899,
+            658864
+          ]
+        }
+      ],
+      "native-tabs-en-result.log": [
+        {
+          "passed": true,
+          "suite": "query-tabs",
+          "vscode": "1.109.5",
+          "locale": "en",
+          "node": "v22.21.1",
+          "cleanXmlSave": true,
+          "dirtyXmlSave": true,
+          "wholePackage": true,
+          "ownerUndoRedo": true,
+          "noExtraXmlDiff": true,
+          "repeatedOpen": true,
+          "manualLists": 2,
+          "automaticListInvented": false,
+          "privateRecoveryRecords": 2,
+          "externalConflictRetainsDraft": true,
+          "analyzerRequired": false,
+          "shutdownWaitsForQueries": true,
+          "backendRecovery": true,
+          "recoveryMethods": [
+            "query/recoveryAppend",
+            "query/recoveryBegin",
+            "query/recoveryClose",
+            "query/recoveryCommit",
+            "query/recoveryRead",
+            "query/recoveryRemove"
+          ],
+          "backendSourceSessions": true,
+          "sourceSessionMethods": [
+            "query/sessionApplied",
+            "query/sessionClose",
+            "query/sessionGet",
+            "query/sessionOpen",
+            "query/sessionPrepare",
+            "query/sessionResume"
+          ],
+          "legacyQueryPlans": 0
+        },
+        {
+          "passed": true,
+          "suite": "query-tabs-cold-recovery",
+          "vscode": "1.109.5",
+          "locale": "en",
+          "dirtyDraftRecovered": true,
+          "originalDirtyXmlSnapshotRetained": true,
+          "automaticApply": false,
+          "conflictRetainsDraft": true,
+          "explicitResumeUnderFreshEditorVersion": true,
+          "independentOwnerSave": true,
+          "backendRecovery": true,
+          "recoveryWithBrokenManifest": true,
+          "offlineInputReconciled": true,
+          "offlineCleanCloseRetainedUntilAcknowledged": true
+        }
+      ],
+      "native-tabs-ru-result.log": [
+        {
+          "passed": true,
+          "suite": "query-tabs",
+          "vscode": "1.109.5",
+          "locale": "ru",
+          "node": "v22.21.1",
+          "cleanXmlSave": true,
+          "dirtyXmlSave": true,
+          "wholePackage": true,
+          "ownerUndoRedo": true,
+          "noExtraXmlDiff": true,
+          "repeatedOpen": true,
+          "manualLists": 2,
+          "automaticListInvented": false,
+          "privateRecoveryRecords": 2,
+          "externalConflictRetainsDraft": true,
+          "analyzerRequired": false,
+          "shutdownWaitsForQueries": true,
+          "backendRecovery": true,
+          "recoveryMethods": [
+            "query/recoveryAppend",
+            "query/recoveryBegin",
+            "query/recoveryClose",
+            "query/recoveryCommit",
+            "query/recoveryRead",
+            "query/recoveryRemove"
+          ],
+          "backendSourceSessions": true,
+          "sourceSessionMethods": [
+            "query/sessionApplied",
+            "query/sessionClose",
+            "query/sessionGet",
+            "query/sessionOpen",
+            "query/sessionPrepare",
+            "query/sessionResume"
+          ],
+          "legacyQueryPlans": 0
+        },
+        {
+          "passed": true,
+          "suite": "query-tabs-cold-recovery",
+          "vscode": "1.109.5",
+          "locale": "ru",
+          "dirtyDraftRecovered": true,
+          "originalDirtyXmlSnapshotRetained": true,
+          "automaticApply": false,
+          "conflictRetainsDraft": true,
+          "explicitResumeUnderFreshEditorVersion": true,
+          "independentOwnerSave": true,
+          "backendRecovery": true,
+          "recoveryWithBrokenManifest": true,
+          "offlineInputReconciled": true,
+          "offlineCleanCloseRetainedUntilAcknowledged": true
+        }
+      ]
+    },
+    "correctedTestFailure": "The first Russian language-edits run correctly denied a rename but the test asserted the English No result. message. The test now verifies the requested UI locale and the observed Russian translation; the repeated Russian run passed with unchanged packaged runtime."
+  },
+  "logs": {
+    "fmt-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/fmt-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "check-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/check-final.log",
+      "sha256": "7f74cfef1a3a25999d28d8cf73b4571d6a08d855fee239be7e3abe6e501d2cd1"
+    },
+    "clippy-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/clippy-final.log",
+      "sha256": "95b1e452ca0773dcb24a96822d0b6ca8f25db60ea86bc97ebcbef0bbd178968b"
+    },
+    "test-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/test-final.log",
+      "sha256": "a966858827c742f71c1decc6296d87b3869f4f0fa8cfff013059216fe8c1e634"
+    },
+    "rustdoc-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/rustdoc-final.log",
+      "sha256": "52798aa1b824d5f3489ef0aebd10da164ba4bdde3c837414fa2e9f097b0f4e25"
+    },
+    "node-first.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/node-first.log",
+      "sha256": "deb4b236d784a8255a08ecc999706fb49cc6eea8c8f8faa3de6ad334cdc75366"
+    },
+    "bun-tests.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/bun-tests.log",
+      "sha256": "3528c45b5b7a96c8dbbcd73e31cd982fadf1e07febe544f4d04bca8457b664f0"
+    },
+    "core-first.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/core-first.log",
+      "sha256": "0368a24e5bf3c008a9c8bc93bed297f3d3db93fcc5e6e09843b8697d14aded55"
+    },
+    "rpc-first.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/rpc-first.log",
+      "sha256": "a72010f7904ad7b7ebc4045802b038a004f5862149a3b59645a551b3600dd6a2"
+    },
+    "sdk-first.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/sdk-first.log",
+      "sha256": "55379e4b96dda8b821889496ebcc5daf2bfd864911a04db2745007fc20a72f02"
+    },
+    "transport-first.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/transport-first.log",
+      "sha256": "437a8deff64ae35070d3c5c132d8395af3a1de55b146ef5b234c2420ebaaf7f3"
+    },
+    "explorer-compile-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/explorer-compile-final.log",
+      "sha256": "aacc76ba29050ec4640c8c2766f813765565ba00278fa226d6072f11f59695bf"
+    },
+    "explorer-typecheck-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/explorer-typecheck-final.log",
+      "sha256": "5062faef2ef40eb366b4a0a37c2b49bd34f9990ce7448c0e7dcc53401761fba0"
+    },
+    "package-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/package-final.log",
+      "sha256": "a477689162e29beb50bbc868c4d0ce784c3cfccf3db82670729fd3e7f1aa4288"
+    },
+    "native-query-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/native-query-en-result.log",
+      "sha256": "497188d621fd28d35aa1cd9b95742d406e27cfb79715ffc153ff8580a8c9fb38"
+    },
+    "native-query-ru-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/native-query-ru-result.log",
+      "sha256": "f2313840e8118ba6673b89454d13933b6c2cb232db10e0ac0eb01327a9c4a233"
+    },
+    "native-language-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/native-language-en-result.log",
+      "sha256": "29249ac1d79f7ede6b6e0a46ea84fff6b5690af8ade4f3737604eb17fb2059a6"
+    },
+    "native-language-ru-final-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/native-language-ru-final-result.log",
+      "sha256": "a6d7a0772e08f297d29960d934679a837516379609d90e977fc1bb2d832a6eae"
+    },
+    "native-tabs-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/native-tabs-en-result.log",
+      "sha256": "15d0ba2aa9d6cb12ec1b151c6b5b4f0e15cd32b9389965ed9ea3c68d3c9551af"
+    },
+    "native-tabs-ru-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-source-view-6qxpza4x/native-tabs-ru-result.log",
+      "sha256": "6bd2e01b1f3ccdcfc4ed0d0962a78af1de74c97ba808760dfe53377364060ca6"
+    }
+  },
+  "unverified": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote",
+    "native BSL owner freeze and its prior user override",
+    "general protected-source backend provider migration"
+  ],
+  "next": "Move general protected-source reads to the common source API, verify restore and exact dirty-owner views; then complete native BSL owner locking before T103-T105."
+}

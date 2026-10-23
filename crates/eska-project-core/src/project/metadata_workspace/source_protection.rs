@@ -21,6 +21,13 @@ struct Restriction {
     descriptor: PathBuf,
 }
 
+/// A public description is not the owned capability required to bypass this backend restriction.
+#[derive(Clone, Debug)]
+pub struct SourceRestrictionInfo {
+    pub id: NonZeroU64,
+    pub source: PathBuf,
+}
+
 /// Proposed checkpoint states share the same restriction until publication or rollback finishes.
 #[derive(Clone, Debug)]
 pub(super) struct SourceRestriction(Arc<Restriction>);
@@ -33,6 +40,17 @@ impl SourceRestriction {
 }
 
 impl SourceProtections {
+    /// Report every live owner sealing this physical file, including a descriptor shared by several modules.
+    pub(super) fn describe(&self, path: &Path) -> Vec<SourceRestrictionInfo> {
+        self.live()
+            .filter(|entry| entry.owner == path || entry.descriptor == path)
+            .map(|entry| SourceRestrictionInfo {
+                id: entry.id,
+                source: entry.owner.clone(),
+            })
+            .collect()
+    }
+
     /// Only a checked source document can acquire a restriction; no filesystem or IDE setting is changed.
     pub(super) fn acquire(&mut self, owner: &Path, descriptor: &Path) -> Option<SourceRestriction> {
         self.owners.retain(|_, entry| entry.strong_count() != 0);

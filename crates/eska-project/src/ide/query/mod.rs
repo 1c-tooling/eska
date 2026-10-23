@@ -6,6 +6,7 @@ mod dto;
 mod params;
 mod recovery;
 mod sessions;
+mod source;
 
 use std::collections::BTreeMap;
 
@@ -33,6 +34,7 @@ pub(super) struct State {
     buffers: BTreeMap<String, buffers::Upload>,
     documents: BTreeMap<String, documents::Entry>,
     sessions: BTreeMap<String, sessions::Entry>,
+    source_snapshots: BTreeMap<String, source::Entry>,
     serial: u64,
     durable_sessions: bool,
 }
@@ -41,6 +43,7 @@ pub(super) struct State {
 pub(super) fn is_method(method: &str) -> bool {
     recovery::is_method(method)
         || sessions::is_method(method)
+        || source::is_method(method)
         || matches!(
             method,
             "query/bufferBegin"
@@ -58,6 +61,16 @@ pub(super) fn is_method(method: &str) -> bool {
 /// Stateful session methods require their separately negotiated contract.
 pub(super) fn is_session_method(method: &str) -> bool {
     sessions::is_method(method)
+}
+
+/// Shared protected-source inspection is an additive contract negotiated independently from query lifecycle.
+pub(super) fn is_source_method(method: &str) -> bool {
+    source::is_method(method)
+}
+
+/// Source snapshots reuse the existing upload and retained-text limits.
+pub(super) fn source_capability() -> Value {
+    source::capability()
 }
 
 /// Existing query extraction remains independent from optional lifecycle/checkpoint ownership.
@@ -89,7 +102,11 @@ pub(super) fn capability() -> Value {
 impl State {
     /// Include reserved upload capacity so unfinished requests cannot evade the byte budget.
     fn admit(&self, bytes: usize) -> Result<(), Value> {
-        if self.buffers.len() + self.documents.len() + self.sessions.len() >= 64
+        if self.buffers.len()
+            + self.documents.len()
+            + self.sessions.len()
+            + self.source_snapshots.len()
+            >= 64
             || self.retained_bytes().saturating_add(bytes) > RETAINED_BYTES
         {
             return Err(resource());
@@ -125,6 +142,11 @@ impl State {
                 .sessions
                 .values()
                 .map(|entry| entry.core.retained_bytes())
+                .sum::<usize>()
+            + self
+                .source_snapshots
+                .values()
+                .map(source::Entry::bytes)
                 .sum::<usize>()
     }
 
@@ -221,6 +243,12 @@ impl Server {
         if matches!(method, "query/close" | "query/bufferClose") {
             return self.queries.close(method, &key, args);
         }
+        if method == "source/bufferClose" {
+            return self.queries.close("query/bufferClose", &key, args);
+        }
+        if matches!(method, "source/snapshotRead" | "source/snapshotClose") {
+            return self.queries.source_cleanup(&key, method, args);
+        }
         if matches!(method, "query/sessionClose" | "query/sessionGet") {
             return self.queries.session_cleanup(method, &key, args);
         }
@@ -247,6 +275,9 @@ impl Server {
             "query/bufferBegin" => self.queries.begin_buffer(&key, args),
             "query/bufferAppend" => self.queries.append_buffer(&key, args),
             "query/open" => self.queries.open_document(project, &key, args),
+            method if source::is_method(method) => {
+                self.queries.source_request(project, &key, method, args)
+            }
             method if sessions::is_method(method) => self.queries.session_request(
                 project,
                 &key,

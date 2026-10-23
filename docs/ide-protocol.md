@@ -1193,3 +1193,88 @@ RecoveryRemove без дополнительного решения возвра
 файлы остаются прежними. Это не отсутствие сохранённой работы. Остальные v1
 записи и методы прежних версий сохраняют поведение. T101-клиент, читающий
 файлы самостоятельно, также не принимает storageVersion 2 за v1.
+
+### API 1.17: общее состояние защиты и снимки исходников
+
+Опциональная capability `sourceProtection` доступна при handshake 1.17:
+`{schemaVersion:1,writesOwner:false,sessionOwnerPriority:true,binarySnapshots:true,
+maxSnapshotBytes:8388608,maxSnapshots:16,maxRetainedBytes:33554432,
+sharedQueryBudget:true,maxChunkBytes:131072,maxPaths:128,maxRetainedEntries:64}`.
+Старые клиенты не получают capability и вызывают новые методы с Method not found.
+Бюджет 32 MiB и 64 entries общий с query uploads, documents и sessions;
+неизменяемые source views дополнительно ограничены 16 handles. Source API
+не запускает анализатор, индекс, полный обход или запись файла.
+
+Запросы используют `{sessionId,projectId,generation}` прежнего metadata context.
+Admission требует свежую generation и отсутствие refresh/reopen flags.
+Чтение уже удерживаемого снимка и cleanup допускают прежнюю generation/flags;
+контекст процесса, metadata session и member всё равно проверяется. Замена
+процесса, workspace/close, shutdown и EOF уничтожают handles.
+
+`source/protection`: `{...context,files:[{path:Path,userReadOnly:boolean}],
+enforceSupport:boolean}`. От 1 до 128 source-relative файлов. Успех возвращает
+обычный context envelope и `files:[Protection]` в том же порядке.
+`Protection` содержит `path,objects,supportReadOnly,supportReason,supportUnknown,
+mixed,supportEnforced,userReadOnly,filesystemReadOnly,exists,writable,diagnostics,
+restrictions:[{id:string,source:Path}]`.
+Причина поддержки использует FileReason из supportFiles; ограничения обозначают
+каждую активную сессию, удерживающую физический файл или его дескриптор.
+`writable` вычисляет core, включая известность владельца и состояние файла.
+`userReadOnly` — независимое ограничение, переданное адаптером, без получения
+или изменения нативного read-only override самим backend.
+
+`enforceSupport:false` соответствует существующему пользовательскому отключению
+обычной защиты поддержки для native-операций. Оно не снимает временное владение,
+ограничение пользователя, отсутствие исходника или файловый read-only.
+Query/plan и query/sessionPrepare не получают такого переключателя: их support
+policy остаётся обязательной. Результат protection — свежие факты для preflight,
+а не долговременное разрешение или exemption по числу id.
+
+`source/snapshotOpen`: `{...context,path:Path,
+native?:{version:string,userReadOnly:boolean,text?:string,bufferId?:string}}`.
+Native input требует положительный u64 version и ровно один text/bufferId.
+Inline text ограничен 128 KiB UTF-8. Больший буфер использует `source/bufferBegin`,
+`source/bufferAppend`, `source/bufferClose`: формы и правила прежнего query buffer
+API 1.13, включая byte offsets, SHA-256 и ровные UTF-8 границы. Это aliases
+общего bounded upload storage. Успешное snapshotOpen поглощает только переданный
+buffer; при ошибке он остаётся доступен для явного close.
+
+Если path удерживает активная QuerySession, backend выбирает её полный owner
+snapshot, включая несохранённые изменения, даже при переданном более новом
+native input. Иначе выбирается переданный native-буфер, затем точные bytes диска.
+Чужой/неизвестный источник, traversal и alias за пределы source не становятся
+file-reader capability. Native input не создаёт новую исходную идентичность.
+
+Ответ: обычный context envelope и `{snapshotId,path,bytes,snapshot,
+origin:"disk"|"editor"|"querySession",version:string|null,protection:Protection}`.
+Snapshot — SHA-256 фактических удерживаемых bytes; disk version null. Снимок
+не декодирует binary, не нормализует BOM/newlines и не даёт права записи.
+Query owner переиспользует immutable text; view не удерживает его write lease.
+Закрытие query-сессии поэтому не мешает дочитать ранее открытый снимок.
+
+`source/snapshotRead`: `{...context,snapshotId,snapshot,offset,bytes}`.
+Offset — byte offset; bytes от 1 до 131072. Ответ без metadata envelope:
+`{snapshotId,snapshot,offset,data:string,nextOffset,complete:boolean}`.
+Data — canonical base64 точного chunk. Здесь нет ограничения UTF-8 границы:
+по частям передаются также binary и части многобайтового символа. Данные
+не перечитываются с диска между chunks. Offset в конце допустим и возвращает
+пустой complete chunk. Чужая или неверная snapshot hash отклоняется.
+
+`source/snapshotClose`: `{...context,snapshotId}` → `{released:boolean}`.
+Cleanup допускает stale generation, но не чужой member. Повторный close
+возвращает false. View handles не хранятся на диске и не восстанавливают
+разрешения на применение. Прежний private recovery остаётся отдельным API 1.14.
+
+Добавлен `source_view_failed` с reasons `unknown_source`, `missing`,
+`invalid_editor_state`, `unknown_snapshot`, `snapshot_mismatch`;
+действуют прежние source/context/upload errors. Resource limit использует
+`source_snapshot` для одного view или общий `query_snapshots`.
+Source bytes и локальные IO diagnostics в ошибках не возвращаются.
+
+Рабочий SDK проверяет DTO, offsets, canonical base64 и полный hash, затем
+освобождает handles. Языковые правки Explorer получают общий writable в ESKA
+и заново проверяют native versions и transport freshness перед передачей IDE.
+Запрос, способный изменить source ownership, заранее инвалидирует старый
+preflight в своём процессе. Нативная блокировка BSL-владельца этим не принимается.
+Провайдер `eska-protected:` ещё читает файл через IDE; его переход на source
+reader остаётся следующей частью T102.

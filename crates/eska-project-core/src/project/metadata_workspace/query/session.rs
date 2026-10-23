@@ -249,6 +249,31 @@ impl QuerySession {
             .map(super::super::source_protection::SourceRestriction::id)
     }
 
+    /// Read-only parent views use the captured owner even if an ordinary native buffer or disk has since changed.
+    ///
+    /// # Errors
+    /// Rejects a closed or foreign session and unavailable source policy; no source write is authorized.
+    pub fn source_snapshot(
+        &self,
+        project: &mut ProjectSession,
+    ) -> Result<super::super::SourceSnapshot, super::super::SourceSnapshotError> {
+        self.check_project(project)
+            .map_err(|_| super::super::SourceSnapshotError::UnknownSource)?;
+        let request = super::super::SourceAccessRequest {
+            path: self.document.path.clone(),
+            user_read_only: self.restrictions.user_read_only,
+        };
+        let protection = project
+            .source_protection(&[request], true)?
+            .pop()
+            .ok_or(super::super::SourceSnapshotError::UnknownSource)?;
+        Ok(super::super::SourceSnapshot::retained_owner(
+            protection,
+            Arc::clone(&self.document.input),
+            self.document.version,
+        ))
+    }
+
     /// Query identity always belongs to the retained full-owner snapshot.
     #[must_use]
     pub const fn identity(&self) -> &QueryIdentity {
