@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-23",
+  "part": "Production IDE adapter uses common ESKA recovery API",
+  "recoveryClientMigrationComplete": true,
+  "sessionModelMigrationComplete": false,
+  "protectionModelMigrationComplete": false,
+  "ownerLockAccepted": false,
+  "productionBslEditingEnabled": false,
+  "commits": {
+    "eskaBackend": "67c4203486ddf987c96ac8b9302ad8ce2bfefcab",
+    "explorer": "39a2482e34ea0da9ce65c54c96a4723ac737180e"
+  },
+  "branch": "codex/design-xml-analyzer",
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa",
+  "environment": {
+    "os": "Linux",
+    "vscodium": "1.109.5",
+    "nativeNode": "22.21.1",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "metadataApi": "1.14"
+  },
+  "backend": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/bin-independent/eska-project",
+    "sha256": "ce6e6550a0464e48ebfc8f41be14ac284631857cb66b04e9cbc7af0f54fbf29a"
+  },
+  "adapterChanges": [
+    "Removed TypeScript filesystem/base64 checkpoint store; ESKA owns format, quota, revision comparison and atomic publication.",
+    "Explicit create and revision-bound save/remove prevent stale updates from recreating a closed draft.",
+    "One bounded upload serializes independent drafts and coalesces rapid updates; unchanged owner/base are reused.",
+    "Initialized recovery endpoint survives a failed metadata open and has process identity instead of sessionId/generation.",
+    "Restart/disconnect waits for storage acknowledgements; stale process endpoints cannot address replacements.",
+    "A reconnect retains prior acknowledged revisions and does not silently accept another window overwrite.",
+    "Offline input stays in native editor, warns that checkpoint requires backend, and reconciles on reconnect.",
+    "Clean closes made offline remove the same acknowledged record on reconnect; an unrelated dirty draft remains."
+  ],
+  "validation": {
+    "typescript": {
+      "command": "npm run check",
+      "exitCode": 0
+    },
+    "compile": {
+      "command": "npm run compile",
+      "exitCode": 0
+    },
+    "node": {
+      "command": "ESKA_TEST_ROOT=<sibling playground> ESKA_TEST_BINARY=<copied backend> npm run test:node",
+      "passed": 237,
+      "failed": 0,
+      "skipped": 3
+    },
+    "bun": {
+      "command": "ESKA_TEST_ROOT=<sibling playground> ESKA_TEST_BINARY=<copied backend> bun test test/*.test.mjs",
+      "passed": 237,
+      "failed": 0,
+      "skipped": 3
+    },
+    "nativeEn": [
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRemove"
+        ]
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ],
+    "nativeRu": [
+      {
+        "passed": true,
+        "suite": "language-pack-registration",
+        "locale": "en"
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRemove"
+        ]
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ],
+    "payload": {
+      "command": "python3 scripts/check-vsix.py <checked VSIX>",
+      "exitCode": 0,
+      "runtimeFilesCompared": 1281
+    },
+    "backendRustGates": "See t102-recovery-backend.json: fmt/check/clippy/test/rustdoc passed; 973 passed, 0 failed, 12 ignored.",
+    "rustRerunForAdapter": false,
+    "rustRerunReason": "This logical adapter change does not modify Rust code/dependencies/build configuration; final backend binary is unchanged from its full passing gates.",
+    "earlierBunFailure": {
+      "log": "bun-final.log",
+      "fullSizeCase": "Default 5 s timeout expired during a real round trip of three 8 MiB control-character components.",
+      "followingCase": "The next case saw connectionLost after the timeout killed two owned processes; no independent root cause is claimed.",
+      "correction": "Only this integration case received a 30 s timeout; all byte, source, quota and framing assertions remain. The standard full Bun run then passed.",
+      "reference": "https://bun.com/reference/node/test/default/TestOptions"
+    }
+  },
+  "installedPackages": [
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/eska-query-recovery-api14-final.vsix",
+      "sha256": "b72b5737e4fc1c4a05b04fc717a92518858dc5d71802b400f9d537a640a40a9f",
+      "locale": "en"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/eska-query-recovery-api14-checked.vsix",
+      "sha256": "731501c67664d7075d3a7be4f986128529a2c9a81adb97aa191d4d9fbdededac",
+      "locale": "ru"
+    }
+  ],
+  "packageScope": "EN archive predates the final developer documentation update; all 1281 packaged runtime/resource files are byte-identical to the checked RU archive and current compiled output. The checked archive passed the full payload comparison with current repository files.",
+  "sourceSha256": {
+    "README.md": "a69ff3889adbeeec2312f0bd628290f94c1188cbe0b34e49618c3ee282597dc0",
+    "docs/development.md": "f10c51e80866cc85039a3d9497245b3e525fe1c85a9bcbaa8ff6567b6310a081",
+    "docs/query-editing.md": "65db4a089b2c869c09f1c1bd6880882305fafcd19de151c714743c042dd8bbc4",
+    "src/connection.ts": "b6d5ea4a9a2e84a2541ef4b9aebd63ba6e9976f80f1630fc0752c8c81c1dc940",
+    "src/extension.ts": "6b4ae01c1fee1c8b58419c8a426f410216c895524994f3eaabd93b403088c222",
+    "src/messages.ts": "e9ea369f2dd959dcd889790538a673aaf5d019545477deabcdf472ca2ff3f72c",
+    "src/protocol.ts": "c8ac3e5bf238fa8547cf25466a308c274df03b63bd6c3a12059f18713b4880aa",
+    "src/query/recovery-protocol.ts": "ea027fe3d0e27ecf1666283160ed87f71b1bbe672093e702dada84755462259a",
+    "src/query/recovery.ts": "4d22483437168e97d4057ebef35a0a3cc2798de74abcb05cb7b8378590759271",
+    "src/query/tabs.ts": "52e7f614459c63366251ed5dc64b517db15e0aafcdf3e5239a8646ace46cd036",
+    "test/fake-backend.mjs": "1147e60f4ba42eed490a3a92c5660aac7a18563f4cc2c38f99a8e280f681e973",
+    "test/query-recovery.test.mjs": "dc223b27bff5dceb23bafb6c61e0886967584c57103269ad3e02aef2649ce80e",
+    "test/query-tabs-host.cjs": "273f2285151b328139f6b8091a0815df4ea7120e984ad3353ae6da15fa22264c",
+    "test/transport.test.mjs": "53bfe91df1bc85bbf137f0d62b1a8ce6199a3f17405916c21b21c01572915fa5"
+  },
+  "evidence": {
+    "node-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/node-final.log",
+      "sha256": "24a1090bfcdbcab9205f97d171fb9f458534d8990a9509313646128f4d88fe8b"
+    },
+    "bun-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/bun-final.log",
+      "sha256": "df8b6b4c5bf9bc3e6039d2fd691327d17862998e9d0bd5f401a12e543a0da1c0"
+    },
+    "bun-checked.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/bun-checked.log",
+      "sha256": "d33aa0d259de09e48d7a4d171f032eaffedd4454697e21ac6557fb320f7d3ced"
+    },
+    "native-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/native-en-result.log",
+      "sha256": "cc75c2e4cf3f34de475f27600a3f60bbb88bbf27f7d960eac6a29a98d024ea54"
+    },
+    "native-ru-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/native-ru-result.log",
+      "sha256": "1a06c4cd231f55b85c0b55ebdf337850db2e8660a3be7836b453c24250920475"
+    },
+    "payload-checked.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/payload-checked.log",
+      "sha256": "f3647bf25f4f173c3bd28b0ac29623e587e83a12b41a7152ddad5b3ce3a4ad72"
+    },
+    "package-checked.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/package-checked.log",
+      "sha256": "9c9f759da7e54db94db6fe81b180f89ffad3a217a7c89011f9ccae600dab0b6b"
+    }
+  },
+  "limitations": [
+    "This accepts production recovery transport and its native adapter, not the full T102 session/protection model.",
+    "No BSL Apply/Cancel has been enabled; preserving prior native read-only overrides while locking all owner views remains unaccepted.",
+    "Private checkpoint persistence requires a running compatible backend. Explicitly disconnected editor input is not claimed durable before reconnection.",
+    "An analyzer is not used in these XML recovery scenarios; T103 context-dependent draft analysis remains separate.",
+    "T103, T104 and T105 are still planned after T102; no constructor or cross-platform acceptance is claimed."
+  ],
+  "unverifiedEnvironments": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ]
+}
