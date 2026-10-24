@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "task": "T103",
+  "date": "2026-10-24",
+  "status": "accepted on Linux/VSCodium",
+  "coreCommit": "e635b85",
+  "apiVersion": "1.20",
+  "analyzer": {
+    "path": "/home/akalsin/.local/bin/bsl-analyzer-app",
+    "version": "0.3.2",
+    "contract": "3.4",
+    "sha256": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d"
+  },
+  "architecture": {
+    "modelOwner": "ESKA",
+    "adapter": "VS Code providers and one URI synchronization stream on the existing LSP client",
+    "diagnostics": "explicit version-guarded pull; unversioned pushes suppressed on projected URI",
+    "sourceWrites": false,
+    "extraProcessPerQuery": false
+  },
+  "artifacts": {
+    "binary": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/bin/eska-project",
+      "sha256": "10b06f5f2ac3d11055463e8ba852acda78d0566bc35da021aea43c5146e1cd53"
+    },
+    "vsix": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/eska-query-language-model.vsix",
+      "sha256": "ed91a67e67e628ffb3438b30aa3a855a5fc405517363737d5944fb3715eb173a"
+    },
+    "packageComparison": {
+      "vsixSha256": "ed91a67e67e628ffb3438b30aa3a855a5fc405517363737d5944fb3715eb173a",
+      "checked": 1320,
+      "matched": 1320,
+      "different": [],
+      "packagerFileAliases": {
+        "readme.md": "README.md",
+        "changelog.md": "CHANGELOG.md",
+        "LICENSE.txt": "LICENSE"
+      }
+    }
+  },
+  "checks": {
+    "rust": {
+      "gates": {
+        "fmt": 0,
+        "check": 0,
+        "clippy": 0,
+        "test": 0,
+        "rustdoc": 0
+      },
+      "suites": 35,
+      "passed": 1026,
+      "failed": 0,
+      "ignored": 12
+    },
+    "node": {
+      "passed": 265,
+      "failed": 0,
+      "skipped": 3
+    },
+    "bun": {
+      "passed": 265,
+      "failed": 0,
+      "skipped": 3
+    },
+    "native": {
+      "native-model-en-result.log": [
+        {
+          "passed": true,
+          "suite": "query-language",
+          "accepted": [
+            "metadata_completion_in_unsaved_projection_without_native_or_disk_changes",
+            "completion_edit_translated_by_core_and_updated_in_one_lsp_process",
+            "version_guarded_pull_diagnostics_change_and_clear_on_latest_draft",
+            "delayed_real_completion_is_discarded_after_draft_revision_changes",
+            "temporary_table_fields_and_aliases_use_current_whole_package",
+            "ordinary_bsl_in_same_application_keeps_working",
+            "language_restart_preserves_draft_and_rebinds_shared_uri",
+            "native_owner_edit_pauses_query_and_restores_actual_native_text",
+            "cancel_preserves_unrelated_native_edit_and_disk"
+          ],
+          "pid": 1638823,
+          "locale": "en",
+          "expectedRefusals": [
+            "query_language_paused ExplorerError: requestFailed"
+          ]
+        }
+      ],
+      "native-model-ru-result.log": [
+        {
+          "passed": true,
+          "suite": "query-language",
+          "accepted": [
+            "metadata_completion_in_unsaved_projection_without_native_or_disk_changes",
+            "completion_edit_translated_by_core_and_updated_in_one_lsp_process",
+            "version_guarded_pull_diagnostics_change_and_clear_on_latest_draft",
+            "delayed_real_completion_is_discarded_after_draft_revision_changes",
+            "temporary_table_fields_and_aliases_use_current_whole_package",
+            "ordinary_bsl_in_same_application_keeps_working",
+            "language_restart_preserves_draft_and_rebinds_shared_uri",
+            "native_owner_edit_pauses_query_and_restores_actual_native_text",
+            "cancel_preserves_unrelated_native_edit_and_disk"
+          ],
+          "pid": 1641953,
+          "locale": "ru",
+          "expectedRefusals": [
+            "query_language_paused ExplorerError: requestFailed"
+          ]
+        }
+      ],
+      "native-model-context-result.log": [
+        {
+          "passed": true,
+          "suite": "query-language-context",
+          "accepted": [
+            "first_application_query_resolves_only_its_own_metadata",
+            "switching_application_pauses_earlier_query_without_lending_other_context",
+            "second_application_query_resolves_only_its_own_metadata"
+          ]
+        }
+      ]
+    },
+    "regression": {
+      "BSL": [
+        "split_query_tabs_share_one_draft",
+        "dirty_owner_snapshot_and_provider_write_denial",
+        "save_checkpoints_without_preparing_or_applying",
+        "ordinary_file_tabs_remain_editable_and_conflict_retains_both_texts",
+        "explicit_apply_preserves_other_queries_bom_crlf_dirty_text_and_single_undo_redo",
+        "close_cancel_keep_explicit_resume_and_discard",
+        "close_explicit_apply_never_saves_owner",
+        "late_native_edit_aborts_prepared_intent_and_preserves_draft",
+        "prior_readonly_and_writeable_overrides_preserved_configured_restriction_refuses_apply",
+        "computed_expression_refused_without_owner_mutation",
+        "real_backend_kill_retains_dirty_parent_and_checkpoint_explicit_resume_no_replay"
+      ],
+      "XML": true
+    }
+  },
+  "coverage": {
+    "accepted": [
+      "metadata and alias completion on unsaved BSL query",
+      "completion edits translated by ESKA into the same draft",
+      "temporary table fields from the whole changed package",
+      "fresh query diagnostics without native/disk mutation",
+      "late completion rejection",
+      "ordinary BSL continues",
+      "language restart restores and rebinds the URI",
+      "native owner changes pause analysis and restore its actual buffer",
+      "application context isolation"
+    ],
+    "upstreamGaps": [
+      "parameter completion returned no candidates in the typed fixture",
+      "direct SDBL and XML owner context unsupported; SCD extensions, main table and dependent list fields unaccepted"
+    ],
+    "notAcceptedSeparately": [
+      "complete hover/definition/reference coverage inside SDBL",
+      "Windows",
+      "macOS",
+      "Microsoft VS Code",
+      "Remote"
+    ],
+    "testBoundary": "Installed VSIX production files; tests inspect the exposed development-host API. Native close-choice answers are scripted in the T102 regression."
+  },
+  "evidence": [
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/native-model-en-result.log",
+      "sha256": "f28a52332738c77a41d0cc4673c9a8edc642e5eb7e8dc78661fe82fe5e6f2a78"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/native-model-ru-result.log",
+      "sha256": "2c8c954273be6df0a06365693c9e415b642631d7d7c2fd0dc05f4aeae16b4843"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/native-model-context-result.log",
+      "sha256": "ed8c3e1fa143e582aac62f1e31529c1a65c48c07e50ac3fcbe1a8f2b2b60dc47"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/native-model-bsl-result.log",
+      "sha256": "4ed250129e5e6fcaf7987b533e61d7dffa7eeb9f9e1aac1d01950c9a9be1a8b0"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/native-model-xml-result.log",
+      "sha256": "d0bdee45606cb05ab45f85a649748d7700442223576b73fdb4f6a935f3f107d5"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/node-model.log",
+      "sha256": "c17d88c0b13ca788d830a839bcc71db36171c8e20ad5acd75f9c0a733bbdd0dd"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/bun-model.log",
+      "sha256": "3199c9a405b80616ab6276dce364969a8239004ef369e3727ac11e0725b47da8"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/context-result.json",
+      "sha256": "6004ed49174b5d706998b9bcb0814c35ceb347560abf1c6dcf000506ced0e26f"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/package-model-comparison.json",
+      "sha256": "53f9115836b96a1cc8d87a0e63855ba3f9e3190d913d1374e4401bf2afc07eac"
+    }
+  ],
+  "adapterCommit": "012618d"
+}
