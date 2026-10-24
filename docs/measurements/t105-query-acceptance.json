@@ -1,0 +1,2694 @@
+{
+  "schemaVersion": 1,
+  "task": "T105",
+  "status": "DONE",
+  "date": "2026-10-24",
+  "acceptedEnvironment": {
+    "os": "Linux x86_64",
+    "vscodiumApi": "1.109.5",
+    "distribution": "1.109.51242",
+    "extensionHostNode": "22.21.1",
+    "node": "22.23.1",
+    "rust": "1.99.1",
+    "bun": "1.4.2",
+    "platform": "8.3.27.2325",
+    "analyzer": "0.3.2, published contract 3.4",
+    "locales": [
+      "ru",
+      "en"
+    ]
+  },
+  "artifacts": {
+    "stand": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv",
+    "vsix": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/eska-query-final.vsix",
+    "backend": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/bin/eska-project-dist",
+    "provenance": {
+      "bundleSha256": "362af1e8feea4b40437d373e0daed28d785f829a1e66cb14928d20619d1c08d5",
+      "vsixSha256": "2ea5a305d40bd335b2469c5e2346eaf44dfd79bf18ac4ccb0326bdfcf8b12ce7",
+      "backendSha256": "90b7dc163b6843dc5e5b85f1851c0c7a86040619fd0f25572c151f43bb0aa2aa",
+      "backendProfile": "dist (opt-level 3, thin LTO)",
+      "analyzerSha256": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+      "comparedPackagedFiles": 1321
+    }
+  },
+  "architecture": [
+    "Extraction, source encoding, UTF-16/source maps, permissions, owner snapshots, conflict checks, checkpoints and constructor operations belong to ESKA.",
+    "Explorer renders models and status, transports LSP requests and applies checked native edits with Undo/Redo.",
+    "The provider-level protected view shares the common backend snapshot; ordinary file tabs remain editable under the accepted conflict-checking contract.",
+    "The existing published analyzer process receives an in-memory BSL projection; no fork, embedded kernel, per-edit subprocess or additional source file is used."
+  ],
+  "checks": {
+    "rustGates": {
+      "fmt": 0,
+      "check": 0,
+      "clippy": 0,
+      "test": 0,
+      "rustdoc": 0,
+      "build": 0
+    },
+    "rustTests": {
+      "passed": 1048,
+      "failed": 0,
+      "ignored": 12,
+      "suites": 35
+    },
+    "node": {
+      "passed": 270,
+      "failed": 0,
+      "skipped": 3,
+      "total": 273
+    },
+    "bun": {
+      "passed": 270,
+      "failed": 0,
+      "skipped": 3,
+      "total": 273
+    },
+    "distSdk": {
+      "passed": 14,
+      "failed": 0
+    },
+    "typescript": true,
+    "compile": true,
+    "package": {
+      "files": 1324,
+      "payloadFilesCompared": 1321,
+      "allMatched": true
+    },
+    "native": {
+      "language-final": [
+        {
+          "passed": true,
+          "suite": "query-language",
+          "accepted": [
+            "metadata_completion_in_unsaved_projection_without_native_or_disk_changes",
+            "completion_edit_translated_by_core_and_updated_in_one_lsp_process",
+            "version_guarded_pull_diagnostics_change_and_clear_on_latest_draft",
+            "delayed_real_completion_is_discarded_after_draft_revision_changes",
+            "temporary_table_fields_and_aliases_use_current_whole_package",
+            "ordinary_bsl_in_same_application_keeps_working",
+            "language_restart_preserves_draft_and_rebinds_shared_uri",
+            "native_owner_edit_pauses_query_and_restores_actual_native_text",
+            "cancel_preserves_unrelated_native_edit_and_disk"
+          ],
+          "errors": [
+            "query_language_paused ExplorerError: requestFailed"
+          ],
+          "pid": 2013142,
+          "locale": "en"
+        }
+      ],
+      "bsl-final": [
+        {
+          "passed": true,
+          "locale": "en",
+          "accepted": [
+            "split_query_tabs_share_one_draft",
+            "dirty_owner_snapshot_and_provider_write_denial",
+            "save_checkpoints_without_preparing_or_applying",
+            "ordinary_file_tabs_remain_editable_and_conflict_retains_both_texts",
+            "explicit_apply_preserves_other_queries_bom_crlf_dirty_text_and_single_undo_redo",
+            "close_cancel_keep_explicit_resume_and_discard",
+            "close_explicit_apply_never_saves_owner",
+            "late_native_edit_aborts_prepared_intent_and_preserves_draft",
+            "prior_readonly_and_writeable_overrides_preserved_configured_restriction_refuses_apply",
+            "computed_expression_refused_without_owner_mutation",
+            "real_backend_kill_retains_dirty_parent_and_checkpoint_explicit_resume_no_replay"
+          ],
+          "errors": [
+            {
+              "code": "requestFailed",
+              "domain": "query_failed",
+              "details": {
+                "reason": "stale_version"
+              },
+              "message": "ExplorerError: requestFailed\n\tat responseError (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:24321:10)\n\tat BackendProcess.receive (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28481:22)\n\tat /home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28333:49\n\tat FrameReader.push (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28269:9)\n\tat Socket.<anonymous> (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28333:21)\n\tat Socket.emit (node:events:519:28)\n\tat addChunk (node:internal/streams/readable:561:12)\n\tat readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n\tat Readable.push (node:internal/streams/readable:392:5)\n\tat Pipe.onStreamRead (node:internal/stream_base_commons:189:23)"
+            },
+            {
+              "code": "sourceChanged",
+              "message": "ExplorerError: sourceChanged\n\tat QueryTabs.assertOwner (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:27800:13)\n\tat QueryTabs.save (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:27722:12)\n\tat async QueryTabs.apply (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:27260:7)\n\tat async /home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:35375:9\n\tat async xb._executeContributedCommand (file:///usr/share/codium/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:116:49352)\n\tat async exports.run (/home/akalsin/Documents/Projects/eska-vscode-explorer/test/query-bsl-host.cjs:149:5)"
+            },
+            {
+              "code": "requestFailed",
+              "domain": "query_failed",
+              "details": {
+                "reason": "user_read_only"
+              },
+              "message": "ExplorerError: requestFailed\n\tat responseError (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:24321:10)\n\tat BackendProcess.receive (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28481:22)\n\tat /home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28333:49\n\tat FrameReader.push (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28269:9)\n\tat Socket.<anonymous> (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28333:21)\n\tat Socket.emit (node:events:519:28)\n\tat addChunk (node:internal/streams/readable:561:12)\n\tat readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n\tat Readable.push (node:internal/streams/readable:392:5)\n\tat Pipe.onStreamRead (node:internal/stream_base_commons:189:23)"
+            },
+            {
+              "code": "requestFailed",
+              "domain": "query_failed",
+              "details": {
+                "reason": "unsupported_expression"
+              },
+              "message": "ExplorerError: requestFailed\n\tat responseError (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:24321:10)\n\tat BackendProcess.receive (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28481:22)\n\tat /home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28333:49\n\tat FrameReader.push (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28269:9)\n\tat Socket.<anonymous> (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28333:21)\n\tat Socket.emit (node:events:519:28)\n\tat addChunk (node:internal/streams/readable:561:12)\n\tat readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n\tat Readable.push (node:internal/streams/readable:392:5)\n\tat Pipe.onStreamRead (node:internal/stream_base_commons:189:23)"
+            },
+            {
+              "code": "connectionLost",
+              "message": "ExplorerError: connectionLost\n\tat ChildProcess.<anonymous> (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28314:60)\n\tat Object.onceWrapper (node:events:634:26)\n\tat ChildProcess.emit (node:events:519:28)\n\tat maybeClose (node:internal/child_process:1101:16)\n\tat ChildProcess._handle.onexit (node:internal/child_process:304:5)"
+            },
+            {
+              "code": "connectionLost",
+              "message": "ExplorerError: connectionLost\n\tat ChildProcess.<anonymous> (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28314:60)\n\tat Object.onceWrapper (node:events:634:26)\n\tat ChildProcess.emit (node:events:519:28)\n\tat maybeClose (node:internal/child_process:1101:16)\n\tat ChildProcess._handle.onexit (node:internal/child_process:304:5)"
+            },
+            {
+              "code": "requestFailed",
+              "domain": "query_failed",
+              "details": {
+                "reason": "user_read_only"
+              },
+              "message": "ExplorerError: requestFailed\n\tat responseError (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:24321:10)\n\tat BackendProcess.receive (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28481:22)\n\tat /home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28333:49\n\tat FrameReader.push (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28269:9)\n\tat Socket.<anonymous> (/home/akalsin/Documents/Projects/eska-playground/explorer-host-VLUA4Z/extensions/1c-tooling.eska-explorer-0.0.12/out/extension.js:28333:21)\n\tat Socket.emit (node:events:519:28)\n\tat addChunk (node:internal/streams/readable:561:12)\n\tat readableAddChunkPushByteMode (node:internal/streams/readable:512:3)\n\tat Readable.push (node:internal/streams/readable:392:5)\n\tat Pipe.onStreamRead (node:internal/stream_base_commons:189:23)"
+            }
+          ],
+          "sourceSessions": [
+            "query/sessionOpen",
+            "query/sessionGet",
+            "query/sessionPrepare",
+            "query/sessionClose",
+            "query/sessionOpen",
+            "query/sessionGet",
+            "query/sessionPrepare",
+            "query/sessionGet",
+            "query/sessionApplied",
+            "query/sessionClose",
+            "query/sessionOpen",
+            "query/sessionClose",
+            "query/sessionRestore",
+            "query/sessionGet",
+            "query/sessionResume",
+            "query/sessionClose",
+            "query/sessionOpen",
+            "query/sessionGet",
+            "query/sessionPrepare",
+            "query/sessionGet",
+            "query/sessionApplied",
+            "query/sessionClose",
+            "query/sessionOpen",
+            "query/sessionGet",
+            "query/sessionPrepare",
+            "query/sessionGet",
+            "query/sessionAbort",
+            "query/sessionClose",
+            "query/sessionOpen",
+            "query/sessionClose",
+            "query/sessionOpen",
+            "query/sessionGet",
+            "query/sessionPrepare",
+            "query/sessionClose",
+            "query/sessionOpen",
+            "query/sessionClose"
+          ]
+        }
+      ],
+      "constructor-final": [
+        {
+          "passed": true,
+          "suite": "query-constructor",
+          "accepted": [
+            "all_editable_splits_replaced_by_constructor_and_core_draft_lock",
+            "comments_follow_nodes_explicit_keep_and_same_draft_single_undo_redo",
+            "constructor_result_uses_existing_explicit_bsl_apply_without_disk_save",
+            "opening_and_applying_without_operations_preserves_exact_draft_and_owner",
+            "cancel_discards_only_unaccepted_constructor_operations_and_releases_its_lock",
+            "six_clause_operations_preserve_opaque_package_and_readonly_constructor_cannot_grant_write_access",
+            "xml_constructor_keeps_existing_draft_undo_and_explicit_source_comment_placement_without_owner_save",
+            "backend_crash_retains_checkpoint_discards_unaccepted_model_and_requires_explicit_resume"
+          ],
+          "errors": [],
+          "locale": "en"
+        }
+      ],
+      "normal-final-en": [
+        {
+          "passed": true,
+          "suite": "query-installed-normal",
+          "locale": "en",
+          "runtime": "/home/akalsin/Documents/Projects/eska-playground/explorer-host-MRFCOg/extensions/1c-tooling.eska-explorer-0.0.12",
+          "privateApiExported": false,
+          "actualDomActions": true,
+          "analyzerMetadataCompletion": true,
+          "sameDraft": true,
+          "unsavedModuleSingleUndo": true,
+          "diskUnchanged": true
+        }
+      ],
+      "normal-final-ru": [
+        {
+          "passed": true,
+          "suite": "query-installed-normal",
+          "locale": "ru",
+          "runtime": "/home/akalsin/Documents/Projects/eska-playground/explorer-host-RpLueQ/extensions/1c-tooling.eska-explorer-0.0.12",
+          "privateApiExported": false,
+          "actualDomActions": true,
+          "analyzerMetadataCompletion": true,
+          "sameDraft": true,
+          "unsavedModuleSingleUndo": true,
+          "diskUnchanged": true
+        }
+      ],
+      "readonly-final-ru": [
+        {
+          "passed": true,
+          "suite": "support-locked-query",
+          "input": {
+            "project": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo",
+            "module": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/buhmfo/src/CommonModules/GoogleПереводчик/Ext/Module.bsl",
+            "mode": "query",
+            "prefixA": "Орг.ИН",
+            "prefixB": "Орг.Ко",
+            "labelA": "ИНН",
+            "labelB": "Код",
+            "cacheRoots": [
+              "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/buhmfo/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/ExternalSystems/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/dzp_АвтоматическаяЗагрузкаВыписок/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/dzp_АдаптацияКодаТиповойКонфигурации/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/dzp_ЗаполнениеБанковскихВыписок/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/dzp_ИсправлениеОшибокКонфигурации/.eska"
+            ],
+            "operations": 6,
+            "readOnly": true
+          },
+          "locale": "ru",
+          "metadataCompletionFromReadonlySource": true,
+          "constructorCannotGrantWrite": true,
+          "nativeAndDiskUnchanged": true,
+          "errors": [
+            {
+              "code": "requestFailed",
+              "details": {
+                "reason": "user_read_only"
+              }
+            }
+          ],
+          "samples": {
+            "open": [
+              1308.6740659999998
+            ],
+            "firstCompletion": [
+              5619.839228000001
+            ]
+          }
+        }
+      ]
+    },
+    "platform": {
+      "complete": true,
+      "platformVersion": "8.3.27.2325",
+      "queriesExecuted": false,
+      "rpc": {
+        "passed": true,
+        "results": [
+          {
+            "locale": "en-US",
+            "rows": [
+              {
+                "source": "CommonTemplates/QuerySchema/Ext/Template.xml",
+                "query": "SELECT 21 AS N",
+                "sourceSha256": "ec13d18cc5191feca2eb4871799701e363832e16624fa530f678829bbc310cb0",
+                "replacements": 1,
+                "preservedBom": true,
+                "crlfOnly": true
+              },
+              {
+                "source": "CommonForms/QueryLists/Ext/Form.xml",
+                "query": "SELECT 21 AS N",
+                "sourceSha256": "26b8e69073e4731fb2c48a13e00769cff37f3f2de309255d8d9addd00018777d",
+                "replacements": 1,
+                "preservedBom": true,
+                "crlfOnly": true
+              },
+              {
+                "source": "CommonModules/QueryBSL/Ext/Module.bsl",
+                "query": "SELECT 21 AS N",
+                "sourceSha256": "6711c50b5cba4f8794f4f1b0b94a2508c431ac4bb898e00b4c0a5414b861bea1",
+                "replacements": 1,
+                "preservedBom": true,
+                "crlfOnly": true
+              }
+            ]
+          },
+          {
+            "locale": "ru-RU",
+            "rows": [
+              {
+                "source": "CommonTemplates/QuerySchema/Ext/Template.xml",
+                "query": "SELECT 31 AS N",
+                "sourceSha256": "2fcb7464adcb84fe9f8b4ebce08935b45af3c5ec80abac30084fba8cc3cef849",
+                "replacements": 1,
+                "preservedBom": true,
+                "crlfOnly": true
+              },
+              {
+                "source": "CommonForms/QueryLists/Ext/Form.xml",
+                "query": "SELECT 31 AS N",
+                "sourceSha256": "162dddcc03936e162082da8f0398d9eecd1efd25ed58877a65f2df71dcf15f55",
+                "replacements": 1,
+                "preservedBom": true,
+                "crlfOnly": true
+              },
+              {
+                "source": "CommonModules/QueryBSL/Ext/Module.bsl",
+                "query": "SELECT 31 AS N",
+                "sourceSha256": "57ee78eb95f7078281d9312c05d92b60341a336d4e8becf4f00c159323fca3d3",
+                "replacements": 1,
+                "preservedBom": true,
+                "crlfOnly": true
+              }
+            ]
+          }
+        ]
+      },
+      "changedSources": [
+        "CommonForms/QueryLists/Ext/Form.xml",
+        "CommonModules/QueryBSL/Ext/Module.bsl",
+        "CommonTemplates/QuerySchema/Ext/Template.xml"
+      ],
+      "sourceBefore": {
+        "Configuration.xml": "25c60d6ef4db3ea9237a08179f05f81ed6396d984003dc89125b912dc848c1bf",
+        "ConfigDumpInfo.xml": "d9e1739e465860bb72377119299cc362ad569950994ec8c349830884551477e9",
+        "Languages/English.xml": "60d8dbb80f4ef018a9d653cbd2b4f15442135622685fa9910bfdbfd81acd33e6",
+        "CommonTemplates/QuerySchema.xml": "b27a78e3776107d649fb68d3b060fc50e8e58e1a199ce99bb2696812d4831754",
+        "CommonForms/QueryLists.xml": "20f8dcc7c208855facfbe824d0b2a372d5d8eec10ce7ad0fac16f42778b09fea",
+        "Ext/ParentConfigurations.bin": "597421127acd97300b1d9d4731e5c816031fab292c3bc098ad40a0c29c424a26",
+        "CommonModules/QueryBSL.xml": "152bdb05fa8a08f9c742439293a428bb24a1dfb5b305965555ea384de6f8d1d7",
+        "CommonModules/QueryBSL/Ext/Module.bsl": "fca0f714bf69166b8aebd33f5b0a1c46d25acbec9e0d84de4493da24c835e4d6",
+        "CommonForms/QueryLists/Ext/Form.xml": "d0420bee05fa8aa4e8d5508b65104f988b0c91b90763b4add73a8205a5a834f7",
+        "CommonTemplates/QuerySchema/Ext/Template.xml": "a8f2902d3b99570ed7ec18d8d23fd063dafa44d17915f422f54af6e7b9f0b85a"
+      },
+      "sourceAfter": {
+        "Configuration.xml": "25c60d6ef4db3ea9237a08179f05f81ed6396d984003dc89125b912dc848c1bf",
+        "ConfigDumpInfo.xml": "d9e1739e465860bb72377119299cc362ad569950994ec8c349830884551477e9",
+        "Languages/English.xml": "60d8dbb80f4ef018a9d653cbd2b4f15442135622685fa9910bfdbfd81acd33e6",
+        "CommonTemplates/QuerySchema.xml": "b27a78e3776107d649fb68d3b060fc50e8e58e1a199ce99bb2696812d4831754",
+        "CommonForms/QueryLists.xml": "20f8dcc7c208855facfbe824d0b2a372d5d8eec10ce7ad0fac16f42778b09fea",
+        "Ext/ParentConfigurations.bin": "597421127acd97300b1d9d4731e5c816031fab292c3bc098ad40a0c29c424a26",
+        "CommonModules/QueryBSL.xml": "152bdb05fa8a08f9c742439293a428bb24a1dfb5b305965555ea384de6f8d1d7",
+        "CommonModules/QueryBSL/Ext/Module.bsl": "57ee78eb95f7078281d9312c05d92b60341a336d4e8becf4f00c159323fca3d3",
+        "CommonForms/QueryLists/Ext/Form.xml": "162dddcc03936e162082da8f0398d9eecd1efd25ed58877a65f2df71dcf15f55",
+        "CommonTemplates/QuerySchema/Ext/Template.xml": "2fcb7464adcb84fe9f8b4ebce08935b45af3c5ec80abac30084fba8cc3cef849"
+      },
+      "schemaQueries": [
+        "SELECT 31 AS N",
+        "SELECT 2 AS N"
+      ],
+      "listQueries": [
+        "SELECT 31 AS N"
+      ],
+      "exportedBslQuery": "SELECT 31 AS N",
+      "artifactSha256": "cea18c2f5f7c23159bdb47ff5668359f55eb272385fd9153d8d812b8fe0dcd33",
+      "artifactBytes": 82462,
+      "projectSha256": "90b7dc163b6843dc5e5b85f1851c0c7a86040619fd0f25572c151f43bb0aa2aa",
+      "builderSha256": "faad60307010238972fa86e600f9ec4c305ebaf7f481d99bb618f5585c48b5db",
+      "sourceUnchangedByBuild": true
+    }
+  },
+  "composition": {
+    "application": "buhmfo",
+    "configurationAndExtensions": [
+      {
+        "member": "ExternalSystems",
+        "rootBytes": 10878,
+        "declaredTopLevelObjects": 89,
+        "kinds": {
+          "Language": 1,
+          "StyleItem": 7,
+          "CommonPicture": 12,
+          "SessionParameter": 1,
+          "Role": 1,
+          "WebService": 2,
+          "DefinedType": 1,
+          "CommonCommand": 1,
+          "Catalog": 20,
+          "Document": 21,
+          "Enum": 13,
+          "InformationRegister": 5,
+          "AccumulationRegister": 1,
+          "ChartOfCharacteristicTypes": 3
+        },
+        "rootSha256": "33a4bd2b5e2600952ebf2edde91f4c9632943bd5af5acd5942ffe2cf79847da2"
+      },
+      {
+        "member": "buhmfo",
+        "rootBytes": 1800224,
+        "declaredTopLevelObjects": 19044,
+        "kinds": {
+          "CommonModule": 3879,
+          "Language": 1,
+          "Subsystem": 111,
+          "StyleItem": 542,
+          "CommonPicture": 2139,
+          "SessionParameter": 114,
+          "Role": 766,
+          "CommonTemplate": 305,
+          "FilterCriterion": 12,
+          "CommonAttribute": 7,
+          "ExchangePlan": 29,
+          "XDTOPackage": 441,
+          "WebService": 20,
+          "HTTPService": 11,
+          "WSReference": 2,
+          "EventSubscription": 534,
+          "ScheduledJob": 192,
+          "SettingsStorage": 3,
+          "FunctionalOption": 649,
+          "FunctionalOptionsParameter": 8,
+          "DefinedType": 537,
+          "CommonCommand": 700,
+          "CommandGroup": 45,
+          "Constant": 866,
+          "CommonForm": 463,
+          "Catalog": 1018,
+          "Document": 633,
+          "DocumentNumerator": 1,
+          "Sequence": 5,
+          "DocumentJournal": 44,
+          "Enum": 1562,
+          "Report": 926,
+          "DataProcessor": 451,
+          "InformationRegister": 1766,
+          "AccumulationRegister": 226,
+          "ChartOfCharacteristicTypes": 18,
+          "ChartOfAccounts": 2,
+          "AccountingRegister": 2,
+          "ChartOfCalculationTypes": 3,
+          "BusinessProcess": 9,
+          "Task": 1,
+          "IntegrationService": 1
+        },
+        "rootSha256": "b32179fe55381c36846074a24a11b77bd444620c599827d761ab2d87a9db6efb"
+      },
+      {
+        "member": "dzp_АвтоматическаяЗагрузкаВыписок",
+        "rootBytes": 6343,
+        "declaredTopLevelObjects": 29,
+        "kinds": {
+          "Language": 1,
+          "Subsystem": 1,
+          "StyleItem": 5,
+          "CommonPicture": 3,
+          "Role": 1,
+          "CommonModule": 3,
+          "ScheduledJob": 5,
+          "CommonCommand": 1,
+          "CommonForm": 1,
+          "Catalog": 4,
+          "Document": 1,
+          "Enum": 1,
+          "DataProcessor": 1,
+          "InformationRegister": 1
+        },
+        "rootSha256": "935bf9d63cca89bdc64a913c48ced5312411c4699ee01167c3e1ac5445ca89fd"
+      },
+      {
+        "member": "dzp_АдаптацияКодаТиповойКонфигурации",
+        "rootBytes": 14764,
+        "declaredTopLevelObjects": 130,
+        "kinds": {
+          "Language": 1,
+          "Subsystem": 4,
+          "StyleItem": 16,
+          "CommonPicture": 11,
+          "Role": 2,
+          "CommonModule": 16,
+          "ScheduledJob": 1,
+          "DefinedType": 1,
+          "CommonCommand": 1,
+          "Constant": 1,
+          "CommonForm": 3,
+          "Catalog": 16,
+          "Document": 18,
+          "Enum": 12,
+          "Report": 16,
+          "DataProcessor": 3,
+          "InformationRegister": 5,
+          "ChartOfCharacteristicTypes": 1,
+          "ChartOfAccounts": 1,
+          "AccountingRegister": 1
+        },
+        "rootSha256": "c998c2d911013481b2baa7b20e601d2aa02814e7b87fd7163eb8267365cca8bf"
+      },
+      {
+        "member": "dzp_ЗаполнениеБанковскихВыписок",
+        "rootBytes": 7638,
+        "declaredTopLevelObjects": 47,
+        "kinds": {
+          "Language": 1,
+          "Subsystem": 2,
+          "CommonPicture": 7,
+          "SessionParameter": 1,
+          "Role": 2,
+          "CommonTemplate": 8,
+          "CommonModule": 3,
+          "EventSubscription": 1,
+          "Constant": 3,
+          "Catalog": 8,
+          "Document": 2,
+          "Enum": 4,
+          "DataProcessor": 3,
+          "InformationRegister": 2
+        },
+        "rootSha256": "b120b3b7a9249f297205ac082c17c0741caf00cb8899aa440b94ca9fb3032d8f"
+      },
+      {
+        "member": "dzp_ИсправлениеОшибокКонфигурации",
+        "rootBytes": 6114,
+        "declaredTopLevelObjects": 27,
+        "kinds": {
+          "Language": 1,
+          "StyleItem": 3,
+          "CommonPicture": 4,
+          "Role": 1,
+          "CommonModule": 8,
+          "CommonCommand": 1,
+          "CommonForm": 1,
+          "Catalog": 1,
+          "Document": 4,
+          "Enum": 1,
+          "Report": 2
+        },
+        "rootSha256": "3cbb296c486994edb7698f549a145cd817a7e2f107236f4c87d1b640847c7020"
+      }
+    ],
+    "probes": "ESKAQueryAcceptance is an added writable module; GoogleПереводчик is an existing support-prohibited module. Both contain a synthetic SELECT probe in the isolated copy only.",
+    "query": "SELECT Орг.ИН\nFROM Catalog.Организации AS Орг",
+    "alternateField": "Орг.Ко -> Код",
+    "constructor": "append a constant field AS Bench"
+  },
+  "performance": {
+    "schemaVersion": 1,
+    "complete": true,
+    "runs": 20,
+    "cohorts": {
+      "cold": 5,
+      "repeat": 5
+    },
+    "cyclesPerRun": 6,
+    "measuredOperationsPerRun": {
+      "ordinary": 30,
+      "query": 48
+    },
+    "p95": "nearest rank",
+    "coldDefinition": "fresh native profile and ESKA cache removal; OS page cache is not flushed",
+    "repeatDefinition": "same cohort native profile and project caches, a new native window and fresh analyzer process",
+    "resourceSampling": "owned descendants by PID/start time; RSS/CPU/IO about 100 ms, PSS about 500 ms; retained values precede shutdown and exclude the first idle second",
+    "runtimeBundleSha256": "362af1e8feea4b40437d373e0daed28d785f829a1e66cb14928d20619d1c08d5",
+    "probeSha256": "c3fd8c08c503e86f9cb9f8a6717cb9e94ec3ef9b6b86a00f734c6fd4dcd0ae9a",
+    "aggregates": {
+      "cold": {
+        "ordinary": {
+          "timingsMs": {
+            "close": {
+              "n": 30,
+              "median": 49.58905849999974,
+              "p95": 91.75981599999977,
+              "min": 41.72019399999954,
+              "max": 134.03626099999929
+            },
+            "editCompletion": {
+              "n": 30,
+              "median": 504.7633094999992,
+              "p95": 728.1642740000007,
+              "min": 164.64112300000124,
+              "max": 852.5150350000004
+            },
+            "editDiagnostics": {
+              "n": 30,
+              "median": 27.688529999999446,
+              "p95": 191.92691000000013,
+              "min": 24.468386000000464,
+              "max": 204.74147999999877
+            },
+            "firstCompletion": {
+              "n": 5,
+              "median": 6687.785612000001,
+              "p95": 6985.370293,
+              "min": 6366.830604,
+              "max": 6985.370293
+            },
+            "open": {
+              "n": 30,
+              "median": 54.639406000000236,
+              "p95": 121.94800499999997,
+              "min": 28.74593400000049,
+              "max": 128.62612199999967
+            },
+            "repairCompletion": {
+              "n": 30,
+              "median": 163.78581849999955,
+              "p95": 545.8033029999988,
+              "min": 136.23042499999974,
+              "max": 611.3973060000008
+            },
+            "metadataReadyMs": {
+              "n": 5,
+              "median": 328.966097,
+              "p95": 392.61345499999993,
+              "min": 307.5439180000001,
+              "max": 392.61345499999993
+            },
+            "languageReadyMs": {
+              "n": 5,
+              "median": 7295.318822,
+              "p95": 7561.348859,
+              "min": 6930.598236,
+              "max": 7561.348859
+            }
+          },
+          "resources": {
+            "peakRssBytes": {
+              "n": 5,
+              "median": 2583908352,
+              "p95": 2639785984,
+              "min": 2494726144,
+              "max": 2639785984
+            },
+            "peakPssBytes": {
+              "n": 5,
+              "median": 1529608192,
+              "p95": 1541047296,
+              "min": 1519983616,
+              "max": 1541047296
+            },
+            "remainingRssBytes": {
+              "n": 5,
+              "median": 2577059840,
+              "p95": 2609848320,
+              "min": 2490572800,
+              "max": 2609848320
+            },
+            "remainingPssBytes": {
+              "n": 5,
+              "median": 1482233856,
+              "p95": 1505635328,
+              "min": 1469979648,
+              "max": 1505635328
+            },
+            "cpuSeconds": {
+              "n": 5,
+              "median": 61.59,
+              "p95": 65.43,
+              "min": 60.91,
+              "max": 65.43
+            },
+            "read_bytes": {
+              "n": 5,
+              "median": 120532992,
+              "p95": 534949888,
+              "min": 62038016,
+              "max": 534949888
+            },
+            "write_bytes": {
+              "n": 5,
+              "median": 64991232,
+              "p95": 83918848,
+              "min": 59928576,
+              "max": 83918848
+            },
+            "rchar": {
+              "n": 5,
+              "median": 4462601044,
+              "p95": 6597257176,
+              "min": 4376322070,
+              "max": 6597257176
+            },
+            "wchar": {
+              "n": 5,
+              "median": 59836071,
+              "p95": 78095272,
+              "min": 57229191,
+              "max": 78095272
+            }
+          }
+        },
+        "query": {
+          "timingsMs": {
+            "apply": {
+              "n": 30,
+              "median": 228.8282480000007,
+              "p95": 313.8390180000024,
+              "min": 203.26472800000192,
+              "max": 335.19121799999994
+            },
+            "cancel": {
+              "n": 30,
+              "median": 76.19458099999974,
+              "p95": 123.04694399999971,
+              "min": 49.693561000000045,
+              "max": 138.28388099999938
+            },
+            "constructor": {
+              "n": 30,
+              "median": 252.76407199999994,
+              "p95": 377.95710099999997,
+              "min": 187.82685800000036,
+              "max": 424.4736430000012
+            },
+            "editCompletion": {
+              "n": 30,
+              "median": 385.674481,
+              "p95": 582.1432719999975,
+              "min": 242.12727300000006,
+              "max": 616.4034379999994
+            },
+            "editDiagnostics": {
+              "n": 30,
+              "median": 328.7001805000009,
+              "p95": 420.3994249999996,
+              "min": 309.427952,
+              "max": 436.2555109999994
+            },
+            "firstCompletion": {
+              "n": 5,
+              "median": 5609.659706,
+              "p95": 6231.754874,
+              "min": 5340.379063999999,
+              "max": 6231.754874
+            },
+            "open": {
+              "n": 30,
+              "median": 481.1080519999996,
+              "p95": 1433.950855,
+              "min": 401.1852260000014,
+              "max": 1482.80429
+            },
+            "openForCancel": {
+              "n": 30,
+              "median": 399.6302905000002,
+              "p95": 490.1473449999976,
+              "min": 328.5103909999998,
+              "max": 599.8321670000005
+            },
+            "repairCompletion": {
+              "n": 30,
+              "median": 227.41613699999925,
+              "p95": 323.32269499999893,
+              "min": 206.12295900000026,
+              "max": 333.66958299999897
+            },
+            "metadataReadyMs": {
+              "n": 5,
+              "median": 377.9404850000001,
+              "p95": 456.957128,
+              "min": 332.7510380000001,
+              "max": 456.957128
+            },
+            "languageReadyMs": {
+              "n": 5,
+              "median": 7593.30783,
+              "p95": 8150.429423,
+              "min": 7282.078489,
+              "max": 8150.429423
+            }
+          },
+          "resources": {
+            "peakRssBytes": {
+              "n": 5,
+              "median": 2691776512,
+              "p95": 2723504128,
+              "min": 2627137536,
+              "max": 2723504128
+            },
+            "peakPssBytes": {
+              "n": 5,
+              "median": 1678894080,
+              "p95": 1750329344,
+              "min": 1668478976,
+              "max": 1750329344
+            },
+            "remainingRssBytes": {
+              "n": 5,
+              "median": 2540097536,
+              "p95": 2612699136,
+              "min": 2510962688,
+              "max": 2612699136
+            },
+            "remainingPssBytes": {
+              "n": 5,
+              "median": 1610482688,
+              "p95": 1677412352,
+              "min": 1587185664,
+              "max": 1677412352
+            },
+            "cpuSeconds": {
+              "n": 5,
+              "median": 102.58,
+              "p95": 106.61,
+              "min": 101.73,
+              "max": 106.61
+            },
+            "read_bytes": {
+              "n": 5,
+              "median": 61775872,
+              "p95": 438276096,
+              "min": 49086464,
+              "max": 438276096
+            },
+            "write_bytes": {
+              "n": 5,
+              "median": 80359424,
+              "p95": 100134912,
+              "min": 75694080,
+              "max": 100134912
+            },
+            "rchar": {
+              "n": 5,
+              "median": 10320161309,
+              "p95": 10391234141,
+              "min": 10203256730,
+              "max": 10391234141
+            },
+            "wchar": {
+              "n": 5,
+              "median": 71426076,
+              "p95": 90628251,
+              "min": 67374822,
+              "max": 90628251
+            }
+          }
+        }
+      },
+      "repeat": {
+        "ordinary": {
+          "timingsMs": {
+            "close": {
+              "n": 30,
+              "median": 51.093408499999896,
+              "p95": 89.18076099999962,
+              "min": 39.46073299999989,
+              "max": 97.05597499999931
+            },
+            "editCompletion": {
+              "n": 30,
+              "median": 490.54232200000024,
+              "p95": 573.5263720000003,
+              "min": 164.7542510000003,
+              "max": 653.2220770000004
+            },
+            "editDiagnostics": {
+              "n": 30,
+              "median": 27.70971399999962,
+              "p95": 146.54049899999882,
+              "min": 24.14824100000078,
+              "max": 147.84182899999905
+            },
+            "firstCompletion": {
+              "n": 5,
+              "median": 6360.349666,
+              "p95": 6766.716541000001,
+              "min": 5650.7726219999995,
+              "max": 6766.716541000001
+            },
+            "open": {
+              "n": 30,
+              "median": 47.96622599999955,
+              "p95": 87.86224599999991,
+              "min": 30.19171499999902,
+              "max": 92.15195399999993
+            },
+            "repairCompletion": {
+              "n": 30,
+              "median": 157.30585950000022,
+              "p95": 285.1108839999997,
+              "min": 130.26191500000095,
+              "max": 292.6293829999995
+            },
+            "metadataReadyMs": {
+              "n": 5,
+              "median": 291.46909600000004,
+              "p95": 333.32485199999996,
+              "min": 244.26713199999995,
+              "max": 333.32485199999996
+            },
+            "languageReadyMs": {
+              "n": 5,
+              "median": 6861.830470000001,
+              "p95": 7325.066774999999,
+              "min": 6020.538322,
+              "max": 7325.066774999999
+            }
+          },
+          "resources": {
+            "peakRssBytes": {
+              "n": 5,
+              "median": 2546204672,
+              "p95": 2585657344,
+              "min": 2409730048,
+              "max": 2585657344
+            },
+            "peakPssBytes": {
+              "n": 5,
+              "median": 1533389824,
+              "p95": 1552467968,
+              "min": 1472217088,
+              "max": 1552467968
+            },
+            "remainingRssBytes": {
+              "n": 5,
+              "median": 2522365952,
+              "p95": 2579058688,
+              "min": 2391932928,
+              "max": 2579058688
+            },
+            "remainingPssBytes": {
+              "n": 5,
+              "median": 1468858368,
+              "p95": 1504241664,
+              "min": 1460098048,
+              "max": 1504241664
+            },
+            "cpuSeconds": {
+              "n": 5,
+              "median": 58.72,
+              "p95": 62.51,
+              "min": 50.41,
+              "max": 62.51
+            },
+            "read_bytes": {
+              "n": 5,
+              "median": 37900288,
+              "p95": 171483136,
+              "min": 8634368,
+              "max": 171483136
+            },
+            "write_bytes": {
+              "n": 5,
+              "median": 8065024,
+              "p95": 17350656,
+              "min": 7933952,
+              "max": 17350656
+            },
+            "rchar": {
+              "n": 5,
+              "median": 4425873084,
+              "p95": 4514822786,
+              "min": 4277166847,
+              "max": 4514822786
+            },
+            "wchar": {
+              "n": 5,
+              "median": 8168820,
+              "p95": 15336263,
+              "min": 8112173,
+              "max": 15336263
+            }
+          }
+        },
+        "query": {
+          "timingsMs": {
+            "apply": {
+              "n": 30,
+              "median": 209.92561650000061,
+              "p95": 243.77688099999796,
+              "min": 180.7145169999967,
+              "max": 384.2549629999994
+            },
+            "cancel": {
+              "n": 30,
+              "median": 64.85380149999946,
+              "p95": 108.54620100000102,
+              "min": 50.406386999999086,
+              "max": 117.64459700000043
+            },
+            "constructor": {
+              "n": 30,
+              "median": 252.91102649999993,
+              "p95": 344.90765099999953,
+              "min": 203.92391900000075,
+              "max": 378.5771599999989
+            },
+            "editCompletion": {
+              "n": 30,
+              "median": 286.7894329999999,
+              "p95": 475.4670249999999,
+              "min": 216.30766500000027,
+              "max": 491.5218180000011
+            },
+            "editDiagnostics": {
+              "n": 30,
+              "median": 311.0342204999997,
+              "p95": 332.4585740000002,
+              "min": 286.0033280000007,
+              "max": 335.3677349999998
+            },
+            "firstCompletion": {
+              "n": 5,
+              "median": 5228.386170999999,
+              "p95": 5366.3487270000005,
+              "min": 4885.066191,
+              "max": 5366.3487270000005
+            },
+            "open": {
+              "n": 30,
+              "median": 455.8266125000009,
+              "p95": 1384.8035189999998,
+              "min": 387.6612129999994,
+              "max": 1459.1610930000002
+            },
+            "openForCancel": {
+              "n": 30,
+              "median": 354.2004324999998,
+              "p95": 441.412601,
+              "min": 286.27735100000064,
+              "max": 447.12519200000315
+            },
+            "repairCompletion": {
+              "n": 30,
+              "median": 213.16900800000076,
+              "p95": 422.9361119999994,
+              "min": 176.31015900000057,
+              "max": 515.4710909999994
+            },
+            "metadataReadyMs": {
+              "n": 5,
+              "median": 290.17572299999983,
+              "p95": 330.72916199999986,
+              "min": 245.46891699999992,
+              "max": 330.72916199999986
+            },
+            "languageReadyMs": {
+              "n": 5,
+              "median": 7022.48265,
+              "p95": 7144.381354,
+              "min": 6444.6156550000005,
+              "max": 7144.381354
+            }
+          },
+          "resources": {
+            "peakRssBytes": {
+              "n": 5,
+              "median": 2680156160,
+              "p95": 2708164608,
+              "min": 2636656640,
+              "max": 2708164608
+            },
+            "peakPssBytes": {
+              "n": 5,
+              "median": 1664441344,
+              "p95": 1691320320,
+              "min": 1635939328,
+              "max": 1691320320
+            },
+            "remainingRssBytes": {
+              "n": 5,
+              "median": 2546507776,
+              "p95": 2570440704,
+              "min": 2522972160,
+              "max": 2570440704
+            },
+            "remainingPssBytes": {
+              "n": 5,
+              "median": 1616171008,
+              "p95": 1643133952,
+              "min": 1601565696,
+              "max": 1643133952
+            },
+            "cpuSeconds": {
+              "n": 5,
+              "median": 95.31,
+              "p95": 98.67,
+              "min": 86.19,
+              "max": 98.67
+            },
+            "read_bytes": {
+              "n": 5,
+              "median": 69328896,
+              "p95": 250109952,
+              "min": 4456448,
+              "max": 250109952
+            },
+            "write_bytes": {
+              "n": 5,
+              "median": 25403392,
+              "p95": 26497024,
+              "min": 15949824,
+              "max": 26497024
+            },
+            "rchar": {
+              "n": 5,
+              "median": 10320691622,
+              "p95": 10349903560,
+              "min": 7231534359,
+              "max": 10349903560
+            },
+            "wchar": {
+              "n": 5,
+              "median": 19897826,
+              "p95": 21630793,
+              "min": 15213115,
+              "max": 21630793
+            }
+          }
+        }
+      }
+    },
+    "runsDetail": [
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-ordinary-20-en-cold",
+        "phase": "cold",
+        "round": 20,
+        "mode": "ordinary",
+        "passed": true,
+        "metadataReadyMs": 326.82188900000006,
+        "languageReadyMs": 7561.348859,
+        "resources": {
+          "peakRssBytes": 2613141504,
+          "peakPssBytes": 1525087232,
+          "cpuSeconds": 61.57,
+          "read_bytes": 534949888,
+          "write_bytes": 64991232,
+          "rchar": 4411695482,
+          "wchar": 59836071,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2591121408,
+          "remainingPssBytes": 1482233856
+        },
+        "initialStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 189612032,
+            "Pss": 111253504
+          },
+          "project": {
+            "Rss": 98840576,
+            "Pss": 96969728
+          },
+          "analyzer": {
+            "Rss": 425603072,
+            "Pss": 421636096
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 191516672,
+            "Pss": 111951872
+          },
+          "project": {
+            "Rss": 98840576,
+            "Pss": 96969728
+          },
+          "analyzer": {
+            "Rss": 337768448,
+            "Pss": 333766656
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-ordinary-20-en-repeat",
+        "phase": "repeat",
+        "round": 20,
+        "mode": "ordinary",
+        "passed": true,
+        "metadataReadyMs": 333.32485199999996,
+        "languageReadyMs": 7325.066774999999,
+        "resources": {
+          "peakRssBytes": 2585657344,
+          "peakPssBytes": 1520846848,
+          "cpuSeconds": 62.51,
+          "read_bytes": 70643712,
+          "write_bytes": 17350656,
+          "rchar": 4514822786,
+          "wchar": 15336263,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2579058688,
+          "remainingPssBytes": 1468858368
+        },
+        "initialStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 188952576,
+            "Pss": 111065088
+          },
+          "project": {
+            "Rss": 89337856,
+            "Pss": 87536640
+          },
+          "analyzer": {
+            "Rss": 394706944,
+            "Pss": 390641664
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 190267392,
+            "Pss": 111129600
+          },
+          "project": {
+            "Rss": 89341952,
+            "Pss": 87540736
+          },
+          "analyzer": {
+            "Rss": 337027072,
+            "Pss": 332918784
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-ordinary-21-en-cold",
+        "phase": "cold",
+        "round": 21,
+        "mode": "ordinary",
+        "passed": true,
+        "metadataReadyMs": 377.439157,
+        "languageReadyMs": 7295.318822,
+        "resources": {
+          "peakRssBytes": 2494726144,
+          "peakPssBytes": 1529608192,
+          "cpuSeconds": 65.43,
+          "read_bytes": 305950720,
+          "write_bytes": 82575360,
+          "rchar": 6597257176,
+          "wchar": 78095272,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2490572800,
+          "remainingPssBytes": 1469979648
+        },
+        "initialStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 188715008,
+            "Pss": 110892032
+          },
+          "project": {
+            "Rss": 98861056,
+            "Pss": 97068032
+          },
+          "analyzer": {
+            "Rss": 427544576,
+            "Pss": 423669760
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 190676992,
+            "Pss": 111842304
+          },
+          "project": {
+            "Rss": 98865152,
+            "Pss": 97072128
+          },
+          "analyzer": {
+            "Rss": 338120704,
+            "Pss": 334202880
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-ordinary-21-en-repeat",
+        "phase": "repeat",
+        "round": 21,
+        "mode": "ordinary",
+        "passed": true,
+        "metadataReadyMs": 286.2999500000001,
+        "languageReadyMs": 6983.619719,
+        "resources": {
+          "peakRssBytes": 2542006272,
+          "peakPssBytes": 1552467968,
+          "cpuSeconds": 58.71,
+          "read_bytes": 35749888,
+          "write_bytes": 8065024,
+          "rchar": 4277171493,
+          "wchar": 8128313,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2522365952,
+          "remainingPssBytes": 1504241664
+        },
+        "initialStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 187813888,
+            "Pss": 109946880
+          },
+          "project": {
+            "Rss": 89260032,
+            "Pss": 87467008
+          },
+          "analyzer": {
+            "Rss": 421646336,
+            "Pss": 417707008
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 190181376,
+            "Pss": 111400960
+          },
+          "project": {
+            "Rss": 89268224,
+            "Pss": 87475200
+          },
+          "analyzer": {
+            "Rss": 336240640,
+            "Pss": 332258304
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-ordinary-22-en-cold",
+        "phase": "cold",
+        "round": 22,
+        "mode": "ordinary",
+        "passed": true,
+        "metadataReadyMs": 328.966097,
+        "languageReadyMs": 6930.598236,
+        "resources": {
+          "peakRssBytes": 2583908352,
+          "peakPssBytes": 1541047296,
+          "cpuSeconds": 62.37,
+          "read_bytes": 120532992,
+          "write_bytes": 59928576,
+          "rchar": 4376322070,
+          "wchar": 57229191,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2577059840,
+          "remainingPssBytes": 1477453824
+        },
+        "initialStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 189149184,
+            "Pss": 111288320
+          },
+          "project": {
+            "Rss": 98897920,
+            "Pss": 97019904
+          },
+          "analyzer": {
+            "Rss": 412237824,
+            "Pss": 408363008
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 190160896,
+            "Pss": 111021056
+          },
+          "project": {
+            "Rss": 98897920,
+            "Pss": 97019904
+          },
+          "analyzer": {
+            "Rss": 337317888,
+            "Pss": 333400064
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-ordinary-22-en-repeat",
+        "phase": "repeat",
+        "round": 22,
+        "mode": "ordinary",
+        "passed": true,
+        "metadataReadyMs": 291.46909600000004,
+        "languageReadyMs": 6758.024224999999,
+        "resources": {
+          "peakRssBytes": 2546204672,
+          "peakPssBytes": 1533499392,
+          "cpuSeconds": 58.72,
+          "read_bytes": 37900288,
+          "write_bytes": 8032256,
+          "rchar": 4277166847,
+          "wchar": 8112173,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2479468544,
+          "remainingPssBytes": 1469455360
+        },
+        "initialStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 190595072,
+            "Pss": 112318464
+          },
+          "project": {
+            "Rss": 89415680,
+            "Pss": 87537664
+          },
+          "analyzer": {
+            "Rss": 417738752,
+            "Pss": 413673472
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 192655360,
+            "Pss": 113500160
+          },
+          "project": {
+            "Rss": 89419776,
+            "Pss": 87541760
+          },
+          "analyzer": {
+            "Rss": 334647296,
+            "Pss": 330539008
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-ordinary-23-en-cold",
+        "phase": "cold",
+        "round": 23,
+        "mode": "ordinary",
+        "passed": true,
+        "metadataReadyMs": 307.5439180000001,
+        "languageReadyMs": 7521.812119,
+        "resources": {
+          "peakRssBytes": 2639785984,
+          "peakPssBytes": 1539085312,
+          "cpuSeconds": 61.59,
+          "read_bytes": 62038016,
+          "write_bytes": 83918848,
+          "rchar": 6476096430,
+          "wchar": 77556561,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2609848320,
+          "remainingPssBytes": 1505635328
+        },
+        "initialStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 189501440,
+            "Pss": 111585280
+          },
+          "project": {
+            "Rss": 98881536,
+            "Pss": 97068032
+          },
+          "analyzer": {
+            "Rss": 394903552,
+            "Pss": 390903808
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 190693376,
+            "Pss": 111544320
+          },
+          "project": {
+            "Rss": 98881536,
+            "Pss": 97067008
+          },
+          "analyzer": {
+            "Rss": 338444288,
+            "Pss": 334309376
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-ordinary-23-en-repeat",
+        "phase": "repeat",
+        "round": 23,
+        "mode": "ordinary",
+        "passed": true,
+        "metadataReadyMs": 308.52186500000016,
+        "languageReadyMs": 6861.830470000001,
+        "resources": {
+          "peakRssBytes": 2409730048,
+          "peakPssBytes": 1533389824,
+          "cpuSeconds": 60.02,
+          "read_bytes": 8634368,
+          "write_bytes": 7933952,
+          "rchar": 4425873084,
+          "wchar": 8168820,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2391932928,
+          "remainingPssBytes": 1460098048
+        },
+        "initialStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 190177280,
+            "Pss": 112242688
+          },
+          "project": {
+            "Rss": 89202688,
+            "Pss": 87397376
+          },
+          "analyzer": {
+            "Rss": 416059392,
+            "Pss": 411925504
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 190783488,
+            "Pss": 112325632
+          },
+          "project": {
+            "Rss": 99721216,
+            "Pss": 97915904
+          },
+          "analyzer": {
+            "Rss": 335802368,
+            "Pss": 331615232
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-ordinary-24-en-cold",
+        "phase": "cold",
+        "round": 24,
+        "mode": "ordinary",
+        "passed": true,
+        "metadataReadyMs": 392.61345499999993,
+        "languageReadyMs": 6969.854573999999,
+        "resources": {
+          "peakRssBytes": 2557988864,
+          "peakPssBytes": 1519983616,
+          "cpuSeconds": 60.91,
+          "read_bytes": 95969280,
+          "write_bytes": 64307200,
+          "rchar": 4462601044,
+          "wchar": 59676828,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2504740864,
+          "remainingPssBytes": 1484610560
+        },
+        "initialStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 189898752,
+            "Pss": 111367168
+          },
+          "project": {
+            "Rss": 98762752,
+            "Pss": 96965632
+          },
+          "analyzer": {
+            "Rss": 425259008,
+            "Pss": 421384192
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 191107072,
+            "Pss": 111679488
+          },
+          "project": {
+            "Rss": 98766848,
+            "Pss": 96969728
+          },
+          "analyzer": {
+            "Rss": 339628032,
+            "Pss": 335719424
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-ordinary-24-en-repeat",
+        "phase": "repeat",
+        "round": 24,
+        "mode": "ordinary",
+        "passed": true,
+        "metadataReadyMs": 244.26713199999995,
+        "languageReadyMs": 6020.538322,
+        "resources": {
+          "peakRssBytes": 2565378048,
+          "peakPssBytes": 1472217088,
+          "cpuSeconds": 50.41,
+          "read_bytes": 171483136,
+          "write_bytes": 10297344,
+          "rchar": 4457293936,
+          "wchar": 10096141,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2560872448,
+          "remainingPssBytes": 1467307008
+        },
+        "initialStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 0
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 189112320,
+            "Pss": 111289344
+          },
+          "project": {
+            "Rss": 89346048,
+            "Pss": 87532544
+          },
+          "analyzer": {
+            "Rss": 438439936,
+            "Pss": 434569216
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 190095360,
+            "Pss": 110994432
+          },
+          "project": {
+            "Rss": 89350144,
+            "Pss": 87536640
+          },
+          "analyzer": {
+            "Rss": 338427904,
+            "Pss": 334514176
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-20-en-cold",
+        "phase": "cold",
+        "round": 20,
+        "mode": "query",
+        "passed": true,
+        "metadataReadyMs": 421.37188100000003,
+        "languageReadyMs": 8150.429423,
+        "resources": {
+          "peakRssBytes": 2723504128,
+          "peakPssBytes": 1750329344,
+          "cpuSeconds": 106.61,
+          "read_bytes": 438276096,
+          "write_bytes": 79855616,
+          "rchar": 10391234141,
+          "wchar": 71426076,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2525401088,
+          "remainingPssBytes": 1592464384
+        },
+        "initialStorage": {
+          "bytes": 1413,
+          "files": 2
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 223670272,
+            "Pss": 145350656
+          },
+          "project": {
+            "Rss": 100413440,
+            "Pss": 98599936
+          },
+          "analyzer": {
+            "Rss": 414183424,
+            "Pss": 410271744
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 227610624,
+            "Pss": 148652032
+          },
+          "project": {
+            "Rss": 110993408,
+            "Pss": 109179904
+          },
+          "analyzer": {
+            "Rss": 340049920,
+            "Pss": 336138240
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-20-en-repeat",
+        "phase": "repeat",
+        "round": 20,
+        "mode": "query",
+        "passed": true,
+        "metadataReadyMs": 307.7670290000001,
+        "languageReadyMs": 7049.746339,
+        "resources": {
+          "peakRssBytes": 2680156160,
+          "peakPssBytes": 1675656192,
+          "cpuSeconds": 98.17,
+          "read_bytes": 10313728,
+          "write_bytes": 23572480,
+          "rchar": 10277288002,
+          "wchar": 18354679,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2546507776,
+          "remainingPssBytes": 1616171008
+        },
+        "initialStorage": {
+          "bytes": 1413,
+          "files": 2
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 211005440,
+            "Pss": 133428224
+          },
+          "project": {
+            "Rss": 112287744,
+            "Pss": 110409728
+          },
+          "analyzer": {
+            "Rss": 423886848,
+            "Pss": 419781632
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 226668544,
+            "Pss": 148539392
+          },
+          "project": {
+            "Rss": 114102272,
+            "Pss": 112224256
+          },
+          "analyzer": {
+            "Rss": 339169280,
+            "Pss": 335064064
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-21-en-cold",
+        "phase": "cold",
+        "round": 21,
+        "mode": "query",
+        "passed": true,
+        "metadataReadyMs": 377.9404850000001,
+        "languageReadyMs": 7282.078489,
+        "resources": {
+          "peakRssBytes": 2627137536,
+          "peakPssBytes": 1678894080,
+          "cpuSeconds": 102.58,
+          "read_bytes": 61775872,
+          "write_bytes": 75694080,
+          "rchar": 10264279830,
+          "wchar": 67374822,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2540097536,
+          "remainingPssBytes": 1610482688
+        },
+        "initialStorage": {
+          "bytes": 1413,
+          "files": 2
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 212971520,
+            "Pss": 134872064
+          },
+          "project": {
+            "Rss": 110878720,
+            "Pss": 109081600
+          },
+          "analyzer": {
+            "Rss": 406761472,
+            "Pss": 402843648
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 226979840,
+            "Pss": 148270080
+          },
+          "project": {
+            "Rss": 110968832,
+            "Pss": 109170688
+          },
+          "analyzer": {
+            "Rss": 339030016,
+            "Pss": 335112192
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-21-en-repeat",
+        "phase": "repeat",
+        "round": 21,
+        "mode": "query",
+        "passed": true,
+        "metadataReadyMs": 330.72916199999986,
+        "languageReadyMs": 7144.381354,
+        "resources": {
+          "peakRssBytes": 2640289792,
+          "peakPssBytes": 1664441344,
+          "cpuSeconds": 98.67,
+          "read_bytes": 105574400,
+          "write_bytes": 15949824,
+          "rchar": 7231534359,
+          "wchar": 15213115,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2570440704,
+          "remainingPssBytes": 1641581568
+        },
+        "initialStorage": {
+          "bytes": 1413,
+          "files": 2
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 197320704,
+            "Pss": 119495680
+          },
+          "project": {
+            "Rss": 112283648,
+            "Pss": 110407680
+          },
+          "analyzer": {
+            "Rss": 421527552,
+            "Pss": 417483776
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 225517568,
+            "Pss": 147086336
+          },
+          "project": {
+            "Rss": 122855424,
+            "Pss": 120979456
+          },
+          "analyzer": {
+            "Rss": 338972672,
+            "Pss": 334928896
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-22-en-cold",
+        "phase": "cold",
+        "round": 22,
+        "mode": "query",
+        "passed": true,
+        "metadataReadyMs": 456.957128,
+        "languageReadyMs": 7593.30783,
+        "resources": {
+          "peakRssBytes": 2691776512,
+          "peakPssBytes": 1668478976,
+          "cpuSeconds": 101.73,
+          "read_bytes": 137654272,
+          "write_bytes": 80359424,
+          "rchar": 10203256730,
+          "wchar": 71309125,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2544742400,
+          "remainingPssBytes": 1620296704
+        },
+        "initialStorage": {
+          "bytes": 1413,
+          "files": 2
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 209010688,
+            "Pss": 131108864
+          },
+          "project": {
+            "Rss": 110850048,
+            "Pss": 108972032
+          },
+          "analyzer": {
+            "Rss": 418410496,
+            "Pss": 414535680
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 226619392,
+            "Pss": 148166656
+          },
+          "project": {
+            "Rss": 110952448,
+            "Pss": 109074432
+          },
+          "analyzer": {
+            "Rss": 339132416,
+            "Pss": 335220736
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-22-en-repeat",
+        "phase": "repeat",
+        "round": 22,
+        "mode": "query",
+        "passed": true,
+        "metadataReadyMs": 284.05059000000006,
+        "languageReadyMs": 7022.48265,
+        "resources": {
+          "peakRssBytes": 2708164608,
+          "peakPssBytes": 1691320320,
+          "cpuSeconds": 95.31,
+          "read_bytes": 4456448,
+          "write_bytes": 26497024,
+          "rchar": 10348253430,
+          "wchar": 21598270,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2569064448,
+          "remainingPssBytes": 1643133952
+        },
+        "initialStorage": {
+          "bytes": 1413,
+          "files": 2
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 208621568,
+            "Pss": 130473984
+          },
+          "project": {
+            "Rss": 112410624,
+            "Pss": 110475264
+          },
+          "analyzer": {
+            "Rss": 409874432,
+            "Pss": 405999616
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 226172928,
+            "Pss": 147422208
+          },
+          "project": {
+            "Rss": 112492544,
+            "Pss": 110557184
+          },
+          "analyzer": {
+            "Rss": 337350656,
+            "Pss": 333475840
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-23-en-cold",
+        "phase": "cold",
+        "round": 23,
+        "mode": "query",
+        "passed": true,
+        "metadataReadyMs": 365.2983589999999,
+        "languageReadyMs": 7959.043049999999,
+        "resources": {
+          "peakRssBytes": 2668105728,
+          "peakPssBytes": 1677412352,
+          "cpuSeconds": 102.43,
+          "read_bytes": 53628928,
+          "write_bytes": 100134912,
+          "rchar": 10320161309,
+          "wchar": 90628251,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2612699136,
+          "remainingPssBytes": 1677412352
+        },
+        "initialStorage": {
+          "bytes": 1413,
+          "files": 2
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 209457152,
+            "Pss": 131158016
+          },
+          "project": {
+            "Rss": 110817280,
+            "Pss": 109020160
+          },
+          "analyzer": {
+            "Rss": 421253120,
+            "Pss": 417335296
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 226979840,
+            "Pss": 148050944
+          },
+          "project": {
+            "Rss": 110940160,
+            "Pss": 109143040
+          },
+          "analyzer": {
+            "Rss": 338661376,
+            "Pss": 334743552
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-23-en-repeat",
+        "phase": "repeat",
+        "round": 23,
+        "mode": "query",
+        "passed": true,
+        "metadataReadyMs": 290.17572299999983,
+        "languageReadyMs": 6664.876135,
+        "resources": {
+          "peakRssBytes": 2636656640,
+          "peakPssBytes": 1635939328,
+          "cpuSeconds": 88.03,
+          "read_bytes": 250109952,
+          "write_bytes": 25706496,
+          "rchar": 10349903560,
+          "wchar": 21630793,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2527236096,
+          "remainingPssBytes": 1601565696
+        },
+        "initialStorage": {
+          "bytes": 1413,
+          "files": 2
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 198356992,
+            "Pss": 120844288
+          },
+          "project": {
+            "Rss": 112353280,
+            "Pss": 110417920
+          },
+          "analyzer": {
+            "Rss": 413196288,
+            "Pss": 409278464
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 199876608,
+            "Pss": 121807872
+          },
+          "project": {
+            "Rss": 112443392,
+            "Pss": 110508032
+          },
+          "analyzer": {
+            "Rss": 338628608,
+            "Pss": 334710784
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-24-en-cold",
+        "phase": "cold",
+        "round": 24,
+        "mode": "query",
+        "passed": true,
+        "metadataReadyMs": 332.7510380000001,
+        "languageReadyMs": 7575.8839929999995,
+        "resources": {
+          "peakRssBytes": 2712653824,
+          "peakPssBytes": 1721191424,
+          "cpuSeconds": 103.42,
+          "read_bytes": 49086464,
+          "write_bytes": 100093952,
+          "rchar": 10320359295,
+          "wchar": 90621041,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2510962688,
+          "remainingPssBytes": 1587185664
+        },
+        "initialStorage": {
+          "bytes": 1413,
+          "files": 2
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 220274688,
+            "Pss": 142057472
+          },
+          "project": {
+            "Rss": 110960640,
+            "Pss": 109086720
+          },
+          "analyzer": {
+            "Rss": 400183296,
+            "Pss": 396078080
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 227401728,
+            "Pss": 148524032
+          },
+          "project": {
+            "Rss": 111071232,
+            "Pss": 109197312
+          },
+          "analyzer": {
+            "Rss": 340086784,
+            "Pss": 335981568
+          }
+        }
+      },
+      {
+        "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-24-en-repeat",
+        "phase": "repeat",
+        "round": 24,
+        "mode": "query",
+        "passed": true,
+        "metadataReadyMs": 245.46891699999992,
+        "languageReadyMs": 6444.6156550000005,
+        "resources": {
+          "peakRssBytes": 2690117632,
+          "peakPssBytes": 1649855488,
+          "cpuSeconds": 86.19,
+          "read_bytes": 69328896,
+          "write_bytes": 25403392,
+          "rchar": 10320691622,
+          "wchar": 19897826,
+          "ownedSurvivors": {},
+          "remainingRssBytes": 2522972160,
+          "remainingPssBytes": 1608412160
+        },
+        "initialStorage": {
+          "bytes": 1413,
+          "files": 2
+        },
+        "finalStorage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "processMemoryStart": {
+          "extensionHost": {
+            "Rss": 208560128,
+            "Pss": 131112960
+          },
+          "project": {
+            "Rss": 112451584,
+            "Pss": 110516224
+          },
+          "analyzer": {
+            "Rss": 413163520,
+            "Pss": 409163776
+          }
+        },
+        "processMemoryEnd": {
+          "extensionHost": {
+            "Rss": 226070528,
+            "Pss": 148009984
+          },
+          "project": {
+            "Rss": 112537600,
+            "Pss": 110602240
+          },
+          "analyzer": {
+            "Rss": 339587072,
+            "Pss": 335543296
+          }
+        }
+      }
+    ]
+  },
+  "longSeries": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-30-en-cold",
+    "cycles": 30,
+    "sourceApply": 30,
+    "cancel": 30,
+    "constructor": 30,
+    "sourceDiskUnchanged": true,
+    "initialMemory": {
+      "unixMs": 1792851235493,
+      "heap": {
+        "rss": 196235264,
+        "heapTotal": 71086080,
+        "heapUsed": 44243216,
+        "external": 4727174,
+        "arrayBuffers": 0
+      },
+      "processes": {
+        "extensionHost": {
+          "Rss": 197361664,
+          "Pss": 119164928
+        },
+        "project": {
+          "Rss": 100401152,
+          "Pss": 98587648
+        },
+        "analyzer": {
+          "Rss": 424284160,
+          "Pss": 420366336
+        }
+      }
+    },
+    "finalMemory": {
+      "unixMs": 1792851296239,
+      "heap": {
+        "rss": 229388288,
+        "heapTotal": 101494784,
+        "heapUsed": 58492772,
+        "external": 5268941,
+        "arrayBuffers": 0
+      },
+      "processes": {
+        "extensionHost": {
+          "Rss": 230440960,
+          "Pss": 151770112
+        },
+        "project": {
+          "Rss": 111009792,
+          "Pss": 109196288
+        },
+        "analyzer": {
+          "Rss": 341012480,
+          "Pss": 337094656
+        }
+      }
+    },
+    "rounds": [
+      {
+        "index": 5,
+        "memory": {
+          "unixMs": 1792851244576,
+          "heap": {
+            "rss": 199872512,
+            "heapTotal": 74231808,
+            "heapUsed": 51168788,
+            "external": 5217091,
+            "arrayBuffers": 0
+          },
+          "processes": {
+            "extensionHost": {
+              "Rss": 200925184,
+              "Pss": 122150912
+            },
+            "project": {
+              "Rss": 111001600,
+              "Pss": 109188096
+            },
+            "analyzer": {
+              "Rss": 372797440,
+              "Pss": 368879616
+            }
+          }
+        },
+        "storage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "sessionCount": 0,
+        "constructorCount": 0,
+        "client": {
+          "sessions": 0,
+          "constructors": 0,
+          "languageViews": 0,
+          "languageTasks": 0,
+          "languageTimers": 0,
+          "languageStates": 0,
+          "languageStreams": 1,
+          "nativeDraftModels": 10
+        }
+      },
+      {
+        "index": 10,
+        "memory": {
+          "unixMs": 1792851254572,
+          "heap": {
+            "rss": 225832960,
+            "heapTotal": 99135488,
+            "heapUsed": 45299040,
+            "external": 4691787,
+            "arrayBuffers": 0
+          },
+          "processes": {
+            "extensionHost": {
+              "Rss": 226676736,
+              "Pss": 147522560
+            },
+            "project": {
+              "Rss": 111009792,
+              "Pss": 109196288
+            },
+            "analyzer": {
+              "Rss": 382124032,
+              "Pss": 378206208
+            }
+          }
+        },
+        "storage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "sessionCount": 0,
+        "constructorCount": 0,
+        "client": {
+          "sessions": 0,
+          "constructors": 0,
+          "languageViews": 0,
+          "languageTasks": 0,
+          "languageTimers": 0,
+          "languageStates": 0,
+          "languageStreams": 1,
+          "nativeDraftModels": 20
+        }
+      },
+      {
+        "index": 15,
+        "memory": {
+          "unixMs": 1792851263818,
+          "heap": {
+            "rss": 227553280,
+            "heapTotal": 99397632,
+            "heapUsed": 52711588,
+            "external": 5354806,
+            "arrayBuffers": 0
+          },
+          "processes": {
+            "extensionHost": {
+              "Rss": 228401152,
+              "Pss": 149792768
+            },
+            "project": {
+              "Rss": 111009792,
+              "Pss": 109196288
+            },
+            "analyzer": {
+              "Rss": 381714432,
+              "Pss": 377796608
+            }
+          }
+        },
+        "storage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "sessionCount": 0,
+        "constructorCount": 0,
+        "client": {
+          "sessions": 0,
+          "constructors": 0,
+          "languageViews": 0,
+          "languageTasks": 0,
+          "languageTimers": 0,
+          "languageStates": 0,
+          "languageStreams": 1,
+          "nativeDraftModels": 30
+        }
+      },
+      {
+        "index": 20,
+        "memory": {
+          "unixMs": 1792851272818,
+          "heap": {
+            "rss": 228884480,
+            "heapTotal": 101494784,
+            "heapUsed": 61080036,
+            "external": 5915734,
+            "arrayBuffers": 0
+          },
+          "processes": {
+            "extensionHost": {
+              "Rss": 230150144,
+              "Pss": 151540736
+            },
+            "project": {
+              "Rss": 111009792,
+              "Pss": 109196288
+            },
+            "analyzer": {
+              "Rss": 377856000,
+              "Pss": 373938176
+            }
+          }
+        },
+        "storage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "sessionCount": 0,
+        "constructorCount": 0,
+        "client": {
+          "sessions": 0,
+          "constructors": 0,
+          "languageViews": 0,
+          "languageTasks": 0,
+          "languageTimers": 0,
+          "languageStates": 0,
+          "languageStreams": 1,
+          "nativeDraftModels": 40
+        }
+      },
+      {
+        "index": 25,
+        "memory": {
+          "unixMs": 1792851282125,
+          "heap": {
+            "rss": 230297600,
+            "heapTotal": 101232640,
+            "heapUsed": 62156516,
+            "external": 6210252,
+            "arrayBuffers": 0
+          },
+          "processes": {
+            "extensionHost": {
+              "Rss": 231243776,
+              "Pss": 152634368
+            },
+            "project": {
+              "Rss": 111009792,
+              "Pss": 109196288
+            },
+            "analyzer": {
+              "Rss": 378269696,
+              "Pss": 374351872
+            }
+          }
+        },
+        "storage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "sessionCount": 0,
+        "constructorCount": 0,
+        "client": {
+          "sessions": 0,
+          "constructors": 0,
+          "languageViews": 0,
+          "languageTasks": 0,
+          "languageTimers": 0,
+          "languageStates": 0,
+          "languageStreams": 1,
+          "nativeDraftModels": 50
+        }
+      },
+      {
+        "index": 30,
+        "memory": {
+          "unixMs": 1792851291227,
+          "heap": {
+            "rss": 228261888,
+            "heapTotal": 101232640,
+            "heapUsed": 45796708,
+            "external": 4496622,
+            "arrayBuffers": 0
+          },
+          "processes": {
+            "extensionHost": {
+              "Rss": 229515264,
+              "Pss": 150844416
+            },
+            "project": {
+              "Rss": 111009792,
+              "Pss": 109196288
+            },
+            "analyzer": {
+              "Rss": 381452288,
+              "Pss": 377534464
+            }
+          }
+        },
+        "storage": {
+          "bytes": 0,
+          "files": 1
+        },
+        "sessionCount": 0,
+        "constructorCount": 0,
+        "client": {
+          "sessions": 0,
+          "constructors": 0,
+          "languageViews": 0,
+          "languageTasks": 0,
+          "languageTimers": 0,
+          "languageStates": 0,
+          "languageStreams": 1,
+          "nativeDraftModels": 52
+        }
+      }
+    ],
+    "clientAtEnd": {
+      "sessions": 0,
+      "constructors": 0,
+      "languageViews": 0,
+      "languageTasks": 0,
+      "languageTimers": 0,
+      "languageStates": 0,
+      "languageStreams": 1,
+      "nativeDraftModels": 52
+    },
+    "initialStorage": {
+      "bytes": 1413,
+      "files": 2
+    },
+    "finalStorage": {
+      "bytes": 0,
+      "files": 1
+    },
+    "resources": {
+      "peakRssBytes": 2736312320,
+      "peakPssBytes": 1756730368,
+      "cpuSeconds": 195.53,
+      "read_bytes": 284884992,
+      "write_bytes": 98013184,
+      "rchar": 19343511984,
+      "wchar": 81694044,
+      "ownedSurvivors": {},
+      "remainingRssBytes": 2492989440,
+      "remainingPssBytes": 1652917248
+    },
+    "progressEvents": []
+  },
+  "fixesFoundByAcceptance": [
+    "5040600: immutable analysis now permits a support-prohibited source while retaining all snapshot guards and refusing source writes.",
+    "bfdf244: closing a query releases its language states/timers/views even while VSCodium retains a temporary text model."
+  ],
+  "coverage": {
+    "xmlEditor": "data sets, manual lists, whole packages, clean/dirty owner, minimal diff, comments and recovery accepted",
+    "bslEditor": "literal extraction, private Save, explicit Apply, unsaved dirty owner, one Undo, conflicts and recovery accepted",
+    "syntaxAnalysis": "fresh unsaved BSL-query diagnostics and metadata/alias/temporary-table completions accepted with app 0.3.2",
+    "constructor": "six structural sections, comments, opaque package text, no-op, Undo/Redo, read-only, cancellation and backend loss accepted",
+    "nativePlatform": "edited SCD, list and BSL built into CF, reloaded and re-exported; queries were not executed"
+  },
+  "limitations": [
+    "Windows, macOS, Microsoft VS Code, Remote and other IDE adapters are unverified.",
+    "XML query context analysis and parameter completion remain unavailable in the checked published-server contract. Full hover/definition/reference coverage inside SDBL is not separately accepted.",
+    "The first constructor subset accepts typed expressions; no metadata picker or join dependency reordering. Unsupported constructs remain exact source text.",
+    "Unaccepted visual operations are memory-only. A backend crash preserves the previously acknowledged canonical draft and requires explicit resume.",
+    "Comment dialog choices are scripted in acceptance; production webview buttons are exercised through actual Chromium DOM in normal installed ru/en windows.",
+    "Performance cohorts use a synthetic query in an added writable module in the isolated full buhmfo application with five extensions. An existing vendor-prohibited module is checked separately.",
+    "Cold means fresh private profile and ESKA cache removal; OS page cache is not flushed. CPU/IO figures include verbose native-window logging.",
+    "VSCodium may retain closed native text models temporarily. ESKA owns no remaining query sessions, language views/tasks/timers/states or private draft data after the series.",
+    "The canonical repository guide is updated; the separate website checkout on main was not edited."
+  ],
+  "priorSeries": {
+    "debug": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/performance-summary.json",
+      "completeComparisonRuns": 20,
+      "status": "diagnostic only, dev opt-level 0; not the accepted performance cohort"
+    },
+    "firstDist": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/series-dist.log",
+      "status": "stopped on an overbroad progress assertion; normal upstream Analyzing work was counted as full indexing. Earlier script also retained closed UI language states."
+    },
+    "final": "The full predetermined final 20-run cohort passed without retries; normal Analyzing progress is recorded separately from index starts."
+  },
+  "commits": {
+    "eska": [
+      "38874e9 docs(query): Согласован защищённый снимок с проверкой конфликтов",
+      "216e15e feat(query): Открыты BSL-сессии со снимком и проверкой конфликтов",
+      "e706046 fix(query): Сессии модулей восстанавливаются без раскрытия дерева",
+      "fcacbb3 docs(query): Подтверждена приёмка BSL-черновиков в VSCodium",
+      "2669548 docs(query): Проверен анализ несохранённого BSL опубликованным сервером",
+      "e635b85 feat(query): Добавлена неизменяемая BSL-проекция для языкового сервера",
+      "817ee2c docs(query): Подтверждён анализ несохранённого запроса в VSCodium",
+      "0522f1f feat(query): Добавлен конструктор с владением черновиком и сохранением текста",
+      "bb93f05 docs(query): Подтверждены конструктор и сохранение черновиков в VSCodium",
+      "5040600 fix(query): Разрешён анализ запросов из модулей на поддержке",
+      "c72b9d1 test(query): Добавлены замеры редактора и загрузка запросов платформой"
+    ],
+    "explorer": [
+      "0a748b7 feat(query): Добавлены BSL-черновики с явным применением к модулю",
+      "012618d feat(query): Подключён анализ BSL-черновика к текущему LSP",
+      "ea0a705 feat(query): Добавлен интерфейс конструктора на общей модели ESKA",
+      "bfdf244 fix(query): Освобождены состояния анализа закрытых черновиков",
+      "757e65c test(query): Проверены установленный конструктор и планы для платформы"
+    ]
+  },
+  "unverifiedQueryExecution": true
+}
