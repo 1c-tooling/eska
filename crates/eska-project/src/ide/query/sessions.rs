@@ -49,13 +49,19 @@ pub(super) fn is_method(method: &str) -> bool {
     )
 }
 
-/// Native BSL admission remains disabled until a production adapter proves the required owner lock.
-pub(super) fn capability(durable: bool) -> Value {
+/// BSL explicitly negotiates protected snapshots with exact native conflict checks, never native lock overrides.
+pub(super) fn capability(durable: bool, bsl: bool) -> Value {
     let mut capability = json!({"schemaVersion":1,"writesOwner":false,"checkpointStorageVersion":1,"maxSessions":16,
         "maxRetainedBytes":super::RETAINED_BYTES,"nativeApplicationReceipt":true,
         "explicitResume":true,"preparedStateDurable":durable,"bslEditing":false,"sourceKinds":["dataCompositionSchema","form"]});
     if durable {
         capability["preparedStorageVersion"] = json!(2);
+    }
+    if bsl {
+        capability["bslEditing"] = json!(true);
+        capability["sourceKinds"] = json!(["dataCompositionSchema", "form", "bsl"]);
+        capability["ownerProtection"] = json!("protectedViewWithConflicts");
+        capability["bslSave"] = json!("checkpointOnly");
     }
     capability
 }
@@ -150,11 +156,11 @@ impl State {
             .sessions
             .remove(&input.query_session_id)
             .map(|mut entry| {
-                let lock = entry.core.close().map(|lock| lock.to_string());
-                (lock, entry.core.restrictions().user_read_only)
+                let restriction = entry.core.close().map(|id| id.to_string());
+                (restriction, entry.core.restrictions().user_read_only)
             });
         Ok(
-            json!({"released":released.is_some(),"releasedOwnerLock":released.as_ref().and_then(|(lock,_)|lock.clone()),
+            json!({"released":released.is_some(),"releasedOwnerLock":null,"releasedSourceRestriction":released.as_ref().and_then(|(restriction,_)|restriction.clone()),
             "userReadOnly":released.map(|(_,read_only)|read_only)}),
         )
     }
@@ -257,7 +263,7 @@ impl State {
             .get(&input.document_id)
             .filter(|entry| &entry.key == key)
             .ok_or_else(|| failure("unknown_document"))?;
-        if document.document.kind() == QueryDocumentKind::Bsl {
+        if document.document.kind() == QueryDocumentKind::Bsl && !self.bsl_sessions {
             return Err(failure("owner_lock_required"));
         }
         self.session_slot(key, document.document.path())?;
@@ -279,7 +285,6 @@ impl State {
             input.format.core(),
             QueryOwnerRestrictions {
                 user_read_only: input.user_read_only,
-                owner_lock: None,
             },
         )
         .map_err(session_error)?;
@@ -330,6 +335,9 @@ impl State {
         }
         let core =
             QuerySession::restore(project, saved, input.format.core()).map_err(session_error)?;
+        if core.document().kind() == QueryDocumentKind::Bsl && !self.bsl_sessions {
+            return Err(failure("owner_lock_required"));
+        }
         self.admit(core.retained_bytes())?;
         let id = self.next_id("q")?;
         let entry = Entry {
@@ -383,7 +391,6 @@ fn operation(
                 input.owner.core()?,
                 QueryOwnerRestrictions {
                     user_read_only: input.owner.user_read_only,
-                    owner_lock: None,
                 },
             )
             .map_err(session_error)?;
@@ -442,7 +449,7 @@ fn header(id: &str, entry: &Entry) -> Result<Value, Value> {
         "revision":entry.core.revision().to_string(),"resumed":entry.core.resumed(),"applyPending":entry.core.applying(),
         "draftWritable":entry.core.draft_writable(),"format":match entry.core.owner_format(){QueryOwnerFormat::Editor=>"editor",QueryOwnerFormat::Source=>"source"},
         "protection":{"capturedSourceWritable":entry.core.document().writable(),"userReadOnly":restrictions.user_read_only,
-            "ownerLock":restrictions.owner_lock.map(|id|id.to_string()),
+            "ownerLock":null,"ownerProtection":if entry.core.document().kind()==QueryDocumentKind::Bsl {Some("protectedViewWithConflicts")} else {None},
             "sourceRestriction":entry.core.source_restriction_id().map(|id|id.to_string())},"record":recovery::header(&entry.stored)?}),
     )
 }
@@ -579,7 +586,6 @@ impl Owner {
             snapshot: &self.snapshot,
             is_dirty: self.is_dirty,
             user_read_only: self.user_read_only,
-            owner_lock: None,
             application,
         })
     }

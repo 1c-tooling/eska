@@ -98,7 +98,7 @@ fn source_session_fences_direct_query_property_and_undo_writes() {
         .prepare(
             project,
             session.revision(),
-            editor(7, &snapshot(owner), false, None),
+            editor(7, &snapshot(owner), false),
             &[],
             None,
         )
@@ -247,7 +247,6 @@ fn source_restrictions_release_only_their_own_lifetimes() {
         QueryOwnerFormat::Source,
         QueryOwnerRestrictions {
             user_read_only: false,
-            owner_lock: Some(19),
         },
     )
     .unwrap();
@@ -317,7 +316,7 @@ fn source_restriction_capability_is_bound_to_its_project_session() {
         other.source_restriction_id()
     );
     assert!(
-        matches!(session.prepare(fresh, session.revision(), editor(7, &snapshot(owner), false, None), &[], None),
+        matches!(session.prepare(fresh, session.revision(), editor(7, &snapshot(owner), false), &[], None),
         Err(QuerySessionError::Document(error)) if matches!(*error, QueryDocumentError::OwnerChanged))
     );
     drop(other);
@@ -326,7 +325,7 @@ fn source_restriction_capability_is_bound_to_its_project_session() {
             .prepare(
                 fresh,
                 session.revision(),
-                editor(7, &snapshot(owner), false, None),
+                editor(7, &snapshot(owner), false),
                 &[],
                 None
             )
@@ -349,7 +348,6 @@ fn source_restriction_release_preserves_current_support_policy() {
         QueryOwnerFormat::Source,
         QueryOwnerRestrictions {
             user_read_only: false,
-            owner_lock: Some(19),
         },
     )
     .unwrap();
@@ -357,7 +355,9 @@ fn source_restriction_release_preserves_current_support_policy() {
     fs::write(directory.0.join("src/Ext/ParentConfigurations.bin"),
         format!("{{6,0,1,{root},0,{root},\"1\",\"Vendor\",\"Test\",1,0,0,{root},{root},0,0,0,1,0,0,0,1,0,1,0,1,1,1,1}}"))
         .unwrap();
-    assert_eq!(session.close(), Some(19));
+    let restriction = session.source_restriction_id();
+    assert!(restriction.is_some());
+    assert_eq!(session.close(), restriction);
     assert!(
         project
             .support_files(std::slice::from_ref(&path))

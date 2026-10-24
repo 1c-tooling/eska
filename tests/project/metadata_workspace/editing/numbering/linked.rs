@@ -73,7 +73,6 @@ fn hold_query_owner(project: &mut ProjectSession, owner: &ObjectId, path: &Path)
         QueryOwnerFormat::Source,
         QueryOwnerRestrictions {
             user_read_only: false,
-            owner_lock: Some(19),
         },
     )
     .unwrap()

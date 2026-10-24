@@ -36,18 +36,12 @@ fn xml_fixture() -> (TestDir, MetadataWorkspace, NodeId, PathBuf) {
 }
 
 /// Capture a native model's exact version/hash; its encoding signature is deliberately outside that model.
-const fn editor(
-    version: u64,
-    snapshot: &str,
-    dirty: bool,
-    owner_lock: Option<u64>,
-) -> QueryEditorState<'_> {
+const fn editor(version: u64, snapshot: &str, dirty: bool) -> QueryEditorState<'_> {
     QueryEditorState {
         version,
         snapshot,
         is_dirty: dirty,
         user_read_only: false,
-        owner_lock,
         application: None,
     }
 }
@@ -120,7 +114,7 @@ fn query_session_owns_dirty_xml_draft_and_native_application_receipt() {
         .prepare(
             project,
             session.revision(),
-            editor(7, &owner_hash, true, None),
+            editor(7, &owner_hash, true),
             &[],
             Some(crate::backend::project::query::LineEnding::CrLf),
         )
@@ -133,7 +127,7 @@ fn query_session_owns_dirty_xml_draft_and_native_application_receipt() {
         session.prepare(
             project,
             session.revision(),
-            editor(7, &owner_hash, true, None),
+            editor(7, &owner_hash, true),
             &[],
             None
         ),
@@ -143,19 +137,19 @@ fn query_session_owns_dirty_xml_draft_and_native_application_receipt() {
         .set_draft(session.revision(), Arc::from("SELECT newer"))
         .unwrap();
     assert!(matches!(
-        session.applied(project, prepared.token, editor(8, &owner_hash, true, None)),
+        session.applied(project, prepared.token, editor(8, &owner_hash, true)),
         Err(QuerySessionError::InvalidReceipt)
     ));
     let output_hash = snapshot(prepared.plan.output());
     session
-        .applied(project, prepared.token, editor(8, &output_hash, true, None))
+        .applied(project, prepared.token, editor(8, &output_hash, true))
         .unwrap();
     assert_eq!(session.document().input(), prepared.plan.output());
     assert_eq!(session.base(), "SELECT 3;\n// пакет 😀\nSELECT 2");
     assert_eq!(session.draft(), "SELECT newer");
     assert_eq!(bytes(&directory.0), original);
     assert!(matches!(
-        session.applied(project, prepared.token, editor(8, &output_hash, true, None)),
+        session.applied(project, prepared.token, editor(8, &output_hash, true)),
         Err(QuerySessionError::UnknownApply)
     ));
 }
@@ -175,7 +169,7 @@ fn query_session_checks_clean_model_and_exact_saved_xml_bytes() {
         .prepare(
             project,
             session.revision(),
-            editor(7, &hash, false, None),
+            editor(7, &hash, false),
             &[],
             None,
         )
@@ -184,11 +178,7 @@ fn query_session_checks_clean_model_and_exact_saved_xml_bytes() {
     let output_hash = snapshot(prepared.plan.output());
     assert!(
         session
-            .applied(
-                project,
-                prepared.token,
-                editor(8, &output_hash, false, None)
-            )
+            .applied(project, prepared.token, editor(8, &output_hash, false))
             .is_err()
     );
     fs::write(
@@ -197,11 +187,7 @@ fn query_session_checks_clean_model_and_exact_saved_xml_bytes() {
     )
     .unwrap();
     session
-        .applied(
-            project,
-            prepared.token,
-            editor(8, &output_hash, false, None),
-        )
+        .applied(project, prepared.token, editor(8, &output_hash, false))
         .unwrap();
     assert_eq!(
         session.document().disk_snapshot(),
@@ -216,7 +202,7 @@ fn query_session_checks_clean_model_and_exact_saved_xml_bytes() {
             .prepare(
                 project,
                 false_clean.revision(),
-                editor(7, &snapshot(&dirty), false, None),
+                editor(7, &snapshot(&dirty), false),
                 &[],
                 None
             )
@@ -243,7 +229,7 @@ fn query_session_recovery_is_paused_and_rebinds_only_matching_owner_state() {
     let mut recovered =
         QuerySession::restore(project, checkpoint, QueryOwnerFormat::Editor).unwrap();
     let owner_hash = snapshot(&input);
-    let current = editor(1, &owner_hash, true, None);
+    let current = editor(1, &owner_hash, true);
     assert!(!recovered.resumed());
     assert!(matches!(
         recovered.prepare(project, recovered.revision(), current, &[], None),
@@ -270,7 +256,7 @@ fn query_session_recovery_is_paused_and_rebinds_only_matching_owner_state() {
             .resume(project, current, QueryOwnerRestrictions::default())
             .is_err()
     );
-    let clean = editor(2, &owner_hash, false, None);
+    let clean = editor(2, &owner_hash, false);
     recovered
         .resume(project, clean, QueryOwnerRestrictions::default())
         .unwrap();
@@ -299,7 +285,7 @@ fn query_session_conflicts_pause_without_changing_owner_base_or_draft() {
             .prepare(
                 project,
                 session.revision(),
-                editor(7, &snapshot(input), false, None),
+                editor(7, &snapshot(input), false),
                 &[],
                 None
             )
@@ -311,7 +297,7 @@ fn query_session_conflicts_pause_without_changing_owner_base_or_draft() {
     session
         .resume(
             project,
-            editor(8, &snapshot(input), false, None),
+            editor(8, &snapshot(input), false),
             QueryOwnerRestrictions::default(),
         )
         .unwrap();
@@ -322,7 +308,7 @@ fn query_session_conflicts_pause_without_changing_owner_base_or_draft() {
         session.prepare(
             project,
             session.revision(),
-            editor(8, &snapshot(input), false, None),
+            editor(8, &snapshot(input), false),
             &[],
             None
         ),
@@ -346,7 +332,6 @@ fn query_session_bsl_can_reapply_and_restore_after_normalizing_draft_line_ending
         QueryOwnerFormat::Source,
         QueryOwnerRestrictions {
             user_read_only: false,
-            owner_lock: Some(19),
         },
     )
     .unwrap();
@@ -358,7 +343,7 @@ fn query_session_bsl_can_reapply_and_restore_after_normalizing_draft_line_ending
         .prepare(
             project,
             session.revision(),
-            editor(7, &original, false, Some(19)),
+            editor(7, &original, false),
             &[],
             Some(crate::backend::project::query::LineEnding::CrLf),
         )
@@ -367,7 +352,7 @@ fn query_session_bsl_can_reapply_and_restore_after_normalizing_draft_line_ending
     let output = snapshot(prepared.plan.output());
     let interrupted = saved(project, &session);
     session
-        .applied(project, prepared.token, editor(8, &output, true, Some(19)))
+        .applied(project, prepared.token, editor(8, &output, true))
         .unwrap();
     assert_eq!(session.base(), "ВЫБРАТЬ 2\nКАК Значение");
     assert_eq!(session.draft(), "ВЫБРАТЬ 2\r\nКАК Значение");
@@ -380,10 +365,9 @@ fn query_session_bsl_can_reapply_and_restore_after_normalizing_draft_line_ending
     pending
         .resume(
             project,
-            editor(1, &output, true, Some(20)),
+            editor(1, &output, true),
             QueryOwnerRestrictions {
                 user_read_only: false,
-                owner_lock: Some(20),
             },
         )
         .unwrap();
@@ -395,10 +379,9 @@ fn query_session_bsl_can_reapply_and_restore_after_normalizing_draft_line_ending
     restored
         .resume(
             project,
-            editor(1, &output, true, Some(20)),
+            editor(1, &output, true),
             QueryOwnerRestrictions {
                 user_read_only: false,
-                owner_lock: Some(20),
             },
         )
         .unwrap();
@@ -406,39 +389,26 @@ fn query_session_bsl_can_reapply_and_restore_after_normalizing_draft_line_ending
         .prepare(
             project,
             restored.revision(),
-            editor(1, &output, true, Some(20)),
+            editor(1, &output, true),
             &[],
             None,
         )
         .unwrap();
     assert!(no_op.plan.is_empty());
     restored
-        .applied(project, no_op.token, editor(1, &output, true, Some(20)))
+        .applied(project, no_op.token, editor(1, &output, true))
         .unwrap();
 }
 
-/// Headless receipts model a verified adapter contract; they do not prove native input prevention in any IDE.
+/// Ordinary native edits are allowed, but a changed version cannot overwrite either the owner or the draft.
 #[test]
-fn query_session_bsl_requires_its_lock_and_release_preserves_independent_user_restrictions() {
-    let (_directory, mut workspace, node, path) = setup();
+fn query_session_bsl_conflicts_preserve_draft_and_release_only_its_source_restriction() {
+    let (directory, mut workspace, node, path) = setup();
     let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
     let document = project.query_document(&node, &path, 7, None).unwrap();
+    let original_disk = fs::read(directory.0.join("src").join(&path)).unwrap();
     let selected = identity(&document);
-    assert!(matches!(
-        QuerySession::open(
-            project,
-            document.clone(),
-            selected.clone(),
-            None,
-            QueryOwnerFormat::Source,
-            QueryOwnerRestrictions::default()
-        ),
-        Err(QuerySessionError::OwnerLockRequired)
-    ));
-    let restrictions = QueryOwnerRestrictions {
-        user_read_only: false,
-        owner_lock: Some(19),
-    };
+    let restrictions = QueryOwnerRestrictions::default();
     let mut session = QuerySession::open(
         project,
         document,
@@ -456,20 +426,26 @@ fn query_session_bsl_requires_its_lock_and_release_preserves_independent_user_re
         session.prepare(
             project,
             session.revision(),
-            editor(7, &hash, false, None),
+            editor(8, &hash, true),
             &[],
             None
         ),
-        Err(QuerySessionError::OwnerLockRequired)
+        Err(QuerySessionError::Document(_))
     ));
+    assert_eq!(session.draft(), "ВЫБРАТЬ 2\nКАК Значение");
+    assert!(!session.resumed());
+    assert_eq!(
+        fs::read(directory.0.join("src").join(&path)).unwrap(),
+        original_disk
+    );
     session
-        .resume(project, editor(7, &hash, false, Some(19)), restrictions)
+        .resume(project, editor(7, &hash, false), restrictions)
         .unwrap();
     let prepared = session
         .prepare(
             project,
             session.revision(),
-            editor(7, &hash, false, Some(19)),
+            editor(7, &hash, false),
             &[],
             None,
         )
@@ -482,20 +458,20 @@ fn query_session_bsl_requires_its_lock_and_release_preserves_independent_user_re
     assert!(matches!(
         session.resume(
             project,
-            editor(7, &hash, false, Some(19)),
+            editor(7, &hash, false),
             QueryOwnerRestrictions {
                 user_read_only: true,
-                owner_lock: Some(19)
             }
         ),
         Err(QuerySessionError::UserReadOnly)
     ));
-    assert_eq!(session.close(), Some(19));
+    let restriction = session.source_restriction_id();
+    assert!(restriction.is_some());
+    assert_eq!(session.close(), restriction);
     assert_eq!(
         session.restrictions(),
         QueryOwnerRestrictions {
             user_read_only: true,
-            owner_lock: None
         }
     );
     assert_eq!(session.close(), None);

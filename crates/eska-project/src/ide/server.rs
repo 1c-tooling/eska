@@ -238,7 +238,7 @@ impl Server {
         }
         if self.client_minor >= 15 {
             result["capabilities"]["querySessions"] =
-                super::query::session_capability(self.client_minor >= 16);
+                super::query::session_capability(self.client_minor >= 16, self.client_minor >= 19);
         }
         if self.client_minor >= 17 {
             result["capabilities"]["sourceProtection"] =

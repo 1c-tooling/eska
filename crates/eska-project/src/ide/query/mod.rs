@@ -37,6 +37,7 @@ pub(super) struct State {
     source_snapshots: BTreeMap<String, source::Entry>,
     serial: u64,
     durable_sessions: bool,
+    bsl_sessions: bool,
 }
 
 /// Request-only routing prevents notifications from allocating retained source snapshots.
@@ -79,8 +80,8 @@ pub(super) fn is_source_preview_method(method: &str) -> bool {
 }
 
 /// Existing query extraction remains independent from optional lifecycle/checkpoint ownership.
-pub(super) fn session_capability(durable: bool) -> Value {
-    sessions::capability(durable)
+pub(super) fn session_capability(durable: bool, bsl: bool) -> Value {
+    sessions::capability(durable, bsl)
 }
 
 /// Recovery is independent of source generations and never writes a project owner.
@@ -252,6 +253,7 @@ impl Server {
     /// Share the metadata session's refresh/reopen boundary while retaining query state separately.
     pub(super) fn query(&mut self, method: &str, args: &Value) -> Result<Value, Value> {
         self.queries.durable_sessions = self.client_minor >= 16;
+        self.queries.bsl_sessions = self.client_minor >= 19;
         let forbidden = self.recovery_forbidden();
         let key = Key::decode(args)?;
         self.check_session(args)?;
@@ -361,7 +363,6 @@ fn session_error(error: QuerySessionError) -> Value {
         QuerySessionError::ContextMemberMismatch => failure("context_member_mismatch"),
         QuerySessionError::ContextChanged => failure("context_changed"),
         QuerySessionError::ResumeRequired => failure("resume_required"),
-        QuerySessionError::OwnerLockRequired => failure("owner_lock_required"),
         QuerySessionError::OwnerBusy => failure("owner_busy"),
         QuerySessionError::UserReadOnly => failure("user_read_only"),
         QuerySessionError::StaleDraft => failure("stale_draft"),

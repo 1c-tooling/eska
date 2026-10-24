@@ -1329,3 +1329,35 @@ preview действительно остался disk-only, unclassified и `wr
 сопоставляет glob с `uri.fsPath`: одинаковый путь другого provider тоже может
 доставить событие наблюдателю. Уведомление о read-only представлении не является
 изменением его физического исходника и не должно подаваться обратно в ESKA/LSP.
+
+
+### API 1.19: BSL-черновик с защищённым снимком и проверкой конфликтов
+
+При handshake 1.19 `querySessions` объявляет `bslEditing:true`,
+`sourceKinds:["dataCompositionSchema","form","bsl"]`,
+`ownerProtection:"protectedViewWithConflicts"`, `bslSave:"checkpointOnly"`.
+Клиенты 1.15–1.18 сохраняют `bslEditing:false` и отказ `owner_lock_required`
+при попытке открыть или восстановить BSL-сессию. Извлечение литерала T100
+не зависит от включения сессий.
+
+BSL использует прежние `query/session*` и durable checkpoint API 1.16.
+Открытие сохраняет полный текущий буфер владельца; `source/snapshotOpen`
+предоставляет этот же снимок защищённому представлению. Обычные нативные вкладки
+могут редактироваться. ESKA не требует токена Native lock и не меняет overrides
+IDE. В header BSL `protection.ownerProtection:"protectedViewWithConflicts"`;
+у XML это поле null. Прежнее документированное `ownerLock` остаётся null.
+
+Сохранение и autosave BSL-черновика меняют только private checkpoint.
+`sessionPrepare` вызывается по явному «Применить». Core повторно проверяет
+точную версию и SHA-256 Native-модели, диск, descriptor, логического владельца,
+поддержку и application context. Несовпадение приостанавливает применение,
+сохраняя исходный снимок и черновик. BSL-план всегда имеет `saveOwner:false`:
+адаптер применяет его одной штатной отменяемой текстовой транзакцией,
+не сохраняет модуль на диск и подтверждает точный результат через `sessionApplied`.
+Новый ввод во время receipt сохраняется отдельно по прежним правилам 1.16.
+
+Закрытие/отмена освобождают только собственный backend source lease.
+В `sessionClose` добавлено `releasedSourceRestriction:string|null` — описание
+освобождённого ограничения; `releasedOwnerLock` остаётся null. Числовое значение
+не предоставляет права записи. Неоконченный intent восстанавливается только
+явным продолжением; автоматический replay по-прежнему запрещён.

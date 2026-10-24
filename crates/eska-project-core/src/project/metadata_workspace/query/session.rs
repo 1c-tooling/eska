@@ -14,11 +14,10 @@ use super::{
 
 pub use query::QueryOwnerFormat;
 
-/// User restrictions and this query's temporary restriction have separate owners and lifetimes.
+/// Native restrictions are independent facts; the source lease belongs to the query session.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct QueryOwnerRestrictions {
     pub user_read_only: bool,
-    pub owner_lock: Option<u64>,
 }
 
 /// Only the IDE knows native versions and dirty markers; source hashes and permissions are checked by ESKA.
@@ -28,7 +27,6 @@ pub struct QueryEditorState<'a> {
     pub snapshot: &'a str,
     pub is_dirty: bool,
     pub user_read_only: bool,
-    pub owner_lock: Option<u64>,
     pub application: Option<&'a str>,
 }
 
@@ -71,7 +69,6 @@ pub enum QuerySessionError {
     ContextMemberMismatch,
     ContextChanged,
     ResumeRequired,
-    OwnerLockRequired,
     OwnerBusy,
     UserReadOnly,
     StaleDraft,
@@ -133,10 +130,10 @@ pub struct QuerySession {
 }
 
 impl QuerySession {
-    /// Start with a freshly checked owner; an editable BSL session requires its own acknowledged native lock.
+    /// Capture the exact owner and fence competing backend writes; native edits are checked before application.
     ///
     /// # Errors
-    /// Rejects stale source/context, an unsupported query and a missing BSL owner lock.
+    /// Rejects stale source/context, an unsupported query and a competing source session.
     pub fn open(
         project: &mut ProjectSession,
         document: QueryDocument,
@@ -145,7 +142,6 @@ impl QuerySession {
         format: QueryOwnerFormat,
         restrictions: QueryOwnerRestrictions,
     ) -> Result<Self, QuerySessionError> {
-        require_lock(document.kind, restrictions)?;
         let context = project.query_context(application)?;
         let query = selected(&document, &identity)?;
         project.check_query_read(&document, revision(&document))?;
@@ -302,14 +298,12 @@ impl QuerySession {
         ]
     }
 
-    /// A recovered BSL snapshot is inspectable until its adapter proves a new owner lock.
+    /// Draft editing preserves source restrictions without changing native editor overrides.
     #[must_use]
-    pub fn draft_writable(&self) -> bool {
+    pub const fn draft_writable(&self) -> bool {
         !matches!(self.phase, Phase::Closed)
             && self.document.writable
             && !self.restrictions.user_read_only
-            && (self.document.kind != QueryDocumentKind::Bsl
-                || self.restrictions.owner_lock.is_some())
     }
 
     /// A selected application never silently follows a later client preference.
@@ -415,7 +409,7 @@ impl QuerySession {
     /// Rebind a remembered buffer only by explicit user intent, including a separately saved matching XML owner.
     ///
     /// # Errors
-    /// Rejects changed owner/descriptor/context, current restrictions and an absent native BSL lock.
+    /// Rejects changed owner/descriptor/context and current restrictions.
     pub fn resume(
         &mut self,
         project: &mut ProjectSession,
@@ -435,18 +429,9 @@ impl QuerySession {
             self.phase = Phase::Paused;
         }
         self.restrictions.user_read_only = restrictions.user_read_only;
-        if self.restrictions.owner_lock.is_some()
-            && self.restrictions.owner_lock != restrictions.owner_lock
-        {
-            return Err(QuerySessionError::OwnerLockRequired);
-        }
-        require_lock(self.document.kind, restrictions)?;
         if restrictions.user_read_only || current.user_read_only {
             self.restrictions.user_read_only = true;
             return Err(QuerySessionError::UserReadOnly);
-        }
-        if restrictions.owner_lock != current.owner_lock {
-            return Err(QuerySessionError::OwnerLockRequired);
         }
         if let Some(pending) = recovered
             && current.snapshot != self.document.snapshot
@@ -633,8 +618,9 @@ impl QuerySession {
             return None;
         }
         self.phase = Phase::Closed;
-        self.source_restriction = None;
-        self.restrictions.owner_lock.take()
+        self.source_restriction
+            .take()
+            .map(|restriction| restriction.id())
     }
 
     /// Every operation resolves current source ownership rather than reusing a stale metadata generation.
@@ -740,14 +726,13 @@ impl QuerySession {
         Ok(())
     }
 
-    /// A query-owned lock never overrides a user's restriction or a missing lock acknowledgement.
-    fn check_restrictions(&self, current: QueryEditorState<'_>) -> Result<(), QuerySessionError> {
+    /// A query-owned restriction never overrides the user's independent read-only state.
+    const fn check_restrictions(
+        &self,
+        current: QueryEditorState<'_>,
+    ) -> Result<(), QuerySessionError> {
         if self.restrictions.user_read_only || current.user_read_only {
             return Err(QuerySessionError::UserReadOnly);
-        }
-        require_lock(self.document.kind, self.restrictions)?;
-        if current.owner_lock != self.restrictions.owner_lock {
-            return Err(QuerySessionError::OwnerLockRequired);
         }
         Ok(())
     }
@@ -798,19 +783,6 @@ impl ProjectSession {
         }
         Ok(context)
     }
-}
-
-/// Native input prevention is a required adapter guarantee; a version check cannot substitute for it.
-fn require_lock(
-    kind: QueryDocumentKind,
-    restrictions: QueryOwnerRestrictions,
-) -> Result<(), QuerySessionError> {
-    if restrictions.owner_lock == Some(0)
-        || (kind == QueryDocumentKind::Bsl && restrictions.owner_lock.is_none())
-    {
-        return Err(QuerySessionError::OwnerLockRequired);
-    }
-    Ok(())
 }
 
 /// Codec reads never accept a caller-supplied range/value as a replacement for checked source syntax.

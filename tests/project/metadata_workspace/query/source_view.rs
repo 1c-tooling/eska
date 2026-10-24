@@ -66,7 +66,6 @@ fn common_source_protection_combines_owned_user_and_support_restrictions() {
         QueryOwnerFormat::Source,
         QueryOwnerRestrictions {
             user_read_only: false,
-            owner_lock: Some(19),
         },
     )
     .unwrap();
@@ -132,7 +131,6 @@ fn common_source_session_snapshot_preserves_the_retained_parent() {
         QueryOwnerFormat::Source,
         QueryOwnerRestrictions {
             user_read_only: false,
-            owner_lock: Some(19),
         },
     )
     .unwrap();

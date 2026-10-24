@@ -9,6 +9,9 @@ mod protection;
 #[path = "sessions/source.rs"]
 mod source;
 
+#[path = "sessions/bsl.rs"]
+mod bsl;
+
 const SOURCE: &str = "CommonForms/Queries/Ext/Form.xml";
 const XML: &str = "\u{feff}<Form xmlns='http://v8.1c.ru/8.3/xcf/logform' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\r\n<Attributes><Attribute name='List' id='1'><Settings xsi:type='DynamicList'><ManualQuery>true</ManualQuery><QueryText>SELECT 1</QueryText></Settings></Attribute></Attributes><other>keep</other>\r\n</Form>";
 
@@ -103,7 +106,10 @@ fn source_connect_options(
         "allowPropertyEdits":allow_property_edits}));
     assert_eq!(hello["capabilities"]["querySessions"]["schemaVersion"], 1);
     assert_eq!(hello["capabilities"]["querySessions"]["writesOwner"], false);
-    assert_eq!(hello["capabilities"]["querySessions"]["bslEditing"], false);
+    assert_eq!(
+        hello["capabilities"]["querySessions"]["bslEditing"],
+        minor >= 19
+    );
     assert_eq!(
         hello["capabilities"]["querySessions"]["preparedStateDurable"],
         minor >= 16
@@ -538,9 +544,9 @@ fn standalone_query_session_budget_keeps_the_draft_awaiting_application_receipt(
     client.finish();
 }
 
-/// Native BSL input prevention is an unaccepted adapter capability; API 1.14 never obtains the new session methods.
+/// Old clients retain BSL admission denial; the protected-view contract requires explicit API 1.19 negotiation.
 #[test]
-fn standalone_query_session_is_optional_and_does_not_enable_unlocked_bsl_apply() {
+fn standalone_query_session_is_optional_and_keeps_legacy_bsl_admission() {
     let (_directory, root, private) = source_fixture();
     let mut old = Client::new(&root, "en");
     initialize(&mut old, "en-US");
