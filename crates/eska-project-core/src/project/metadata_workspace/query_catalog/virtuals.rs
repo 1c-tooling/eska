@@ -1,6 +1,8 @@
 //! Virtual-table availability and fields follow real owner metadata rather than a client-side schema.
 
+mod calculation;
 mod columns;
+mod related;
 
 use super::{
     ProjectSession, QueryFieldChoice, QuerySessionError, QueryTableChoice,
@@ -31,19 +33,20 @@ pub(super) fn available(kind: VirtualTable, category: MetadataKind, owner: Node<
         VirtualTable::ScheduleData => {
             property(owner, "Schedule").is_some_and(|value| !value.is_empty())
         }
-        VirtualTable::Base => false,
+        VirtualTable::Base => enabled(owner, "BasePeriodUse"),
         _ => true,
     }
 }
 
 /// Expand one register into its supported virtual tables only when its descriptor is requested.
 pub(super) fn choices(
+    project: &ProjectSession,
     table: &QueryTableChoice,
     owner: Node<'_, '_>,
     tables: &mut BTreeMap<String, QueryTableChoice>,
-) {
+) -> Result<(), QuerySessionError> {
     for &kind in VirtualTable::for_category(table.category) {
-        if !available(kind, table.category, owner) {
+        if kind == VirtualTable::Base || !available(kind, table.category, owner) {
             continue;
         }
         let (russian, english) = kind.names();
@@ -57,18 +60,41 @@ pub(super) fn choices(
         };
         tables.entry(value.english.to_lowercase()).or_insert(value);
     }
+    if table.category == MetadataKind::CalculationRegister {
+        calculation::choices(project, table, owner, tables)?;
+    }
+    Ok(())
+}
+
+/// A calculated base table must name a register related through the assigned calculation-type chart.
+pub(super) fn selected_available(
+    project: &ProjectSession,
+    kind: VirtualTable,
+    category: MetadataKind,
+    owner: Node<'_, '_>,
+    requested: &str,
+) -> Result<bool, QuerySessionError> {
+    if !available(kind, category, owner) {
+        return Ok(false);
+    }
+    if kind == VirtualTable::Base {
+        return Ok(calculation::base_register(project, owner, requested)?.is_some());
+    }
+    Ok(true)
 }
 
 /// Virtual rows derive from the descriptor's own dimensions/resources and the platform's table-specific column rules.
 pub(super) fn fields(
     project: &ProjectSession,
-    kind: VirtualTable,
     table: &QueryTableChoice,
     document: &Document<'_>,
     parsed: &ParsedDescriptor,
     owner: &ParsedObject,
+    requested: &str,
     output: &mut BTreeMap<String, QueryFieldChoice>,
 ) -> Result<(), QuerySessionError> {
+    let (_, kind) = VirtualTable::resolve(requested)
+        .ok_or(crate::project::query::QueryError::InvalidPosition)?;
     let node = fields::object_node(document, owner)?;
     if matches!(
         kind,
@@ -77,6 +103,7 @@ pub(super) fn fields(
             | VirtualTable::RecordsWithExtDimensions
             | VirtualTable::AdjustedEffectivePeriod
             | VirtualTable::ScheduleData
+            | VirtualTable::Base
     ) {
         fields::append(document, parsed, owner, table.category, output)?;
     }
@@ -89,7 +116,11 @@ pub(super) fn fields(
         category: table.category,
         kind,
     };
-    context.append(output)
+    context.append(output)?;
+    if table.category == MetadataKind::CalculationRegister {
+        calculation::fields(project, node, kind, requested, output)?;
+    }
+    Ok(())
 }
 
 /// XML Schema boolean word and numeric forms have identical meaning.

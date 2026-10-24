@@ -61,6 +61,7 @@ impl ProjectSession {
             return self.query_catalog(
                 application,
                 &QueryCatalogRequest {
+                    virtual_tables: request.virtual_tables || binding.parameters.is_some(),
                     table: Some(binding.table),
                     source: None,
                     ..request.clone()

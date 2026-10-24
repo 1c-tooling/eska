@@ -244,25 +244,25 @@ fn collect_fields(
     if request.virtual_tables {
         let node = fields::object_node(&document, owner)?;
         if is_root {
-            virtuals::choices(table, node, &mut choices.tables);
+            virtuals::choices(project, table, node, &mut choices.tables)?;
         } else if let Some((category, virtual_table)) =
             crate::project::query::virtual_tables::VirtualTable::resolve(requested)
         {
-            if virtuals::available(virtual_table, category, node) {
+            if virtuals::selected_available(project, virtual_table, category, node, requested)? {
                 choices.found = true;
                 if choices.parameters.is_empty() {
                     choices.parameters = virtual_table.parameters(
                         category,
-                        fields::property(node, "Correspondence") == Some("true"),
+                        matches!(fields::property(node, "Correspondence"), Some("true" | "1")),
                     );
                 }
                 return virtuals::fields(
                     project,
-                    virtual_table,
                     table,
                     &document,
                     &parsed,
                     owner,
+                    requested,
                     &mut choices.fields,
                 );
             }
@@ -372,7 +372,7 @@ fn standard_name(english: &str) -> Option<&'static str> {
         "RecordType" => "ВидДвижения",
         "RegistrationPeriod" => "ПериодРегистрации",
         "Account" => "Счет",
-        "PeriodAdjustment" => "ПериодКорректировки",
+        "PeriodAdjustment" => "УточнениеПериода",
         "Started" => "Стартован",
         "Completed" => "Завершен",
         "Executed" => "Выполнена",

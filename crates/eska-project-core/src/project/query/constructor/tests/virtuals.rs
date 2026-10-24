@@ -1,5 +1,34 @@
 use super::*;
 
+/// Optional empty calls may omit parentheses in existing queries; unchanged forms keep those exact bytes.
+#[test]
+fn virtual_sources_without_parentheses_retain_parameter_controls_and_exact_text() {
+    for original in [
+        "SELECT R.QuantityBalance FROM AccumulationRegister.Stock.Balance AS R",
+        "ВЫБРАТЬ Р.КоличествоОстаток ИЗ РегистрНакопления.Stock.Остатки КАК Р",
+    ] {
+        let mut value = constructor(original);
+        let clause = &value.model().statements[0].clauses[1];
+        let expression = clause.items[0].visual(value.text(), clause).unwrap();
+        assert!(
+            matches!(&expression, Expression::VirtualSource { parameters, .. } if parameters.is_empty())
+        );
+        assert_eq!(
+            value.model().statements[0].source_bindings(value.text())[0].parameters,
+            Some(vec![])
+        );
+        apply(
+            &mut value,
+            &Action::Compose {
+                statement: 0,
+                selection: Some(selection(1, 0)),
+                expression,
+            },
+        );
+        assert_eq!(value.text(), original);
+    }
+}
+
 /// Missing optional positions and commas inside nested expressions remain separate positional values.
 #[test]
 fn virtual_arguments_are_structured_and_unchanged_forms_are_exact() {

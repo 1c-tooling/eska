@@ -264,6 +264,9 @@ pub(super) fn validate_argument(text: &str) -> Result<(), Error> {
 
 /// Losslessly split an existing call for ordinary parameter controls; comments require exact preservation.
 pub(crate) fn split_call(table: &str) -> Option<(&str, Vec<String>)> {
+    if VirtualTable::resolve(table).is_some() {
+        return Some((table, Vec::new()));
+    }
     let (name, parameters) = split_arguments(table)?;
     VirtualTable::resolve(name)?;
     Some((name, parameters))

@@ -41,7 +41,11 @@ impl Context<'_, '_> {
                     self.dimension(object, output)?;
                 }
                 MetadataKind::Resource => {
-                    self.resource(name, output);
+                    let unbalanced = matches!(
+                        property(object_node(self.document, object)?, "Balance"),
+                        Some("false" | "0")
+                    );
+                    self.resource(name, unbalanced, output);
                     if self.kind == VirtualTable::Turnovers
                         && self.category == MetadataKind::AccountingRegister
                         && matches!(
@@ -97,7 +101,12 @@ impl Context<'_, '_> {
     }
 
     /// Suffixes are query-language identifiers, not human captions or guessed record properties.
-    fn resource(&self, name: &str, output: &mut BTreeMap<String, QueryFieldChoice>) {
+    fn resource(
+        &self,
+        name: &str,
+        unbalanced: bool,
+        output: &mut BTreeMap<String, QueryFieldChoice>,
+    ) {
         let accounting = self.category == MetadataKind::AccountingRegister;
         let suffixes: &[(&str, &str)] = match self.kind {
             VirtualTable::Balance if accounting => &[
@@ -118,6 +127,9 @@ impl Context<'_, '_> {
                 ("Приход", "Receipt"),
                 ("Расход", "Expense"),
             ],
+            VirtualTable::DrCrTurnovers if unbalanced => {
+                &[("ОборотДт", "TurnoverDr"), ("ОборотКт", "TurnoverCr")]
+            }
             VirtualTable::DrCrTurnovers => &[("Оборот", "Turnover")],
             _ => &[],
         };
@@ -211,40 +223,6 @@ impl Context<'_, '_> {
         if self.category == MetadataKind::AccountingRegister {
             self.accounting(output)?;
         }
-        if matches!(
-            self.kind,
-            VirtualTable::AdjustedEffectivePeriod | VirtualTable::ScheduleData
-        ) {
-            for (russian, english) in [
-                ("ВидРасчета", "CalculationType"),
-                ("Сторно", "ReversingEntry"),
-            ] {
-                insert(output, russian, english);
-            }
-            for (setting, columns) in [
-                (
-                    "ActionPeriodUse",
-                    &[
-                        ("ПериодДействия", "ActionPeriod"),
-                        ("ПериодДействияНачало", "BegOfActionPeriod"),
-                        ("ПериодДействияКонец", "EndOfActionPeriod"),
-                    ][..],
-                ),
-                (
-                    "BasePeriodUse",
-                    &[
-                        ("БазовыйПериодНачало", "BegOfBasePeriod"),
-                        ("БазовыйПериодКонец", "EndOfBasePeriod"),
-                    ][..],
-                ),
-            ] {
-                if matches!(property(self.node, setting), Some("true" | "1")) {
-                    for (russian, english) in columns {
-                        insert(output, russian, english);
-                    }
-                }
-            }
-        }
         Ok(())
     }
 
@@ -254,6 +232,25 @@ impl Context<'_, '_> {
         output: &mut BTreeMap<String, QueryFieldChoice>,
     ) -> Result<(), QuerySessionError> {
         let correspondence = matches!(property(self.node, "Correspondence"), Some("true" | "1"));
+        if property(self.node, "PeriodAdjustmentLength")
+            .and_then(|value| value.parse::<u32>().ok())
+            .is_some_and(|value| value > 0)
+            && matches!(
+                self.kind,
+                VirtualTable::RecordsWithExtDimensions
+                    | VirtualTable::Turnovers
+                    | VirtualTable::DrCrTurnovers
+                    | VirtualTable::BalanceAndTurnovers
+            )
+        {
+            insert(output, "УточнениеПериода", "PeriodAdjustment");
+        }
+        if self.kind == VirtualTable::RecordsWithExtDimensions {
+            insert(output, "МоментВремени", "PointInTime");
+        }
+        if self.kind == VirtualTable::Turnovers {
+            insert(output, "КорСчет", "BalancedAccount");
+        }
         let split = self.kind == VirtualTable::DrCrTurnovers
             || (self.kind == VirtualTable::RecordsWithExtDimensions && correspondence);
         if self.kind == VirtualTable::ExtDimensions {
@@ -279,6 +276,13 @@ impl Context<'_, '_> {
             insert(output, "Счет", "Account");
         }
         for index in 1..=self.extra_dimension_count()? {
+            if self.kind == VirtualTable::Turnovers {
+                insert(
+                    output,
+                    &format!("КорСубконто{index}"),
+                    &format!("BalancedExtDimension{index}"),
+                );
+            }
             for (ru, en) in if split {
                 &[("Дт", "Dr"), ("Кт", "Cr")][..]
             } else {
