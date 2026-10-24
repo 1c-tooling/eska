@@ -5,7 +5,7 @@ use std::ops::Range;
 use super::Error;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum Kind {
+pub(in crate::project::query) enum Kind {
     Word,
     Number,
     Quoted,
@@ -14,7 +14,7 @@ pub(super) enum Kind {
 }
 
 #[derive(Clone, Debug)]
-pub(super) struct Token {
+pub(in crate::project::query) struct Token {
     pub kind: Kind,
     pub range: Range<usize>,
     pub depth: u16,
@@ -29,7 +29,7 @@ impl Token {
 }
 
 /// Keep all unknown symbols visible to the model and reject malformed nesting before planning any edit.
-pub(super) fn tokens(input: &str) -> Result<Vec<Token>, Error> {
+pub(in crate::project::query) fn tokens(input: &str) -> Result<Vec<Token>, Error> {
     let mut result = Vec::new();
     let mut offset = 0;
     let mut nesting = Vec::new();

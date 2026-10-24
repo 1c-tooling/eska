@@ -74,7 +74,11 @@ pub(super) fn append(
 }
 
 /// Equivalent base/extension columns share one semantic key while preserving both query spellings.
-fn insert(fields: &mut BTreeMap<String, QueryFieldChoice>, russian: &str, english: &str) {
+pub(super) fn insert(
+    fields: &mut BTreeMap<String, QueryFieldChoice>,
+    russian: &str,
+    english: &str,
+) {
     fields
         .entry(english.to_lowercase())
         .or_insert_with(|| QueryFieldChoice {
@@ -84,7 +88,7 @@ fn insert(fields: &mut BTreeMap<String, QueryFieldChoice>, russian: &str, englis
 }
 
 /// A field must map to its real namespace-aware object, never to a similarly named nested property.
-fn object_node<'a>(
+pub(super) fn object_node<'a>(
     document: &'a Document<'_>,
     object: &ParsedObject,
 ) -> Result<Node<'a, 'a>, QuerySessionError> {
@@ -95,7 +99,7 @@ fn object_node<'a>(
 }
 
 /// Direct owner properties decide the physical query-column layout.
-fn property<'a>(object: Node<'a, '_>, name: &str) -> Option<&'a str> {
+pub(super) fn property<'a>(object: Node<'a, '_>, name: &str) -> Option<&'a str> {
     object
         .children()
         .find(|node| node.has_tag_name((MD, "Properties")))?

@@ -3,6 +3,7 @@
 use std::collections::BTreeMap;
 
 mod fields;
+mod virtuals;
 
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +26,8 @@ pub struct QueryCatalogRequest {
     pub limit: Option<usize>,
     pub table: Option<String>,
     pub qualifier: Option<String>,
+    #[serde(default)]
+    pub virtual_tables: bool,
 }
 
 /// Both spellings are query names, not locale-dependent identities or client-generated SQL.
@@ -36,6 +39,8 @@ pub struct QueryTableChoice {
     pub russian: String,
     pub english: String,
     pub alias: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub virtual_table: Option<crate::project::query::virtual_tables::VirtualTable>,
 }
 
 /// Custom names are retained; standard query fields expose their real bilingual spelling.
@@ -55,6 +60,7 @@ pub struct QueryCatalogPage {
     pub found: bool,
     pub context_fingerprint: String,
     pub limited_context: bool,
+    pub parameters: Vec<crate::project::query::virtual_tables::Parameter>,
 }
 
 impl ProjectSession {
@@ -89,18 +95,10 @@ impl ProjectSession {
             return Err(QueryError::InvalidPosition.into());
         }
         let context = self.query_context(application)?;
-        let mut tables = BTreeMap::new();
-        let mut fields = BTreeMap::new();
-        let mut found = false;
+        let mut choices = CatalogContents::default();
         for source in context.context.sources() {
             if source.project().source() == self.project().source() {
-                collect(
-                    self,
-                    request.table.as_deref(),
-                    &mut tables,
-                    &mut fields,
-                    &mut found,
-                )?;
+                collect(self, request, &mut choices)?;
             } else {
                 let scope = source.member().map_or(ProjectScope::Standalone, |name| {
                     ProjectScope::Member(name.clone())
@@ -108,17 +106,12 @@ impl ProjectSession {
                 let source = designer_source::open_project(source.project().clone(), scope, true)
                     .map_err(|error| workspace_error(WorkspaceError::Source(error)))?;
                 let project = Self::open(source).map_err(workspace_error)?;
-                collect(
-                    &project,
-                    request.table.as_deref(),
-                    &mut tables,
-                    &mut fields,
-                    &mut found,
-                )?;
+                collect(&project, request, &mut choices)?;
             }
         }
         let search = request.search.to_lowercase();
-        let mut matching = tables
+        let mut matching = choices
+            .tables
             .into_values()
             .filter(|table| {
                 search.is_empty()
@@ -130,7 +123,8 @@ impl ProjectSession {
         let next_offset = matching
             .next()
             .map(|_| request.offset.saturating_add(tables.len()));
-        let fields = fields
+        let fields = choices
+            .fields
             .into_values()
             .map(|mut field| {
                 if let Some(alias) = &request.qualifier {
@@ -144,20 +138,28 @@ impl ProjectSession {
             tables,
             fields,
             next_offset,
-            found: request.table.is_none() || found,
+            found: request.table.is_none() || choices.found,
             context_fingerprint: context.fingerprint,
             limited_context: context.context.limited_context(),
+            parameters: choices.parameters,
         })
     }
+}
+
+/// One accumulation keeps overlay fields and positional signatures consistent across application sources.
+#[derive(Default)]
+struct CatalogContents {
+    tables: BTreeMap<String, QueryTableChoice>,
+    fields: BTreeMap<String, QueryFieldChoice>,
+    found: bool,
+    parameters: Vec<crate::project::query::virtual_tables::Parameter>,
 }
 
 /// Root declarations enumerate physical tables without opening every catalog, document or register.
 fn collect(
     project: &ProjectSession,
-    requested: Option<&str>,
-    tables: &mut BTreeMap<String, QueryTableChoice>,
-    fields: &mut BTreeMap<String, QueryFieldChoice>,
-    found: &mut bool,
+    request: &QueryCatalogRequest,
+    choices: &mut CatalogContents,
 ) -> Result<(), QuerySessionError> {
     for object in project
         .objects
@@ -168,7 +170,7 @@ fn collect(
             continue;
         };
         let table = choice(object.kind, &object.name, russian, english);
-        if let Some(requested) = requested {
+        if let Some(requested) = request.table.as_deref() {
             let matches = [table.russian.as_str(), table.english.as_str()]
                 .iter()
                 .any(|name| {
@@ -178,12 +180,13 @@ fn collect(
                             .starts_with(&format!("{}.", name.to_lowercase()))
                 });
             if matches {
-                collect_fields(
-                    project, &object.id, &table, requested, tables, fields, found,
-                )?;
+                collect_fields(project, &object.id, &table, request, choices)?;
             }
         } else {
-            tables.entry(table.english.to_lowercase()).or_insert(table);
+            choices
+                .tables
+                .entry(table.english.to_lowercase())
+                .or_insert(table);
         }
     }
     Ok(())
@@ -194,10 +197,8 @@ fn collect_fields(
     project: &ProjectSession,
     id: &ObjectId,
     table: &QueryTableChoice,
-    requested: &str,
-    tables: &mut BTreeMap<String, QueryTableChoice>,
-    fields: &mut BTreeMap<String, QueryFieldChoice>,
-    found: &mut bool,
+    request: &QueryCatalogRequest,
+    choices: &mut CatalogContents,
 ) -> Result<(), QuerySessionError> {
     let parsed = metadata_parser::load(&project.source, id, PropertiesMode::Summary)
         .map_err(|error| workspace_error(WorkspaceError::Load(error)))?;
@@ -222,7 +223,39 @@ fn collect_fields(
         .iter()
         .find(|object| object.metadata.id() == id)
         .ok_or_else(|| workspace_error(WorkspaceError::UnknownObject(id.clone())))?;
+    let requested = request
+        .table
+        .as_deref()
+        .ok_or(QueryError::InvalidPosition)?;
     let is_root = same_name(requested, &table.russian) || same_name(requested, &table.english);
+    if request.virtual_tables {
+        let node = fields::object_node(&document, owner)?;
+        if is_root {
+            virtuals::choices(table, node, &mut choices.tables);
+        } else if let Some((category, virtual_table)) =
+            crate::project::query::virtual_tables::VirtualTable::resolve(requested)
+        {
+            if virtuals::available(virtual_table, category, node) {
+                choices.found = true;
+                if choices.parameters.is_empty() {
+                    choices.parameters = virtual_table.parameters(
+                        category,
+                        fields::property(node, "Correspondence") == Some("true"),
+                    );
+                }
+                return virtuals::fields(
+                    project,
+                    virtual_table,
+                    table,
+                    &document,
+                    &parsed,
+                    owner,
+                    &mut choices.fields,
+                );
+            }
+            return Ok(());
+        }
+    }
     let selected = if is_root {
         Some(owner)
     } else {
@@ -240,7 +273,7 @@ fn collect_fields(
     let Some(selected) = selected else {
         return Ok(());
     };
-    *found = true;
+    choices.found = true;
     for object in parsed.objects.iter().filter(|object| {
         object.metadata.parent() == Some(selected.metadata.id())
             && object.metadata.kind() == MetadataKind::TabularSection
@@ -252,10 +285,20 @@ fn collect_fields(
             russian: format!("{}.{name}", table.russian),
             english: format!("{}.{name}", table.english),
             alias: name.to_owned(),
+            virtual_table: None,
         };
-        tables.entry(value.english.to_lowercase()).or_insert(value);
+        choices
+            .tables
+            .entry(value.english.to_lowercase())
+            .or_insert(value);
     }
-    fields::append(&document, &parsed, selected, table.category, fields)?;
+    fields::append(
+        &document,
+        &parsed,
+        selected,
+        table.category,
+        &mut choices.fields,
+    )?;
     Ok(())
 }
 
@@ -290,6 +333,7 @@ fn choice(category: MetadataKind, name: &str, russian: &str, english: &str) -> Q
         russian: format!("{russian}.{name}"),
         english: format!("{english}.{name}"),
         alias: name.to_owned(),
+        virtual_table: None,
     }
 }
 

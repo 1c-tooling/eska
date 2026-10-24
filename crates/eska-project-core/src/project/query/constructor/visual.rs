@@ -38,6 +38,20 @@ pub enum Comparison {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Expression {
+    VirtualSource {
+        table: String,
+        alias: String,
+        parameters: Vec<String>,
+    },
+    VirtualJoin {
+        table: String,
+        alias: String,
+        parameters: Vec<String>,
+        join: JoinKind,
+        left: String,
+        comparison: Comparison,
+        right: String,
+    },
     Source {
         table: String,
         alias: String,
@@ -74,15 +88,17 @@ pub enum Expression {
 pub struct SourceBinding {
     pub table: String,
     pub alias: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<Vec<String>>,
 }
 
 impl Expression {
     /// The expression type determines its destination clause.
     const fn clause(&self) -> ClauseKind {
         match self {
-            Self::Source { .. } => ClauseKind::Sources,
+            Self::Source { .. } | Self::VirtualSource { .. } => ClauseKind::Sources,
             Self::Field { .. } => ClauseKind::Fields,
-            Self::Join { .. } => ClauseKind::Joins,
+            Self::Join { .. } | Self::VirtualJoin { .. } => ClauseKind::Joins,
             Self::Condition { .. } => ClauseKind::Conditions,
             Self::Group { .. } => ClauseKind::Group,
             Self::Order { .. } => ClauseKind::Order,
@@ -92,6 +108,9 @@ impl Expression {
     /// Generate only the requested fragment; the lossless editor still validates boundaries and owns comments.
     fn text(&self, russian: bool) -> Result<String, Error> {
         let complete = match self {
+            Self::VirtualSource { .. } | Self::VirtualJoin { .. } => {
+                return Err(Error::InvalidExpression);
+            }
             Self::Source { table, .. } => !table.trim().is_empty(),
             Self::Field { expression, .. }
             | Self::Group { expression }
@@ -117,6 +136,9 @@ impl Expression {
             ))
         };
         Ok(match self {
+            Self::VirtualSource { .. } | Self::VirtualJoin { .. } => {
+                return Err(Error::InvalidExpression);
+            }
             Self::Source { table, alias } => with_alias(table, alias)?,
             Self::Field {
                 expression,
@@ -224,6 +246,37 @@ impl Comparison {
     }
 }
 
+/// Parameter inputs become one checked source fragment before the ordinary lossless operation is planned.
+fn normalize_virtual(expression: &Expression) -> Result<Option<Expression>, Error> {
+    Ok(match expression {
+        Expression::VirtualSource {
+            table,
+            alias,
+            parameters,
+        } => Some(Expression::Source {
+            table: super::super::virtual_tables::call(table, parameters)?,
+            alias: alias.clone(),
+        }),
+        Expression::VirtualJoin {
+            table,
+            alias,
+            parameters,
+            join,
+            left,
+            comparison,
+            right,
+        } => Some(Expression::Join {
+            table: super::super::virtual_tables::call(table, parameters)?,
+            alias: alias.clone(),
+            join: *join,
+            left: left.clone(),
+            comparison: *comparison,
+            right: right.clone(),
+        }),
+        _ => None,
+    })
+}
+
 /// Lower a visual form to the same minimal operation used by the expression editor.
 pub(super) fn compose(
     input: &str,
@@ -232,6 +285,9 @@ pub(super) fn compose(
     selection: Option<Selection>,
     expression: &Expression,
 ) -> Result<Action, Error> {
+    let requested = expression;
+    let normalized = normalize_virtual(expression)?;
+    let expression = normalized.as_ref().unwrap_or(expression);
     let owner = model
         .statements
         .get(statement)
@@ -304,7 +360,7 @@ pub(super) fn compose(
         }
         let clause = &owner.clauses[selection.clause];
         if let Some(item) = clause.items.get(selection.item)
-            && item.visual(input, clause).as_ref() == Some(expression)
+            && item.visual(input, clause).as_ref() == Some(requested)
         {
             text = item.expression(input);
         }
@@ -340,7 +396,19 @@ impl Item {
             }
             ClauseKind::Sources => {
                 let (table, alias) = split_alias(&text)?;
-                Some(Expression::Source { table, alias })
+                Some(
+                    if let Some((name, parameters)) =
+                        super::super::virtual_tables::split_call(&table)
+                    {
+                        Expression::VirtualSource {
+                            table: name.to_owned(),
+                            alias,
+                            parameters,
+                        }
+                    } else {
+                        Expression::Source { table, alias }
+                    },
+                )
             }
             ClauseKind::Conditions => {
                 let (left, comparison, right) = comparison(&text)?;
@@ -392,6 +460,17 @@ impl Item {
                 } else {
                     JoinKind::Inner
                 };
+                if let Some((name, parameters)) = super::super::virtual_tables::split_call(&table) {
+                    return Some(Expression::VirtualJoin {
+                        table: name.to_owned(),
+                        alias,
+                        parameters,
+                        join,
+                        left,
+                        comparison,
+                        right,
+                    });
+                }
                 Some(Expression::Join {
                     table,
                     alias,
@@ -429,7 +508,16 @@ impl super::Statement {
                 } else {
                     alias
                 };
-                Some(SourceBinding { table, alias })
+                let (table, parameters) = super::super::virtual_tables::split_call(&table)
+                    .map_or_else(
+                        || (table.clone(), None),
+                        |(name, parameters)| (name.to_owned(), Some(parameters)),
+                    );
+                Some(SourceBinding {
+                    table,
+                    alias,
+                    parameters,
+                })
             })
             .collect()
     }

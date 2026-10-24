@@ -2,6 +2,70 @@ use super::*;
 
 const DRAFT: &str = "SELECT A, // keep 😀\n B FROM T;\nDESTROY Temp";
 
+/// Virtual-table calls are portable structured actions; older clients retain their previous bounded contract.
+#[test]
+fn virtual_table_rpc_is_negotiated_and_never_mutates_the_canonical_draft() {
+    for locale in ["en-US", "ru-RU"] {
+        for minor in [22, 23] {
+            let (_directory, root, private) = source_fixture();
+            let config = root.join("src/Configuration.xml");
+            fs::write(&config, fs::read_to_string(&config).unwrap().replace("<CommonForm>Queries</CommonForm>", "<CommonForm>Queries</CommonForm><AccumulationRegister>Stock</AccumulationRegister>")).unwrap();
+            fs::create_dir(root.join("src/AccumulationRegisters")).unwrap();
+            fs::write(root.join("src/AccumulationRegisters/Stock.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><AccumulationRegister uuid='33333333-3333-3333-3333-333333333333'><Properties><Name>Stock</Name><RegisterType>Balance</RegisterType></Properties><ChildObjects/></AccumulationRegister></MetaDataObject>").unwrap();
+            let mut client = Client::new(&root, locale);
+            let binding = source_connect_version(&mut client, &root, &private, locale, minor);
+            let state = open_source(&mut client, &binding, XML, false);
+            let opened = client.request(
+                "query/constructorOpen",
+                &source_args(
+                    &binding,
+                    json!({"querySessionId":state["querySessionId"],"revision":state["revision"]}),
+                ),
+            );
+            let query = constructor_args(
+                &binding,
+                &opened,
+                json!({"query":{"virtualTables":true,"table":"AccumulationRegister.Stock.Balance"}}),
+            );
+            let action = constructor_args(
+                &binding,
+                &opened,
+                json!({"action":{"kind":"compose","statement":0,"selection":null,"expression":{"kind":"virtualSource","table":"AccumulationRegister.Stock.Balance","alias":"S","parameters":["","Item = &Item"]}}}),
+            );
+            if minor < 23 {
+                assert_eq!(
+                    client.response("query/constructorCatalog", &query)["error"]["code"],
+                    -32601
+                );
+                assert_eq!(
+                    client.response("query/constructorAction", &action)["error"]["code"],
+                    -32601
+                );
+            } else {
+                let page = client.request("query/constructorCatalog", &query);
+                assert_eq!(page["catalog"]["parameters"][0]["key"], "period");
+                assert_eq!(page["catalog"]["parameters"][1]["key"], "condition");
+                let changed = client.request("query/constructorAction", &action);
+                assert!(
+                    changed["constructor"]["text"]
+                        .as_str()
+                        .unwrap()
+                        .contains("Balance(, Item = &Item) AS S")
+                );
+                assert_eq!(
+                    changed["constructor"]["statements"][0]["clauses"][1]["items"][0]["visual"]["kind"],
+                    "virtualSource"
+                );
+                assert_eq!(source_parts(&mut client, &binding, &changed)[3], "SELECT 1");
+            }
+            assert_eq!(
+                fs::read_to_string(root.join("src").join(SOURCE)).unwrap(),
+                XML
+            );
+        }
+    }
+}
+
 /// Catalog reads and typed operations use one constructor identity and cannot advance the canonical draft before Finish.
 #[test]
 fn visual_constructor_rpc_binds_catalog_and_operations_to_the_same_revision_and_application() {

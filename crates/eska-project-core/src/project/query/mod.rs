@@ -5,6 +5,7 @@ pub mod constructor;
 mod editing;
 mod mapping;
 pub mod recovery;
+pub mod virtual_tables;
 mod xml;
 
 pub use bsl::read_bsl;

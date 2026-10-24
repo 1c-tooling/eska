@@ -1,7 +1,7 @@
 //! Token-preserving visual query operations are domain logic; IDEs display models and apply checked plans.
 
 mod editing;
-mod lex;
+pub(super) mod lex;
 mod model;
 mod visual;
 

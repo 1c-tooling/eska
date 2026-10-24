@@ -37,7 +37,7 @@ pub(in super::super) fn augment(
         .get(selection.item)
         .ok_or(Error::InvalidSelection)?;
     let mut edits = plan.replacements().to_vec();
-    if let Expression::Join { join, .. } = expression {
+    if let Expression::Join { join, .. } | Expression::VirtualJoin { join, .. } = expression {
         edits.extend(join_header(input, clause, *join, owner.russian)?);
     }
     let old = item.visual(input, clause);
@@ -47,13 +47,26 @@ pub(in super::super) fn augment(
                 table: old_table,
                 alias: old_alias,
             }
+            | Expression::VirtualSource {
+                table: old_table,
+                alias: old_alias,
+                ..
+            }
+            | Expression::VirtualJoin {
+                table: old_table,
+                alias: old_alias,
+                ..
+            }
             | Expression::Join {
                 table: old_table,
                 alias: old_alias,
                 ..
             },
         ),
-        Expression::Source { table, alias } | Expression::Join { table, alias, .. },
+        Expression::Source { table, alias }
+        | Expression::Join { table, alias, .. }
+        | Expression::VirtualSource { table, alias, .. }
+        | Expression::VirtualJoin { table, alias, .. },
     ) = (old, expression)
     {
         let previous = implicit_alias(&old_table, &old_alias);
@@ -79,7 +92,10 @@ pub(in super::super) fn augment(
                     edits.push(reference);
                 }
             }
-            if matches!(expression, Expression::Join { .. }) {
+            if matches!(
+                expression,
+                Expression::Join { .. } | Expression::VirtualJoin { .. }
+            ) {
                 for edit in edits.iter_mut().filter(|edit| edit.range == item.range) {
                     let start = on_end(&edit.text)?.unwrap_or(edit.text.len());
                     let replacements =

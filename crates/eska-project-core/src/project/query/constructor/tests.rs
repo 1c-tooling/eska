@@ -1,5 +1,7 @@
 use super::*;
 
+mod virtuals;
+
 /// Implicit source names retain complete qualification; nested property names are not aliases to another source.
 #[test]
 fn implicit_source_qualification_and_nested_properties_survive_alias_changes() {

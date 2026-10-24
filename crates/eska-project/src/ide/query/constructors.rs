@@ -49,13 +49,16 @@ pub(super) fn is_cleanup(method: &str) -> bool {
 }
 
 /// Visual editing is explicit, lossless, bounded and fenced at the same canonical draft used by XML/BSL sessions.
-pub(super) fn capability(visual: bool) -> Value {
+pub(super) fn capability(visual: bool, advanced: bool) -> Value {
     let mut result = json!({"schemaVersion":1,"writesOwner":false,"writesDraft":true,"explicitFinish":true,"exclusiveDraft":true,
         "maxTokens":65536,"maxStatements":256,"maxStatementClauses":128,"maxStatementSeparators":2048,"lossless":true,"nativeDraftPlan":true,"sourceCommentPositions":true,"maxExpressionBytes":MAX_EXPRESSION,"maxModelBytes":MAX_MODEL_BYTES,"sharedQueryBudget":true,
         "clauses":["fields","sources","joins","conditions","group","order"]});
     if visual {
         result["visualExpressions"] = json!(true);
         result["metadataCatalog"] = json!(true);
+    }
+    if advanced {
+        result["virtualTables"] = json!(true);
     }
     result
 }
@@ -108,6 +111,7 @@ impl State {
         args: &Value,
         recovery: &mut recovery::State,
         forbidden: &[PathBuf],
+        advanced: bool,
     ) -> Result<Value, Value> {
         #[derive(Deserialize)]
         #[serde(rename_all = "camelCase")]
@@ -164,6 +168,7 @@ impl State {
                 value,
                 &input.constructor_id,
                 entry.core.constructor_writable(),
+                advanced,
             )?;
             return Ok(output);
         }
@@ -172,14 +177,7 @@ impl State {
         self.admit_change(entry.core.retained_bytes(), core.retained_bytes())?;
         let view = id
             .as_deref()
-            .map(|id| {
-                model(
-                    core.constructor(params::counter(id)?)
-                        .map_err(session_error)?,
-                    id,
-                    core.constructor_writable(),
-                )
-            })
+            .map(|id| bound_model(&core, id, advanced))
             .transpose()?;
         let stored = if method == "query/constructorFinish" {
             let project_key = entry.stored.record.metadata()["projectKey"]
@@ -230,6 +228,21 @@ type Transition = (
     Option<eska_project_core::project::metadata_edit::EditPlan>,
     Option<bool>,
 );
+
+/// Resolve an owned constructor before producing any transport model.
+fn bound_model(
+    core: &eska_project_core::project::metadata_workspace::QuerySession,
+    id: &str,
+    advanced: bool,
+) -> Result<Value, Value> {
+    model(
+        core.constructor(params::counter(id)?)
+            .map_err(session_error)?,
+        id,
+        core.constructor_writable(),
+        advanced,
+    )
+}
 
 /// Tokens identify only this source session; native snapshot guards protect the final canonical-draft handoff.
 fn transition(
@@ -311,14 +324,15 @@ fn transition(
 }
 
 /// DTO text is the exact working draft; long expressions remain readable but cannot be replaced through a short input control.
-fn model(value: &Constructor, id: &str, writable: bool) -> Result<Value, Value> {
+fn model(value: &Constructor, id: &str, writable: bool, advanced: bool) -> Result<Value, Value> {
     let input = value.text();
     let statements: Vec<_> = value.model().statements.iter().enumerate().map(|(index, statement)| {
         let clauses: Vec<_> = statement.clauses.iter().enumerate().map(|(index, clause)| {
             let items: Vec<_> = clause.items.iter().enumerate().map(|(index, item)| {
                 let expression = item.expression(input);
                 let too_large = expression.len() > MAX_EXPRESSION;
-                json!({"index":index,"range":dto::bytes(&item.range),"preview":preview(&input[item.range.clone()]),"visual":if too_large {None} else {item.visual(input, clause)},
+                let visual = item.visual(input, clause).filter(|value| advanced || !matches!(value, eska_project_core::project::query::constructor::Expression::VirtualSource { .. } | eska_project_core::project::query::constructor::Expression::VirtualJoin { .. }));
+                json!({"index":index,"range":dto::bytes(&item.range),"preview":preview(&input[item.range.clone()]),"visual":if too_large {None} else {visual},
                     "expression":if too_large {None} else {Some(expression)},"comments":item.comments.len(),
                     "removable":writable && (clause.items.len()>1 || !matches!(clause.kind,ClauseKind::Fields|ClauseKind::Sources)),
                     "movable":writable && clause.kind!=ClauseKind::Joins && clause.items.len()>1,

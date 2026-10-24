@@ -1,6 +1,8 @@
 use super::*;
 use crate::backend::project::metadata_workspace::QueryCatalogRequest;
 
+mod virtuals;
+
 /// Correspondence columns use the actual debit/credit layout rather than inventing a shared Account or unbalanced field.
 #[test]
 fn query_catalog_distinguishes_balanced_and_correspondence_accounting_columns() {

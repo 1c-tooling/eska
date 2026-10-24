@@ -79,14 +79,38 @@ pub(super) fn projection_capability() -> Value {
     projections::capability()
 }
 
-/// Exclusive visual draft ownership is negotiated separately from read-only language projections.
-pub(super) fn is_constructor_method(method: &str) -> bool {
-    constructors::is_method(method)
+/// The constructor never writes the owner; only explicit finish updates its existing private draft.
+pub(super) fn constructor_capability(visual: bool, advanced: bool) -> Value {
+    constructors::capability(visual, advanced)
 }
 
-/// The constructor never writes the owner; only explicit finish updates its existing private draft.
-pub(super) fn constructor_capability(visual: bool) -> Value {
-    constructors::capability(visual)
+/// Each constructor extension has one explicit minimum, before any session lookup or mutation.
+pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
+    if !constructors::is_method(method) {
+        return 0;
+    }
+    if method == "query/constructorCatalog" {
+        return if args["query"]["virtualTables"] == true {
+            23
+        } else {
+            22
+        };
+    }
+    if method == "query/constructorAction" {
+        if matches!(
+            args["action"]["expression"]["kind"].as_str(),
+            Some("virtualSource" | "virtualJoin")
+        ) {
+            return 23;
+        }
+        if matches!(
+            args["action"]["kind"].as_str(),
+            Some("compose" | "appendFields")
+        ) {
+            return 22;
+        }
+    }
+    21
 }
 
 /// Shared protected-source inspection is an additive contract negotiated independently from query lifecycle.
@@ -313,6 +337,7 @@ impl Server {
                 args,
                 &mut self.recovery,
                 &forbidden,
+                self.client_minor >= 23,
             );
         }
         if matches!(method, "query/sessionClose" | "query/sessionGet") {
@@ -349,10 +374,14 @@ impl Server {
             method if source::is_method(method) => {
                 self.queries.source_request(project, &key, method, args)
             }
-            method if constructors::is_method(method) => {
-                self.queries
-                    .constructor_request(&key, method, args, &mut self.recovery, &forbidden)
-            }
+            method if constructors::is_method(method) => self.queries.constructor_request(
+                &key,
+                method,
+                args,
+                &mut self.recovery,
+                &forbidden,
+                self.client_minor >= 23,
+            ),
             method if sessions::is_method(method) => self.queries.session_request(
                 project,
                 &key,
