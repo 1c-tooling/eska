@@ -82,6 +82,10 @@ pub(super) fn capability(minor: u32) -> Value {
         result["multipleTotals"] = json!(true);
         result["maxTotalSections"] = json!(32);
     }
+    if minor >= 29 {
+        result["dcs"] = json!(true);
+        result["maxDcsValues"] = json!(128);
+    }
     result
 }
 

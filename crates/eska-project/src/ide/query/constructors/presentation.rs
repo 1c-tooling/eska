@@ -21,13 +21,41 @@ pub(super) fn model(
         minor,
     };
     let input = value.text();
-    let statements: Vec<_> = value
+    let mut statements: Vec<_> = value
         .model()
         .statements
         .iter()
         .enumerate()
         .map(|(index, statement)| view.statement(index, statement))
         .collect();
+    if minor >= 29 {
+        let dcs = value
+            .dcs_model()
+            .map_err(|_| failure("constructor_limit"))?;
+        for (statement, dcs) in statements.iter_mut().zip(dcs.statements) {
+            let mut dcs = json!(dcs);
+            for node in dcs["nodes"].as_array_mut().into_iter().flatten() {
+                if let (Some(start), Some(end)) = (
+                    node["range"]["start"]
+                        .as_u64()
+                        .and_then(|v| usize::try_from(v).ok()),
+                    node["range"]["end"]
+                        .as_u64()
+                        .and_then(|v| usize::try_from(v).ok()),
+                ) {
+                    node["preview"] = json!(preview(&input[start..end]));
+                }
+            }
+            if !writable {
+                dcs["addSelect"] = json!(false);
+                dcs["addWhere"] = json!(false);
+                for node in dcs["nodes"].as_array_mut().into_iter().flatten() {
+                    node["editable"] = json!(false);
+                }
+            }
+            statement["dcs"] = dcs;
+        }
+    }
     let mut output = json!({"id":id,"revision":value.revision().to_string(),"snapshot":snapshot(input),"text":input,
         "bytes":input.len(),"writable":writable,"statements":statements});
     if minor >= 23 {

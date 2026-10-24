@@ -1,5 +1,6 @@
 //! Token-preserving visual query operations are domain logic; IDEs display models and apply checked plans.
 
+mod dcs;
 mod editing;
 pub(super) mod lex;
 mod model;
@@ -14,6 +15,7 @@ use std::sync::Arc;
 
 use crate::project::metadata_edit::{EditPlan, snapshot};
 
+pub use dcs::{DcsKind, DcsModel, DcsNode, DcsStatement, DcsValue};
 pub use model::{Clause, ClauseKind, Item, Model, Statement, Unavailable};
 pub use packages::{PackageIssue, PackageIssueKind, PackageOperation, TemporaryTable};
 pub use scopes::{QueryScope, Union};
@@ -52,6 +54,14 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    SetDcs {
+        statement: usize,
+        node: Option<usize>,
+        target: DcsKind,
+        values: Vec<DcsValue>,
+        enabled: bool,
+        comments: Option<CommentDecision>,
+    },
     AddTotals {
         statement: usize,
         after: Option<usize>,
@@ -143,7 +153,8 @@ impl Action {
     #[must_use]
     pub const fn statement(&self) -> usize {
         match self {
-            Self::AddTotals { statement, .. }
+            Self::SetDcs { statement, .. }
+            | Self::AddTotals { statement, .. }
             | Self::RemoveTotals { statement, .. }
             | Self::MoveTotals { statement, .. }
             | Self::ComposeTotal { statement, .. }
@@ -219,6 +230,14 @@ impl Constructor {
         &self.model
     }
 
+    /// DCS is a read-only projection of the same canonical bytes; unknown blocks never grant write authority.
+    ///
+    /// # Errors
+    /// Rejects resource exhaustion while scanning the bounded query.
+    pub fn dcs_model(&self) -> Result<DcsModel, Error> {
+        dcs::inspect(&self.working, &self.model)
+    }
+
     /// Read-only previews use these exact bytes, including all opaque statements and comments.
     #[must_use]
     pub fn text(&self) -> &str {
@@ -267,6 +286,11 @@ impl Constructor {
     pub fn apply(&mut self, expected: u64, action: &Action) -> Result<EditPlan, Error> {
         if expected != self.revision {
             return Err(Error::StaleRevision);
+        }
+        if let Some(plan) = dcs::plan(&self.working, &self.model, action)? {
+            let model = Model::parse(plan.output())?;
+            self.accept(&plan, model, action)?;
+            return Ok(plan);
         }
         if let Some(plan) = totals::section_plan(&self.working, &self.model, action)? {
             let model = Model::parse(plan.output())?;

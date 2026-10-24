@@ -855,7 +855,7 @@ fn split_aggregate(text: &str) -> (String, Option<Aggregate>) {
 }
 
 /// Complex predicates remain exact expressions instead of being guessed into a binary condition.
-fn comparison(text: &str) -> Option<(String, Comparison, String)> {
+pub(super) fn comparison(text: &str) -> Option<(String, Comparison, String)> {
     let tokens = lex::tokens(text).ok()?;
     for (index, token) in tokens.iter().enumerate() {
         if token.depth != 0 {

@@ -60,6 +60,61 @@ fn xml_changes_only_the_query_scalar_and_escapes_values_with_existing_patch() {
     assert_eq!(query(result.output()).text, value);
 }
 
+/// A typed DCS change survives the real Designer XML reader/encoder without touching unrelated owner bytes.
+#[test]
+fn typed_dcs_constructor_round_trips_designer_xml_with_cdata_and_entities() {
+    use crate::project::query::constructor::{Action, Comparison, Constructor, DcsKind, DcsValue};
+    let input = xml(&format!(
+        "<!--source--><![CDATA[{}]]>",
+        include_str!("../constructor/tests/fixtures/buhmfo-price-query.sdbl")
+    ));
+    let extracted = query(&input);
+    let mut constructor = Constructor::new(extracted.text.into()).unwrap();
+    assert!(constructor.finish().unwrap().is_empty());
+    constructor
+        .apply(
+            constructor.revision(),
+            &Action::SetDcs {
+                statement: 0,
+                node: Some(
+                    constructor.dcs_model().unwrap().statements[0]
+                        .nodes
+                        .iter()
+                        .find(|node| node.kind == DcsKind::Where)
+                        .unwrap()
+                        .index,
+                ),
+                target: DcsKind::Where,
+                values: vec![DcsValue::Condition {
+                    left: "СправочникНоменклатура.Код".into(),
+                    comparison: Comparison::Less,
+                    right: "&Граница".into(),
+                }],
+                enabled: true,
+                comments: None,
+            },
+        )
+        .unwrap();
+    let output = edit(&input, constructor.text(), &[]).unwrap();
+    assert_eq!(query(output.output()).text, constructor.text());
+    assert_eq!(output.replacements().len(), 1);
+    assert!(
+        output
+            .output()
+            .starts_with(input.split("<![CDATA[").next().unwrap())
+    );
+    assert!(
+        output.output().ends_with(
+            "</query><other>unchanged</other></dataSet>\r\n</DataCompositionSchema>\r\n"
+        )
+    );
+    assert!(
+        output
+            .output()
+            .contains("СправочникНоменклатура.Код &lt; &amp;Граница")
+    );
+}
+
 /// Editor EOL normalization must not change the byte plan or the canonical decoded XML query.
 #[test]
 fn editor_line_endings_match_new_xml_lines_without_rewriting_owner_or_no_op() {

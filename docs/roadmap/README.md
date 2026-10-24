@@ -74,7 +74,7 @@ T98–T99 в эту цель не входят. `DONE` фиксируется т
 **T109 → T110 → T111 → T112 → T113 → T114**:
 связанные метаданные базы/расширений, временные таблицы и пакеты, HAVING,
 последовательные итоги, конструкции СКД и приёмка реальной платформой.
-T109–T112 завершены, выполняется T113; [scope и критерии](20-query-constructor-completion.md).
+T109–T113 завершены, выполняется T114; [scope и критерии](20-query-constructor-completion.md).
 Вся доменная логика принадлежит ESKA; расширение предоставляет интерфейс.
 
 Ревью от 2026-10-24 перенесло обратную навигацию по исходникам из Explorer
@@ -445,8 +445,8 @@ BSL LSP и визуальный редактор форм в это направ
 | T110 | DONE | Временные таблицы, INTO, порядок операторов и зависимости пакета | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 | T111 | DONE | Отбор по агрегатам ИМЕЮЩИЕ/HAVING в ESKA и интерфейсе | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 | T112 | DONE | Несколько последовательных секций итогов | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
-| T113 | IN-PROGRESS | Типизированные конструкции языка СКД по грамматике платформы | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
-| T114 | PLANNED | Приёмка сформированных запросов на тестовой ИБ buhmfo и fixtures платформы 1С | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
+| T113 | DONE | Типизированные конструкции языка СКД по грамматике платформы | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
+| T114 | IN-PROGRESS | Приёмка сформированных запросов на тестовой ИБ buhmfo и fixtures платформы 1С | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в

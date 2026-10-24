@@ -12,6 +12,7 @@ use super::{
 pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<EditPlan, Error> {
     let edits = match action {
         Action::Compose { .. }
+        | Action::SetDcs { .. }
         | Action::AddTotals { .. }
         | Action::RemoveTotals { .. }
         | Action::MoveTotals { .. }
@@ -91,7 +92,7 @@ fn item_at(model: &Model, selection: Selection) -> Result<(&Clause, &Item), Erro
 }
 
 /// Fragments cannot escape their selected item into another clause, statement or SCD extension.
-fn fragment(text: &str) -> Result<(), Error> {
+pub(super) fn fragment(text: &str) -> Result<(), Error> {
     if text.trim().is_empty() || text.len() > super::super::MAX_SNAPSHOT_BYTES {
         return Err(Error::InvalidExpression);
     }

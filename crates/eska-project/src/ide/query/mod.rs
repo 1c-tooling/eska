@@ -103,6 +103,9 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
         };
     }
     if method == "query/constructorAction" {
+        if args["action"]["kind"] == "setDcs" {
+            return 29;
+        }
         if matches!(
             args["action"]["kind"].as_str(),
             Some("addTotals" | "removeTotals" | "moveTotals" | "composeTotal" | "appendTotal")
