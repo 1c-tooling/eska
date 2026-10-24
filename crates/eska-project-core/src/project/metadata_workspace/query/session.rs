@@ -443,7 +443,7 @@ impl QuerySession {
             Phase::Applying(_) | Phase::Recovering(_) => return Err(QuerySessionError::ApplyBusy),
             _ => return Err(QuerySessionError::ResumeRequired),
         }
-        let document = self.checked_document(project, current, false)?;
+        let document = self.checked_read_document(project, current, false)?;
         project.check_query_read(&document, revision(&document))?;
         let plan = document.plan(&self.identity, &self.draft, &[], None)?;
         let QueryIdentity::BslLiteral(range) = &self.identity else {
@@ -711,6 +711,20 @@ impl QuerySession {
         current: QueryEditorState<'_>,
         resuming: bool,
     ) -> Result<QueryDocument, QuerySessionError> {
+        let document = self.checked_read_document(project, current, resuming)?;
+        if !self.document.writable || !document.writable {
+            return Err(QueryDocumentError::ReadOnly.into());
+        }
+        Ok(document)
+    }
+
+    /// Analysis retains every snapshot/context guard without turning source inspection into write permission.
+    fn checked_read_document(
+        &self,
+        project: &mut ProjectSession,
+        current: QueryEditorState<'_>,
+        resuming: bool,
+    ) -> Result<QueryDocument, QuerySessionError> {
         if current.snapshot != self.document.snapshot
             || (!resuming && current.version != self.document.version)
         {
@@ -725,9 +739,6 @@ impl QuerySession {
             Some(Arc::clone(&self.document.input)),
         )?;
         self.check_descriptor(&document)?;
-        if !self.document.writable || !document.writable {
-            return Err(QueryDocumentError::ReadOnly.into());
-        }
         let matching_disk = document.disk_snapshot
             == disk_snapshot(&document.input, document.disk_bom, self.format);
         if (!current.is_dirty && !matching_disk)

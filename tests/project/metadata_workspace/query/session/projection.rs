@@ -5,6 +5,54 @@ use crate::backend::project::{
     query::{Affinity, byte_position},
 };
 
+/// A real support prohibition permits current query analysis but never yields a source-application plan.
+#[test]
+fn supported_source_projection_keeps_read_guards_without_granting_write_permission() {
+    let (directory, mut workspace, node, path) = setup();
+    let root = "11111111-1111-1111-1111-111111111111";
+    let rules = format!(
+        "{{6,0,1,{root},0,{root},\"1\",\"Vendor\",\"Test\",1,0,0,{root},{root},0,0,0,1,0,0,0,1,0,1,0,1,1,1,1}}"
+    );
+    fs::write(directory.0.join("src/Ext/ParentConfigurations.bin"), rules).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let document = project.query_document(&node, &path, 7, None).unwrap();
+    assert!(!document.writable());
+    let selected = identity(&document);
+    let hash = document.snapshot().to_owned();
+    let mut session = QuerySession::open(
+        project,
+        document,
+        selected,
+        None,
+        QueryOwnerFormat::Source,
+        QueryOwnerRestrictions::default(),
+    )
+    .unwrap();
+    let projection = session
+        .language_projection(project, session.revision(), editor(7, &hash, false))
+        .unwrap();
+    assert_eq!(projection.draft(), session.draft());
+    assert!(matches!(
+        session.language_projection(project, session.revision(), editor(8, &hash, false)),
+        Err(QuerySessionError::Document(error)) if matches!(*error, QueryDocumentError::StaleVersion)
+    ));
+    fs::write(
+        directory.0.join("src").join(&path),
+        "// changed externally\n",
+    )
+    .unwrap();
+    assert!(
+        session
+            .language_projection(project, session.revision(), editor(7, &hash, false))
+            .is_err()
+    );
+    fs::write(directory.0.join("src").join(&path), INPUT).unwrap();
+    assert!(matches!(
+        session.prepare(project, session.revision(), editor(7, &hash, false), &[], None),
+        Err(QuerySessionError::Document(error)) if matches!(*error, QueryDocumentError::ReadOnly)
+    ));
+}
+
 /// Language projection keeps the dirty full owner, maps UTF-16 and owns no source-write lease after its session closes.
 #[test]
 fn query_projection_retains_exact_owner_and_maps_draft_and_unchanged_code() {
