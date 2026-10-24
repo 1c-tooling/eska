@@ -1,0 +1,900 @@
+{
+  "schemaVersion": 1,
+  "task": "T114",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-25",
+  "editorAcceptance": "passed",
+  "platformQueryExecution": "not-executed",
+  "metadataApi": "1.29",
+  "domainOwner": "eska-project-core",
+  "environment": {
+    "os": "Linux",
+    "editor": "VSCodium 1.109.51242",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "platform": "8.3.27.2325",
+    "distrobox": "1c-ubuntu-env",
+    "nativeBuildCli": "eska 0.15.2"
+  },
+  "completedTasks": [
+    "T109",
+    "T110",
+    "T111",
+    "T112",
+    "T113"
+  ],
+  "architecture": [
+    "ESKA owns application metadata relationships, syntax, scopes, typed intentions, validation and minimal edit plans",
+    "Explorer owns DTO validation, native view lifecycle, UI controls and Undo/Redo",
+    "The original query remains canonical; unknown DCS constructs retain their exact text"
+  ],
+  "acceptanceFixes": [
+    {
+      "repository": "eska",
+      "commit": "430b4ec",
+      "problem": "An unaliased CASE DCS source item lost its full byte boundary",
+      "result": "A length-preserving masked token keeps the complete source range, including Cyrillic and nested clauses"
+    },
+    {
+      "repository": "eska-vscode-explorer",
+      "commit": "0878006",
+      "problem": "A stale dirty parent TextEditor caused unconditional focus retries and an unresponsive Extension Host",
+      "result": "Only a completed clean-tab close schedules a recheck; an already active constructor panel is not revealed again",
+      "beforeFixRegression": {
+        "failed": 4,
+        "passed": 0
+      },
+      "afterFixRegression": {
+        "failed": 0,
+        "passed": 4
+      },
+      "dirtyOwnerSavedOrDiscardedByGuard": false,
+      "profileEvidence": "t114-unresponsive-profile-top.json"
+    },
+    {
+      "repository": "eska-vscode-explorer",
+      "commit": "ccf2662",
+      "problem": "A pending native open flushed by LanguageClient waited on the same projected URI synchronization queue",
+      "result": "Suppressed native traffic returns before enqueueing and cannot block its own projection notification",
+      "beforeFixRegression": {
+        "failed": 1,
+        "passed": 0
+      },
+      "afterFixModuleTests": {
+        "failed": 0,
+        "passed": 5
+      },
+      "nativeFailureEvidence": "t114-lsp-deadlock-explorer.log",
+      "nativeFailureSecondsBeforeClosingOwnedTestWindow": 275.01
+    }
+  ],
+  "checks": [
+    {
+      "name": "fmt",
+      "exitCode": 0,
+      "seconds": 4.01
+    },
+    {
+      "name": "check",
+      "exitCode": 0,
+      "seconds": 8.98
+    },
+    {
+      "name": "clippy",
+      "exitCode": 0,
+      "seconds": 26.41
+    },
+    {
+      "name": "rustdoc",
+      "exitCode": 0,
+      "seconds": 103.01
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "seconds": 75.97
+    },
+    {
+      "name": "typescript",
+      "exitCode": 0,
+      "seconds": 0.31
+    },
+    {
+      "name": "node",
+      "exitCode": 0,
+      "seconds": 7.78
+    },
+    {
+      "name": "bun",
+      "exitCode": 0,
+      "seconds": 16.34
+    }
+  ],
+  "rustTestTotals": {
+    "passed": 1124,
+    "failed": 0,
+    "ignored": 12
+  },
+  "node": {
+    "passed": 302,
+    "skipped": 3,
+    "failed": 0
+  },
+  "bun": {
+    "passed": 302,
+    "skipped": 3,
+    "failed": 0
+  },
+  "native": [
+    {
+      "name": "t114-query-package-host-en",
+      "exitCode": 0,
+      "seconds": 6.47,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-package",
+          "locale": "en",
+          "accepted": [
+            "package_cancel_keeps_same_draft",
+            "temporary_catalog_projection_and_atomic_rename_preserve_explicit_alias",
+            "package_apply_native_undo_redo_and_parent_single_undo_preserve_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-having-host-en",
+      "exitCode": 0,
+      "seconds": 6.45,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-having",
+          "locale": "en",
+          "accepted": [
+            "separate_typed_where_having_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-total-sections-host-en",
+      "exitCode": 0,
+      "seconds": 6.61,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-total-sections",
+          "locale": "en",
+          "accepted": [
+            "independent_total_sections_add_select_move_remove_cancel_apply_and_native_undo_redo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-dcs-host-en",
+      "exitCode": 0,
+      "seconds": 6.25,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-dcs",
+          "locale": "en",
+          "accepted": [
+            "typed_dcs_lists_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-advanced-host-en",
+      "exitCode": 0,
+      "seconds": 6.77,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-advanced",
+          "locale": "en",
+          "accepted": [
+            "virtual_catalog_parameter_labels_positional_values_and_core_call_generation",
+            "same_panel_child_navigation_parent_hidden_and_current_derived_projection",
+            "union_duplicate_policy_scope_tail_order_overall_totals_and_period_fill",
+            "advanced_draft_one_undo_redo_unsaved_parent_apply_and_one_owner_undo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-builder-host-en",
+      "exitCode": 0,
+      "seconds": 7.09,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-builder",
+          "locale": "en",
+          "accepted": [
+            "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+            "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+            "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-modal-normal-host-en",
+      "exitCode": 0,
+      "seconds": 8.31,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-modal-normal",
+          "locale": "en",
+          "accepted": [
+            "native_cancel_preserves_dirty_parent_without_opening_child",
+            "explicit_native_save_precedes_source_capture_and_return",
+            "only_explicit_native_discard_can_revert_unsaved_parent",
+            "native_readonly_override_survives_modal_roundtrip"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-constructor-host-en",
+      "exitCode": 0,
+      "seconds": 11.35,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-constructor",
+          "accepted": [
+            "all_editable_splits_replaced_by_constructor_and_core_draft_lock",
+            "comments_follow_nodes_explicit_keep_and_same_draft_single_undo_redo",
+            "constructor_result_uses_existing_explicit_bsl_apply_without_disk_save",
+            "opening_and_applying_without_operations_preserves_exact_draft_and_owner",
+            "cancel_discards_only_unaccepted_constructor_operations_and_releases_its_lock",
+            "six_clause_operations_preserve_opaque_package_and_readonly_constructor_cannot_grant_write_access",
+            "installed_webview_dom_eight_tabs_translated_labels_text_only_rendering_expression_submission_and_cancel",
+            "xml_constructor_keeps_existing_draft_undo_and_explicit_source_comment_placement_without_owner_save",
+            "backend_crash_retains_checkpoint_discards_unaccepted_model_and_requires_explicit_resume"
+          ],
+          "errors": [],
+          "locale": "en"
+        }
+      ]
+    },
+    {
+      "name": "t114-query-package-host-ru",
+      "exitCode": 0,
+      "seconds": 9.85,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-package",
+          "locale": "ru",
+          "accepted": [
+            "package_cancel_keeps_same_draft",
+            "temporary_catalog_projection_and_atomic_rename_preserve_explicit_alias",
+            "package_apply_native_undo_redo_and_parent_single_undo_preserve_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-having-host-ru",
+      "exitCode": 0,
+      "seconds": 9.61,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-having",
+          "locale": "ru",
+          "accepted": [
+            "separate_typed_where_having_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-total-sections-host-ru",
+      "exitCode": 0,
+      "seconds": 9.8,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-total-sections",
+          "locale": "ru",
+          "accepted": [
+            "independent_total_sections_add_select_move_remove_cancel_apply_and_native_undo_redo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-dcs-host-ru",
+      "exitCode": 0,
+      "seconds": 9.73,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-dcs",
+          "locale": "ru",
+          "accepted": [
+            "typed_dcs_lists_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-advanced-host-ru",
+      "exitCode": 0,
+      "seconds": 10.02,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-advanced",
+          "locale": "ru",
+          "accepted": [
+            "virtual_catalog_parameter_labels_positional_values_and_core_call_generation",
+            "same_panel_child_navigation_parent_hidden_and_current_derived_projection",
+            "union_duplicate_policy_scope_tail_order_overall_totals_and_period_fill",
+            "advanced_draft_one_undo_redo_unsaved_parent_apply_and_one_owner_undo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-builder-host-ru",
+      "exitCode": 0,
+      "seconds": 10.1,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-builder",
+          "locale": "ru",
+          "accepted": [
+            "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+            "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+            "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-modal-normal-host-ru",
+      "exitCode": 0,
+      "seconds": 11.3,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-modal-normal",
+          "locale": "ru",
+          "accepted": [
+            "native_cancel_preserves_dirty_parent_without_opening_child",
+            "explicit_native_save_precedes_source_capture_and_return",
+            "only_explicit_native_discard_can_revert_unsaved_parent",
+            "native_readonly_override_survives_modal_roundtrip"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t114-query-constructor-host-ru",
+      "exitCode": 0,
+      "seconds": 14.87,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-constructor",
+          "accepted": [
+            "all_editable_splits_replaced_by_constructor_and_core_draft_lock",
+            "comments_follow_nodes_explicit_keep_and_same_draft_single_undo_redo",
+            "constructor_result_uses_existing_explicit_bsl_apply_without_disk_save",
+            "opening_and_applying_without_operations_preserves_exact_draft_and_owner",
+            "cancel_discards_only_unaccepted_constructor_operations_and_releases_its_lock",
+            "six_clause_operations_preserve_opaque_package_and_readonly_constructor_cannot_grant_write_access",
+            "installed_webview_dom_eight_tabs_translated_labels_text_only_rendering_expression_submission_and_cancel",
+            "xml_constructor_keeps_existing_draft_undo_and_explicit_source_comment_placement_without_owner_save",
+            "backend_crash_retains_checkpoint_discards_unaccepted_model_and_requires_explicit_resume"
+          ],
+          "errors": [],
+          "locale": "ru"
+        }
+      ]
+    }
+  ],
+  "buhmfoNative": [
+    {
+      "name": "t114-buhmfo-installed-en",
+      "exitCode": 0,
+      "seconds": 13.65,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-installed-normal",
+          "locale": "en",
+          "runtime": "/home/akalsin/Documents/Projects/eska-playground/explorer-host-eBXtHK/extensions/1c-tooling.eska-explorer-0.0.12",
+          "privateApiExported": false,
+          "actualDomActions": true,
+          "analyzerMetadataCompletion": true,
+          "sameDraft": true,
+          "singleQueryView": true,
+          "parentReturned": true,
+          "unsavedModuleSingleUndo": true,
+          "diskUnchanged": true
+        }
+      ]
+    },
+    {
+      "name": "t114-buhmfo-readonly-en",
+      "exitCode": 0,
+      "seconds": 14.02,
+      "results": [
+        {
+          "passed": true,
+          "suite": "support-locked-query",
+          "input": {
+            "project": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo",
+            "module": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/buhmfo/src/CommonModules/GoogleПереводчик/Ext/Module.bsl",
+            "mode": "query",
+            "prefixA": "Орг.ИН",
+            "prefixB": "Орг.Ко",
+            "labelA": "ИНН",
+            "labelB": "Код",
+            "cacheRoots": [
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/buhmfo/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/ExternalSystems/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/dzp_АвтоматическаяЗагрузкаВыписок/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/dzp_АдаптацияКодаТиповойКонфигурации/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/dzp_ЗаполнениеБанковскихВыписок/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/dzp_ИсправлениеОшибокКонфигурации/.eska"
+            ],
+            "operations": 6,
+            "readOnly": true,
+            "backendSha256": "3dc14bdc9a0a4def06e875cc24c089096167c0727e4f6aff25d524d1eb8c536c",
+            "buildProfile": "dist"
+          },
+          "locale": "en",
+          "metadataCompletionFromReadonlySource": true,
+          "constructorCannotGrantWrite": true,
+          "nativeAndDiskUnchanged": true,
+          "errors": [
+            {
+              "code": "requestFailed",
+              "details": {
+                "reason": "user_read_only"
+              }
+            }
+          ],
+          "samples": {
+            "open": [
+              1389.206586
+            ],
+            "firstCompletion": [
+              5847.6003200000005
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "t114-buhmfo-installed-ru",
+      "exitCode": 0,
+      "seconds": 17.62,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-installed-normal",
+          "locale": "ru",
+          "runtime": "/home/akalsin/Documents/Projects/eska-playground/explorer-host-ETZCOT/extensions/1c-tooling.eska-explorer-0.0.12",
+          "privateApiExported": false,
+          "actualDomActions": true,
+          "analyzerMetadataCompletion": true,
+          "sameDraft": true,
+          "singleQueryView": true,
+          "parentReturned": true,
+          "unsavedModuleSingleUndo": true,
+          "diskUnchanged": true
+        }
+      ]
+    },
+    {
+      "name": "t114-buhmfo-readonly-ru",
+      "exitCode": 0,
+      "seconds": 17.19,
+      "results": [
+        {
+          "passed": true,
+          "suite": "support-locked-query",
+          "input": {
+            "project": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo",
+            "module": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/buhmfo/src/CommonModules/GoogleПереводчик/Ext/Module.bsl",
+            "mode": "query",
+            "prefixA": "Орг.ИН",
+            "prefixB": "Орг.Ко",
+            "labelA": "ИНН",
+            "labelB": "Код",
+            "cacheRoots": [
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/buhmfo/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/ExternalSystems/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/dzp_АвтоматическаяЗагрузкаВыписок/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/dzp_АдаптацияКодаТиповойКонфигурации/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/dzp_ЗаполнениеБанковскихВыписок/.eska",
+              "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/src/dzp_ИсправлениеОшибокКонфигурации/.eska"
+            ],
+            "operations": 6,
+            "readOnly": true,
+            "backendSha256": "3dc14bdc9a0a4def06e875cc24c089096167c0727e4f6aff25d524d1eb8c536c",
+            "buildProfile": "dist"
+          },
+          "locale": "ru",
+          "metadataCompletionFromReadonlySource": true,
+          "constructorCannotGrantWrite": true,
+          "nativeAndDiskUnchanged": true,
+          "errors": [
+            {
+              "code": "requestFailed",
+              "details": {
+                "reason": "user_read_only"
+              }
+            }
+          ],
+          "samples": {
+            "open": [
+              1133.338289
+            ],
+            "firstCompletion": [
+              5852.541566
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "constructorFirstRepeat": {
+    "vsixSha256": "6ac3fc3b35db2d6bca690d4b3c2bb7439d9497cc264c65f334652fa543ede27e",
+    "results": [
+      {
+        "name": "t114-query-constructor-host-en",
+        "exitCode": 0,
+        "seconds": 21.76,
+        "results": [
+          {
+            "passed": true,
+            "suite": "query-constructor",
+            "accepted": [
+              "all_editable_splits_replaced_by_constructor_and_core_draft_lock",
+              "comments_follow_nodes_explicit_keep_and_same_draft_single_undo_redo",
+              "constructor_result_uses_existing_explicit_bsl_apply_without_disk_save",
+              "opening_and_applying_without_operations_preserves_exact_draft_and_owner",
+              "cancel_discards_only_unaccepted_constructor_operations_and_releases_its_lock",
+              "six_clause_operations_preserve_opaque_package_and_readonly_constructor_cannot_grant_write_access",
+              "installed_webview_dom_eight_tabs_translated_labels_text_only_rendering_expression_submission_and_cancel",
+              "xml_constructor_keeps_existing_draft_undo_and_explicit_source_comment_placement_without_owner_save",
+              "backend_crash_retains_checkpoint_discards_unaccepted_model_and_requires_explicit_resume"
+            ],
+            "errors": [],
+            "locale": "en"
+          }
+        ]
+      },
+      {
+        "name": "t114-query-constructor-host-ru",
+        "exitCode": 0,
+        "seconds": 21.98,
+        "results": [
+          {
+            "passed": true,
+            "suite": "query-constructor",
+            "accepted": [
+              "all_editable_splits_replaced_by_constructor_and_core_draft_lock",
+              "comments_follow_nodes_explicit_keep_and_same_draft_single_undo_redo",
+              "constructor_result_uses_existing_explicit_bsl_apply_without_disk_save",
+              "opening_and_applying_without_operations_preserves_exact_draft_and_owner",
+              "cancel_discards_only_unaccepted_constructor_operations_and_releases_its_lock",
+              "six_clause_operations_preserve_opaque_package_and_readonly_constructor_cannot_grant_write_access",
+              "installed_webview_dom_eight_tabs_translated_labels_text_only_rendering_expression_submission_and_cancel",
+              "xml_constructor_keeps_existing_draft_undo_and_explicit_source_comment_placement_without_owner_save",
+              "backend_crash_retains_checkpoint_discards_unaccepted_model_and_requires_explicit_resume"
+            ],
+            "errors": [],
+            "locale": "ru"
+          }
+        ]
+      }
+    ],
+    "languageFeaturesEnabled": false
+  },
+  "artifacts": {
+    "backend": {
+      "path": "../eska-playground/query-completion-nuun9c9e/bin/eska-project-t114",
+      "sha256": "3dc14bdc9a0a4def06e875cc24c089096167c0727e4f6aff25d524d1eb8c536c"
+    },
+    "vsix": {
+      "path": "../eska-playground/query-completion-nuun9c9e/query-t114.vsix",
+      "sha256": "23019f0c31d4aee2cc59b7ceff8bb56046f5cb7c251bc26a5f278d80c3259ab5"
+    }
+  },
+  "runtimeCommits": {
+    "backend": "430b4ec",
+    "adapter": "ccf2662"
+  },
+  "vsixFiles": 1325,
+  "platformPreparation": {
+    "buhmfoCfBuild": {
+      "status": "success",
+      "durationMs": 702801,
+      "bytes": 2129248388,
+      "artifact": "../eska-playground/query-completion-nuun9c9e/buhmfo/build/buhmfo.cf"
+    },
+    "minimalInfobase": {
+      "configurationBuilt": true,
+      "configurationApplied": true,
+      "runtimeProbeExecuted": false
+    },
+    "minimalBslAnalysis": {
+      "complete": true,
+      "files": 2,
+      "failedFiles": 0,
+      "warnings": 1,
+      "warningCode": "DeprecatedPlatformApi",
+      "warningApi": "DetailErrorDescription",
+      "workspaceMcpAvailable": false,
+      "fallback": "published bsl-analyzer-app 0.3.2 CLI"
+    },
+    "generatedMatrix": {
+      "caseCount": 13,
+      "executedCount": 0,
+      "cases": [
+        "nested",
+        "union",
+        "union_all",
+        "temporary_chain",
+        "having",
+        "totals",
+        "sequential_totals",
+        "virtual_balance",
+        "dcs_select",
+        "dcs_filters",
+        "dcs_virtual_arguments",
+        "dcs_optional_join",
+        "buhmfo_price_schema"
+      ],
+      "source": "platform/generated-cases.json",
+      "sha256": "ad3f5a1fccd9c5fd1072db28d34a752f9168dc3077436ce6e13023b1ccc46741"
+    },
+    "extensionsBuild": {
+      "schema_version": 1,
+      "projects": [
+        {
+          "name": "external-systems",
+          "status": "failed",
+          "artifact": null,
+          "platform": {
+            "version": "8.3.27.2325"
+          },
+          "duration_ms": null,
+          "error": {
+            "code": "command-failed",
+            "stage": "import-sources"
+          }
+        },
+        {
+          "name": "dzp-auto-statements",
+          "status": "success",
+          "artifact": {
+            "type": "extension",
+            "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/build/dzp-auto-statements.cfe",
+            "path_encoding": "utf-8"
+          },
+          "platform": {
+            "version": "8.3.27.2325"
+          },
+          "duration_ms": 4656,
+          "error": null
+        },
+        {
+          "name": "dzp-typical-code",
+          "status": "failed",
+          "artifact": null,
+          "platform": {
+            "version": "8.3.27.2325"
+          },
+          "duration_ms": null,
+          "error": {
+            "code": "command-failed",
+            "stage": "import-sources"
+          }
+        },
+        {
+          "name": "dzp-fill-bank-statements",
+          "status": "success",
+          "artifact": {
+            "type": "extension",
+            "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/build/dzp-fill-bank-statements.cfe",
+            "path_encoding": "utf-8"
+          },
+          "platform": {
+            "version": "8.3.27.2325"
+          },
+          "duration_ms": 4055,
+          "error": null
+        },
+        {
+          "name": "dzp-config-fixes",
+          "status": "success",
+          "artifact": {
+            "type": "extension",
+            "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/buhmfo/build/dzp-config-fixes.cfe",
+            "path_encoding": "utf-8"
+          },
+          "platform": {
+            "version": "8.3.27.2325"
+          },
+          "duration_ms": 5034,
+          "error": null
+        }
+      ]
+    },
+    "probeRetryScript": {
+      "path": "platform/retry-probe.py",
+      "scope": "constant SELECT 1 license/runtime probe only",
+      "fullMatrixExecutor": false
+    }
+  },
+  "platformBlockers": [
+    {
+      "kind": "runtime-license",
+      "attempts": [
+        {
+          "exitCode": 1,
+          "seconds": 1.97,
+          "resultExists": false
+        },
+        {
+          "exitCode": 1,
+          "seconds": 0.87,
+          "resultExists": false
+        }
+      ],
+      "error": "License not found. Software protection key or acquired software license not found!",
+      "queriesExecuted": false
+    },
+    {
+      "kind": "buhmfo-file-infobase-update",
+      "exitCode": 102,
+      "seconds": 374.84,
+      "error": "Index key length exceeds maximum allowed",
+      "index": "_InfoRg60459_5@",
+      "configurationApplied": false,
+      "queriesExecuted": false
+    },
+    {
+      "kind": "extension-xml-import",
+      "projects": [
+        "external-systems",
+        "dzp-typical-code"
+      ],
+      "externalSystems": "Unknown predefined Catalog.АЭ_ВидыНачисленийПоЗаймам.ОсновнойДолг and Проценты",
+      "typicalCode": "XDTO Color mapping failed for АктуальнаяПодпискаЦвет in АЭ_ЗаймПредоставленный/ФормаДокумента",
+      "baseConfigurationPreflight": {
+        "code": "base-configuration-unsupported",
+        "stage": "plan",
+        "project": "external-systems"
+      },
+      "causeConfirmed": false
+    }
+  ],
+  "remaining": [
+    "Provide an isolated usable licensed platform runtime",
+    "Prepare a buhmfo infobase that applies successfully and resolve the two extension import contexts",
+    "Complete the native fixture/execution harness for the 13 generated cases, including register and DCS result assertions",
+    "Execute the matrix on the platform and compare columns, values, totals and temporary-table behavior",
+    "Record acceptance of base-plus-extension metadata against the applied runtime configuration"
+  ],
+  "unverifiedEnvironments": [
+    "Windows",
+    "macOS",
+    "Microsoft VS Code",
+    "Remote"
+  ],
+  "limitations": [
+    "Ordinary visual clauses containing DCS extensions remain read-only",
+    "Characteristics and unknown extension positions remain opaque",
+    "Source/editor acceptance and a successful CF build do not establish platform query execution"
+  ],
+  "manualStand": {
+    "standRelativeToCore": "../eska-playground/buhmfo-query-manual-d5inc0y_",
+    "backupRelativeToStand": "backups/before-completion-20261024T230351247381Z",
+    "acceptedBundleSha256": "4c545936d70b94af829b4086e88e0f5342cd26766e3d2a625a38d2554a444136",
+    "metadataApi": "1.29",
+    "updated": [
+      "bin/eska-project",
+      "packages/eska-query.vsix",
+      "artifacts.json",
+      "stand.json",
+      "README.md"
+    ],
+    "sourcesAndNativeProfileTouched": false,
+    "liveWindowReloaded": false,
+    "artifactsVerified": true,
+    "platformQueriesExecuted": false
+  },
+  "evidenceRootRelativeToCore": "../eska-playground/query-completion-nuun9c9e",
+  "earlierAttemptEvidence": [
+    "acceptance-before-focus-fix",
+    "acceptance-before-lsp-fix",
+    "initial-t114-native-checks.json",
+    "initial-t114-buhmfo-native-checks.json",
+    "t114-native-before-isolated-repeat.json",
+    "t114-crash-before-profile.log",
+    "t114-unresponsive-profile.json"
+  ],
+  "commitsBeforeThisReport": {
+    "eska": [
+      {
+        "hash": "33db433",
+        "subject": "docs(query): Определена очередь связанных схем и полного конструктора T109–T114"
+      },
+      {
+        "hash": "605c736",
+        "subject": "fix(query): Объединены связанные схемы базы и расширений в каталоге приложения"
+      },
+      {
+        "hash": "11ee17d",
+        "subject": "feat(query): Добавлены временные таблицы и проверяемые операции пакета"
+      },
+      {
+        "hash": "ad0cca8",
+        "subject": "feat(query): Добавлен типизированный отбор по агрегатам HAVING"
+      },
+      {
+        "hash": "aba0ba7",
+        "subject": "feat(query): Добавлены независимые последовательные секции итогов"
+      },
+      {
+        "hash": "f1256cd",
+        "subject": "feat(query): Добавлено типизированное редактирование конструкций СКД"
+      },
+      {
+        "hash": "430b4ec",
+        "subject": "fix(query): Сохранены исходные границы CASE в модели СКД"
+      }
+    ],
+    "explorer": [
+      {
+        "hash": "5805d6e",
+        "subject": "feat(query): Добавлен интерфейс пакета и временных таблиц ESKA"
+      },
+      {
+        "hash": "7f34509",
+        "subject": "feat(query): Отделён агрегатный отбор в интерфейсе условий"
+      },
+      {
+        "hash": "3a487ca",
+        "subject": "feat(query): Добавлено управление секциями итогов через API ESKA"
+      },
+      {
+        "hash": "90d3a01",
+        "subject": "feat(query): Добавлен интерфейс типизированных конструкций СКД"
+      },
+      {
+        "hash": "0878006",
+        "subject": "fix(query): Устранён цикл фокуса при несохранённом XML-родителе"
+      },
+      {
+        "hash": "ccf2662",
+        "subject": "fix(lsp): Устранена блокировка подсказок при отложенном открытии модуля"
+      },
+      {
+        "hash": "197366d",
+        "subject": "test(query): Приёмка девяти вкладок ожидает готовности конструктора"
+      }
+    ]
+  },
+  "vcsNote": "Plain Rust/TypeScript repositories have no eska.toml; eska save --dry-run rejects them, so commits use Git directly"
+}

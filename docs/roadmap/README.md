@@ -76,6 +76,10 @@ T98–T99 в эту цель не входят. `DONE` фиксируется т
 последовательные итоги, конструкции СКД и приёмка реальной платформой.
 T109–T113 завершены, выполняется T114; [scope и критерии](20-query-constructor-completion.md).
 Вся доменная логика принадлежит ESKA; расширение предоставляет интерфейс.
+Редактор T114 принят на Linux/VSCodium ru/en, включая копию buhmfo.
+Выполнение запросов платформой не принято: нет рабочей лицензии, обновление
+тестовой файловой ИБ buhmfo и импорт двух расширений завершились ошибками.
+[Фактические проверки и оставшиеся шаги](../measurements/t114-platform-acceptance.json).
 
 Ревью от 2026-10-24 перенесло обратную навигацию по исходникам из Explorer
 в общее ядро: Metadata API 1.24 возвращает владельца и цепочку предков одним
@@ -446,7 +450,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T111 | DONE | Отбор по агрегатам ИМЕЮЩИЕ/HAVING в ESKA и интерфейсе | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 | T112 | DONE | Несколько последовательных секций итогов | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 | T113 | DONE | Типизированные конструкции языка СКД по грамматике платформы | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
-| T114 | IN-PROGRESS | Приёмка сформированных запросов на тестовой ИБ buhmfo и fixtures платформы 1С | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
+| T114 | IN-PROGRESS | Редактор ru/en принят; выполнение запросов ожидает лицензированную среду и рабочую тестовую ИБ buhmfo | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в
