@@ -281,6 +281,29 @@ fn dcs_removing_braces_cannot_merge_neighboring_query_tokens() {
     assert!(value.text().contains("P.Item WHERE T.Ref"));
 }
 
+/// An unaliased CASE still ends at its original END token, including Cyrillic UTF-8 boundaries.
+#[test]
+fn dcs_where_after_unaliased_case_keeps_original_token_boundaries() {
+    for input in [
+        "SELECT CASE WHEN TRUE THEN 1 ELSE 0 END",
+        "ВЫБРАТЬ ВЫБОР КОГДА ИСТИНА ТОГДА 1 ИНАЧЕ 0 КОНЕЦ",
+    ] {
+        let mut value = constructor(input);
+        change(
+            &mut value,
+            DcsKind::Where,
+            vec![DcsValue::Condition {
+                left: "1".into(),
+                comparison: Comparison::Equal,
+                right: "1".into(),
+            }],
+            true,
+        );
+        assert!(value.text().starts_with(input));
+        assert!(value.text().contains("1 = 1}"));
+    }
+}
+
 /// The full original buhmfo query includes CASE, optional ON(TRUE), compound joins and parenthesized filter paths.
 #[test]
 fn dcs_inspects_the_original_buhmfo_price_query_without_regenerating_case() {

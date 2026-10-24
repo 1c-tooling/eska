@@ -122,7 +122,9 @@ fn mask_cases(bytes: &mut [u8]) -> Result<(), Error> {
                 *byte = b' ';
             }
         }
-        bytes[range.start] = b'0';
+        // A quoted placeholder spans the entire scalar, so its end cannot land inside an original Cyrillic keyword.
+        bytes[range.start] = b'"';
+        bytes[range.end - 1] = b'"';
     }
     Ok(())
 }
