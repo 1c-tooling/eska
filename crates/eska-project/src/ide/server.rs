@@ -236,6 +236,9 @@ impl Server {
         self.property_editing =
             input.api_version.minor >= 6 && input.allow_property_edits == Some(true);
         let mut result = json!({"apiVersion":{"major":1,"minor":super::API_MINOR},"server":{"name":self.identity.name(),"version":env!("CARGO_PKG_VERSION")},"capabilities":{"analyzerConfiguration":self.client_minor>=12,"propertyEditing":self.property_editing,"unsignedIntegerProperties":self.property_editing && self.client_minor >= 11,"linkedPropertyEdits":self.property_editing && self.client_minor >= 10,"metadataRename":self.property_editing && self.client_minor >= 9,"propertyPresentation":true,"picturePreview":true,"supportFiles":true,"supportPolicy":true,"selfUpdate":matches!(self.identity,Identity::Legacy),"designerXml":true,"readOnly":!self.property_editing,"diskCache":true,"search":true,"clientFileEvents":true,"batch":true,"multiContext":false,"supportedProjectTypes":["configuration","extension","processing","report"]},"limits":{"maxHeaderBytes":8192,"maxRequestBytes":1_048_576,"maxResponseBytes":67_108_864,"maxDepth":64,"maxBatchItems":16,"maxPendingRequests":128,"maxQueuedBytes":4_194_304}});
+        if self.client_minor >= 24 {
+            result["capabilities"]["sourceNavigation"] = json!(true);
+        }
         if self.client_minor >= 13 {
             result["capabilities"]["queryEditing"] = super::query::capability();
         }

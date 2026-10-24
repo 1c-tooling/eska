@@ -39,6 +39,7 @@ pub(super) fn is_method(method: &str) -> bool {
             | "metadata/source"
             | "metadata/search"
             | "metadata/reveal"
+            | "metadata/revealSource"
             | "metadata/refresh"
             | "metadata/index"
             | "metadata/indexErrors"
@@ -54,6 +55,9 @@ impl Server {
         events: &mut Vec<Value>,
     ) -> Result<Value, Value> {
         let input: params::Context = params::decode(args)?;
+        if method == "metadata/revealSource" && self.client_minor < 24 {
+            return Err(error(-32601));
+        }
         if matches!(method, "metadata/renamePreview" | "metadata/renameApply")
             && self.client_minor < 9
         {
@@ -231,6 +235,7 @@ fn metadata_request(
             Ok(json!({"sources":sources.iter().map(dto::source).collect::<Vec<_>>()}))
         }
         "metadata/search" => search(project, args),
+        "metadata/revealSource" => reveal_source(labels, project, args),
         "metadata/reveal" => {
             let id: ObjectId = params::decode(&args["objectId"])?;
             let ancestry = reveal_ancestry(project, &id)?;
@@ -241,6 +246,32 @@ fn metadata_request(
         "metadata/indexErrors" => index_errors(project, args),
         _ => Err(error(-32601)),
     }
+}
+
+/// Return only the selected source's ancestry, avoiding transport and client retention of every sibling.
+fn reveal_source(
+    labels: &dto::Labels,
+    project: &mut ProjectSession,
+    args: &Value,
+) -> Result<Value, Value> {
+    let path: params::Path = params::decode(&args["path"])?;
+    let Some(navigation) = project
+        .reveal_source(&path.native()?)
+        .map_err(|failure| errors::workspace(&failure))?
+    else {
+        return Ok(json!({"source":null,"nodes":[]}));
+    };
+    let nodes = navigation
+        .ancestry
+        .iter()
+        .map(|id| {
+            project
+                .node(id)
+                .map(|node| labels.node(node))
+                .map_err(|failure| errors::workspace(&failure))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(json!({"source":dto::source(&navigation.source),"nodes":nodes}))
 }
 
 /// Reuse visible ancestry before asking the lazy index to reveal an unloaded object.

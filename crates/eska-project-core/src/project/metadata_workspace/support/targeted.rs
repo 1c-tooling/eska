@@ -4,10 +4,9 @@ use super::{
     FileReason, FileSupport, ObjectSupport, ProjectSession, SupportSnapshot, file_policies,
 };
 use crate::project::{
-    metadata_model::{MetadataKind, ObjectId},
+    metadata_model::ObjectId,
     metadata_parser::{self, ParsedDescriptor, PropertiesMode},
     metadata_workspace::WorkspaceError,
-    object_model::logical_path_for_source,
     support::{Reason, State, Support},
 };
 use sha2::{Digest, Sha256};
@@ -98,26 +97,6 @@ impl ProjectSession {
         Ok(snapshot)
     }
 
-    /// Translate an existing Designer path through the shared ownership vocabulary.
-    fn support_owner(&self, path: &Path) -> Option<ObjectId> {
-        let logical = logical_path_for_source(self.project().configuration().project_type(), path)?;
-        let mut owner = None;
-        for part in logical.parts {
-            let Some(kind) = MetadataKind::ALL
-                .iter()
-                .find(|kind| kind.as_str() == part.kind)
-            else {
-                break;
-            };
-            let name = part
-                .name
-                .as_deref()
-                .unwrap_or_else(|| self.source.root().name());
-            owner = Some(ObjectId::from_parts(owner.as_ref(), kind.as_str(), name));
-        }
-        owner
-    }
-
     /// Resolve shared XML and predefined items without inheriting inline-child locks into modules.
     fn classify_support_file(
         &mut self,
@@ -134,7 +113,7 @@ impl ProjectSession {
         if !unaliased(self.project().source(), path) {
             return None;
         }
-        let owner = self.support_owner(path)?;
+        let owner = self.source_owner(path)?;
         let parsed = self.support_dependency(&owner, read)?;
         let location = self.source.object_descriptor(&owner).ok()??;
         if path == location.path && !parsed.diagnostics.is_empty() {

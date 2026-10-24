@@ -14,6 +14,7 @@ mod refresh;
 mod renaming;
 pub mod search;
 mod session;
+mod source_navigation;
 mod source_protection;
 mod source_view;
 mod support;
@@ -32,6 +33,7 @@ pub use query::{
 };
 pub use refresh::RefreshReport;
 pub use renaming::RenameError;
+pub use source_navigation::SourceNavigation;
 pub use source_protection::SourceRestrictionInfo;
 pub use source_view::{
     MAX_SOURCE_SNAPSHOT_BYTES, NativeSourceSnapshot, SourceAccessRequest, SourceFileState,

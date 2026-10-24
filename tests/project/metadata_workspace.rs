@@ -17,6 +17,7 @@ use std::{
 mod editing;
 mod query;
 mod renaming;
+mod source_navigation;
 
 /// Copy static fixtures into a uniquely owned playground directory.
 fn copy(source: &Path, target: &Path) {
