@@ -32,6 +32,7 @@ pub(super) fn is_method(method: &str) -> bool {
             | "metadata/renamePreview"
             | "metadata/renameApply"
             | "metadata/supportFiles"
+            | "metadata/supportObjects"
             | "metadata/root"
             | "metadata/children"
             | "metadata/get"
@@ -56,6 +57,9 @@ impl Server {
     ) -> Result<Value, Value> {
         let input: params::Context = params::decode(args)?;
         if method == "metadata/revealSource" && self.client_minor < 24 {
+            return Err(error(-32601));
+        }
+        if method == "metadata/supportObjects" && self.client_minor < 25 {
             return Err(error(-32601));
         }
         if matches!(method, "metadata/renamePreview" | "metadata/renameApply")
@@ -180,6 +184,7 @@ fn metadata_request(
             super::renaming::apply(labels, session, state, project, args, events)
         }
         "metadata/supportFiles" => support_files(project, args),
+        "metadata/supportObjects" => support_objects(project, args),
         "metadata/support" => {
             let offset = match args.get("offset") {
                 None => 0,
@@ -538,6 +543,21 @@ pub(super) fn changed(
     }
     events.push(notification);
     Ok(())
+}
+
+/// Return display policy in bounded batches without resolving source paths in every IDE adapter.
+fn support_objects(project: &mut ProjectSession, args: &Value) -> Result<Value, Value> {
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Objects {
+        object_ids: Vec<ObjectId>,
+    }
+    let input: Objects = params::decode(args)?;
+    if input.object_ids.is_empty() || input.object_ids.len() > 128 {
+        return Err(error(-32602));
+    }
+    let snapshot = project.support_objects(&input.object_ids);
+    Ok(json!({"objects":snapshot.objects,"diagnostics":snapshot.diagnostics,"freshness":"current"}))
 }
 
 /// Classify a bounded set of source-relative paths without starting a support inventory.

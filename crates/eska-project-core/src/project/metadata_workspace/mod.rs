@@ -39,7 +39,7 @@ pub use source_view::{
     MAX_SOURCE_SNAPSHOT_BYTES, NativeSourceSnapshot, SourceAccessRequest, SourceFileState,
     SourceProtection, SourceSnapshot, SourceSnapshotError, SourceSnapshotOrigin,
 };
-pub use support::{FileReason, FileSupport, ObjectSupport, SupportSnapshot};
+pub use support::{FileReason, FileSupport, ObjectSupport, ObjectSupportSnapshot, SupportSnapshot};
 
 use std::path::Path;
 

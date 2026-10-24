@@ -239,6 +239,9 @@ impl Server {
         if self.client_minor >= 24 {
             result["capabilities"]["sourceNavigation"] = json!(true);
         }
+        if self.client_minor >= 25 {
+            result["capabilities"]["supportObjects"] = json!(true);
+        }
         if self.client_minor >= 13 {
             result["capabilities"]["queryEditing"] = super::query::capability();
         }

@@ -23,6 +23,8 @@ mod support;
 mod recovery;
 #[path = "server/source_navigation.rs"]
 mod source_navigation;
+#[path = "server/support_objects.rs"]
+mod support_objects;
 
 struct Client {
     child: Child,
