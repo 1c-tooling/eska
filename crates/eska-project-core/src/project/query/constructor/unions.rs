@@ -22,12 +22,32 @@ pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<Option
         .scopes
         .get(owner.scope)
         .ok_or(Error::InvalidSelection)?;
-    if owner.unavailable.is_some() {
+    if owner.unavailable.is_some()
+        || owner
+            .clauses
+            .iter()
+            .any(|clause| clause.kind == ClauseKind::Destroy)
+    {
         return Err(Error::Unsupported);
     }
     let edits = match action {
         Action::AddUnion { all, .. } => {
-            let body = input[owner.range.start..owner.range.end.min(scope.tail)].trim();
+            let end = owner.range.end.min(scope.tail);
+            let body = owner
+                .clauses
+                .iter()
+                .find(|c| c.kind == ClauseKind::Into)
+                .map_or_else(
+                    || input[owner.range.start..end].to_owned(),
+                    |into| {
+                        format!(
+                            "{}{}",
+                            &input[owner.range.start..into.range.start],
+                            &input[into.range.end..end]
+                        )
+                    },
+                );
+            let body = body.trim();
             let keyword = if owner.russian {
                 "ОБЪЕДИНИТЬ"
             } else {
@@ -126,6 +146,21 @@ fn remove(
             .iter()
             .find(|clause| clause.kind == ClauseKind::Fields)
             .ok_or(Error::Unsupported)?;
+        if let Some(name) = model.temporary_destination(input, owner.scope) {
+            let position = next
+                .clauses
+                .iter()
+                .find(|c| c.kind.rank() > ClauseKind::Into.rank())
+                .map_or_else(|| next.range.end.min(scope.tail), |c| c.range.start);
+            let newline = editing::newline(input);
+            edits.push(Replacement {
+                range: position..position,
+                text: format!(
+                    "{newline}{} {name}{newline}",
+                    ClauseKind::Into.keyword(next.russian)
+                ),
+            });
+        }
         for (old, new) in first.items.iter().zip(&fields.items) {
             if let Some(name) = old.output_name(input, first)
                 && new.output_name(input, fields).as_ref() != Some(&name)

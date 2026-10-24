@@ -244,7 +244,7 @@ pub(in super::super) fn path_references(
     }
     let mut edits = Vec::new();
     for (index, window) in tokens.windows(prefix.len()).enumerate() {
-        if index > 0 && tokens[index - 1].kind == Kind::Symbol('.') {
+        if index > 0 && matches!(tokens[index - 1].kind, Kind::Symbol('.' | '&')) {
             continue;
         }
         if (require_dot

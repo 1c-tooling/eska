@@ -32,7 +32,7 @@ impl ProjectSession {
         request: &QueryCatalogRequest,
         depth: usize,
     ) -> Result<QueryCatalogPage, QuerySessionError> {
-        if depth > 32 {
+        if depth > 256 {
             return Err(QueryError::TooLarge.into());
         }
         if let Some(scope) = request.scope {
@@ -45,6 +45,44 @@ impl ProjectSession {
             );
         }
         let Some(selection) = request.source else {
+            if let Some(statement) = request.at_statement {
+                let visible = constructor
+                    .model()
+                    .temporary_tables_at(constructor.text(), statement)
+                    .map_err(|_| QueryError::InvalidPosition)?;
+                if let Some(table) = request.table.as_ref().and_then(|name| {
+                    visible
+                        .iter()
+                        .find(|table| super::same_name(name, &table.name))
+                }) {
+                    return self.constructor_catalog_projection(
+                        constructor,
+                        application,
+                        request,
+                        table.scope,
+                        depth,
+                    );
+                }
+                let mut page = self.query_catalog(
+                    application,
+                    &QueryCatalogRequest {
+                        at_statement: None,
+                        ..request.clone()
+                    },
+                )?;
+                if request.table.is_none() && request.offset == 0 {
+                    page.temporary_tables = visible
+                        .into_iter()
+                        .filter(|table| {
+                            table
+                                .name
+                                .to_lowercase()
+                                .contains(&request.search.to_lowercase())
+                        })
+                        .collect();
+                }
+                return Ok(page);
+            }
             return self.query_catalog(application, request);
         };
         let model = constructor.model();
@@ -58,6 +96,18 @@ impl ProjectSession {
             .find(|binding| binding.clause == selection.clause && binding.item == selection.item)
             .ok_or(QueryError::InvalidPosition)?;
         if !binding.derived {
+            if let Some(table) = model
+                .temporary_source(constructor.text(), selection.statement, &binding.table)
+                .map_err(|_| QueryError::InvalidPosition)?
+            {
+                return self.constructor_catalog_projection(
+                    constructor,
+                    application,
+                    request,
+                    table.scope,
+                    depth,
+                );
+            }
             return self.query_catalog(
                 application,
                 &QueryCatalogRequest {
@@ -91,6 +141,7 @@ impl ProjectSession {
             .ok_or(QueryError::InvalidPosition)?;
         let statement = &model.statements[branch];
         let mut fields = BTreeMap::new();
+        let mut found = true;
         if let Some(clause) = statement
             .clauses
             .iter()
@@ -123,6 +174,7 @@ impl ProjectSession {
                             },
                             depth + 1,
                         )?;
+                        found &= page.found;
                         for field in page.fields {
                             let name = if statement.russian {
                                 field.russian
@@ -138,7 +190,9 @@ impl ProjectSession {
         if fields.len() > 65_536 {
             return Err(QueryError::TooLarge.into());
         }
-        self.derived_page(application, request, fields)
+        let mut page = self.derived_page(application, request, fields)?;
+        page.found = found;
+        Ok(page)
     }
 
     /// Derived identifiers use their proven projection spelling in either editor locale.
@@ -172,6 +226,7 @@ impl ProjectSession {
             context_fingerprint: context.fingerprint,
             limited_context: context.context.limited_context(),
             parameters: Vec::new(),
+            temporary_tables: Vec::new(),
         })
     }
 }

@@ -4,6 +4,7 @@ mod editing;
 pub(super) mod lex;
 mod model;
 mod nested;
+mod packages;
 mod scopes;
 mod totals;
 mod unions;
@@ -14,6 +15,7 @@ use std::sync::Arc;
 use crate::project::metadata_edit::{EditPlan, snapshot};
 
 pub use model::{Clause, ClauseKind, Item, Model, Statement, Unavailable};
+pub use packages::{PackageIssue, PackageIssueKind, PackageOperation, TemporaryTable};
 pub use scopes::{QueryScope, Union};
 pub use totals::{Hierarchy, PeriodRange, PeriodUnit};
 pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
@@ -50,6 +52,24 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    SetInto {
+        statement: usize,
+        name: Option<String>,
+        comments: Option<CommentDecision>,
+    },
+    AddStatement {
+        statement: usize,
+        operation: PackageOperation,
+        name: Option<String>,
+    },
+    RemoveStatement {
+        statement: usize,
+        comments: Option<CommentDecision>,
+    },
+    MoveStatement {
+        statement: usize,
+        to: usize,
+    },
     AddUnion {
         statement: usize,
         all: bool,
@@ -97,7 +117,11 @@ impl Action {
     #[must_use]
     pub const fn statement(&self) -> usize {
         match self {
-            Self::AddUnion { statement, .. }
+            Self::SetInto { statement, .. }
+            | Self::AddStatement { statement, .. }
+            | Self::RemoveStatement { statement, .. }
+            | Self::MoveStatement { statement, .. }
+            | Self::AddUnion { statement, .. }
             | Self::SetUnion { statement, .. }
             | Self::RemoveUnion { statement, .. }
             | Self::AppendFields { statement, .. }
@@ -205,6 +229,12 @@ impl Constructor {
         if expected != self.revision {
             return Err(Error::StaleRevision);
         }
+        if let Some(plan) = packages::plan(&self.working, &self.model, action)? {
+            let model = Model::parse(plan.output())?;
+            packages::check(&self.working, &self.model, plan.output(), &model)?;
+            self.accept(&plan, model, action)?;
+            return Ok(plan);
+        }
         if let Some(plan) = unions::plan(&self.working, &self.model, action)? {
             let model = Model::parse(plan.output())?;
             unions::check_shape(&self.model, &model, action)?;
@@ -309,7 +339,9 @@ impl Constructor {
         if plan.output().len() > super::MAX_SNAPSHOT_BYTES {
             return Err(Error::TooLarge);
         }
-        let focus = scopes::focus(&self.model, &model, plan, action);
+        packages::check(&self.working, &self.model, plan.output(), &model)?;
+        let focus = packages::focus(&self.model, &model, action)
+            .or_else(|| scopes::focus(&self.model, &model, plan, action));
         if !plan.is_empty() {
             self.revision = self.revision.checked_add(1).ok_or(Error::TooLarge)?;
             self.working = Arc::from(plan.output());
@@ -327,6 +359,12 @@ impl Constructor {
         if self.original != self.working && !self.model.union_mismatches(&self.working).is_empty() {
             return Err(Error::InvalidExpression);
         }
+        packages::check(
+            &self.original,
+            &Model::parse(&self.original)?,
+            &self.working,
+            &self.model,
+        )?;
         super::minimal_text_plan(&self.original, &self.working)
             .map_err(|_| Error::InvalidExpression)
     }
@@ -334,17 +372,7 @@ impl Constructor {
 
 /// Token edits cannot accidentally merge or hide a neighboring clause while still forming a superficially valid SELECT.
 fn check_shape(before: &Model, after: &Model, action: &Action) -> Result<(), Error> {
-    let statement = match action {
-        Action::AddUnion { statement, .. }
-        | Action::SetUnion { statement, .. }
-        | Action::RemoveUnion { statement, .. }
-        | Action::Append { statement, .. }
-        | Action::Compose { statement, .. }
-        | Action::AppendFields { statement, .. } => *statement,
-        Action::Replace { selection, .. }
-        | Action::Remove { selection, .. }
-        | Action::Move { selection, .. } => selection.statement,
-    };
+    let statement = action.statement();
     let old = before
         .statements
         .get(statement)

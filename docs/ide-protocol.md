@@ -1689,3 +1689,46 @@ ESKA читает текущие правила и проверяет объяв
 не даёт права редактировать общий XML. При открытии и изменении исходника
 продолжают действовать `metadata/supportFiles` и проверки соответствующего
 source API.
+
+### API 1.26: временные таблицы и операторы пакета
+
+`queryConstructor.packages=true` и `temporaryTables=true` расширяют список
+`clauses` до `fields,sources,joins,conditions,group,order,totals,totalGroups,into,destroy,index`.
+Клиенты ниже 1.26 видят новые операторы непрозрачными, новые действия получают
+`-32601`. Прежние действия над таким оператором отклоняются без изменения текста.
+
+У каждого statement появляется `package`:
+`{operation:null|select|destroy,position:number|null,first:number,destination:string|null,
+add:boolean,remove:boolean,setInto:boolean,moveUp:number|null,moveDown:number|null}`.
+Это разрешения и целевые порядковые номера корневых операторов, вычисленные ESKA.
+Вложенный SELECT не получает права изменять пакет родителя. `focus` указывает
+сохранившийся/добавленный оператор после структурной правки.
+
+Новые actions: `setInto:{statement,name:string|null,comments?}`,
+`addStatement:{statement,operation:select|destroy,name:string|null}`,
+`removeStatement:{statement,comments?}`, `moveStatement:{statement,to}`.
+Имя — один идентификатор до 1024 UTF-8 байт. `setInto` задаёт/снимает назначение
+первой ветки и переименовывает доказанные ссылки в пределах одной жизни таблицы,
+включая соответствующий DESTROY. Явные псевдонимы, параметры и строки сохраняются.
+`addStatement` добавляет SELECT с одной исходной колонкой либо DESTROY после
+корневого оператора; `to` у moveStatement — порядковый номер корневого оператора.
+Удаление комментариев требует прежнего `comments:keep|discard`.
+Обычный `INDEX BY` доступен через строки clause `index`; SETS/UNIQUE/APPEND TO
+не объявлены поддержанным визуальным синтаксисом.
+
+`query/constructorCatalog.query.atStatement?:number` выбирает точку пакета;
+этот selector несовместим с `scope` и `source`. При перечислении первой страницы
+дополнительно возвращается `temporaryTables:[{name,scope,statement}]` — только
+видимые перед оператором таблицы, отфильтрованные `search`. Поле отсутствует при
+пустом списке. `table` в этой точке и прежний связанный `source` разрешают проекцию
+производителя, включая UNION и поддержанные wildcard-цепочки. В момент создания
+собственная таблица ещё не видна, DESTROY закрывает жизнь, повторное создание
+получает новый scope. Неизвестная/неоднозначная схема не подменяется вымышленной.
+
+В `issues` добавлены `temporary_missing`, `temporary_duplicate`,
+`temporary_column`, `temporary_ambiguous_columns` с `scope,table,column:null|string`.
+ESKA проверяет порядок и доказанные квалифицированные ссылки на явные колонки;
+wildcard-схемы разрешаются каталогом с метаданными. Операция, добавляющая новую
+известную ошибку, отклоняется атомарно. Уже ошибочный исходный текст остаётся
+доступным для точного просмотра. Это не замена исполнения и проверки типов ИБ.
+Конструктор по-прежнему не пишет владельца или исходные XML.

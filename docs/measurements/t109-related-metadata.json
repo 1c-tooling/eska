@@ -4,7 +4,7 @@
   "status": "DONE",
   "date": "2026-10-24",
   "domainOwner": "eska-project-core",
-  "metadataApi": "1.24, existing catalog contract",
+  "metadataApi": "1.25, existing catalog contract",
   "implementation": [
     "Lazy effective query schema across selected ordered application sources",
     "Omitted properties inherited; explicit values and named inline children overlaid",

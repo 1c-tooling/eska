@@ -80,8 +80,8 @@ pub(super) fn projection_capability() -> Value {
 }
 
 /// The constructor never writes the owner; only explicit finish updates its existing private draft.
-pub(super) fn constructor_capability(visual: bool, advanced: bool) -> Value {
-    constructors::capability(visual, advanced)
+pub(super) fn constructor_capability(minor: u32) -> Value {
+    constructors::capability(minor)
 }
 
 /// Each constructor extension has one explicit minimum, before any session lookup or mutation.
@@ -90,6 +90,9 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
         return 0;
     }
     if method == "query/constructorCatalog" {
+        if !args["query"]["atStatement"].is_null() {
+            return 26;
+        }
         return if args["query"]["virtualTables"] == true
             || !args["query"]["source"].is_null()
             || !args["query"]["scope"].is_null()
@@ -100,6 +103,15 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
         };
     }
     if method == "query/constructorAction" {
+        if matches!(
+            args["action"]["kind"].as_str(),
+            Some("setInto" | "addStatement" | "removeStatement" | "moveStatement")
+        ) || matches!(
+            args["action"]["clause"].as_str(),
+            Some("into" | "destroy" | "index")
+        ) {
+            return 26;
+        }
         if matches!(
             args["action"]["kind"].as_str(),
             Some("addUnion" | "setUnion" | "removeUnion")
@@ -360,7 +372,7 @@ impl Server {
                 args,
                 &mut self.recovery,
                 &forbidden,
-                self.client_minor >= 23,
+                self.client_minor,
             );
         }
         if matches!(method, "query/sessionClose" | "query/sessionGet") {
@@ -403,7 +415,7 @@ impl Server {
                 args,
                 &mut self.recovery,
                 &forbidden,
-                self.client_minor >= 23,
+                self.client_minor,
             ),
             method if sessions::is_method(method) => self.queries.session_request(
                 project,

@@ -260,10 +260,8 @@ impl Server {
             result["capabilities"]["queryProjections"] = super::query::projection_capability();
         }
         if self.client_minor >= 21 {
-            result["capabilities"]["queryConstructor"] = super::query::constructor_capability(
-                self.client_minor >= 22,
-                self.client_minor >= 23,
-            );
+            result["capabilities"]["queryConstructor"] =
+                super::query::constructor_capability(self.client_minor);
         }
         Ok(result)
     }

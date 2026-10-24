@@ -2,6 +2,7 @@ use super::*;
 use crate::backend::project::metadata_workspace::QueryCatalogRequest;
 
 mod overlays;
+mod packages;
 mod virtuals;
 
 /// Correspondence columns use the actual debit/credit layout rather than inventing a shared Account or unbalanced field.

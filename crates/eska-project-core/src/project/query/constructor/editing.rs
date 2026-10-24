@@ -12,6 +12,10 @@ use super::{
 pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<EditPlan, Error> {
     let edits = match action {
         Action::Compose { .. }
+        | Action::SetInto { .. }
+        | Action::AddStatement { .. }
+        | Action::RemoveStatement { .. }
+        | Action::MoveStatement { .. }
         | Action::AppendFields { .. }
         | Action::AddUnion { .. }
         | Action::SetUnion { .. }

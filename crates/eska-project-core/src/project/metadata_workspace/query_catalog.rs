@@ -31,6 +31,7 @@ pub struct QueryCatalogRequest {
     pub virtual_tables: bool,
     pub source: Option<crate::project::query::constructor::Selection>,
     pub scope: Option<usize>,
+    pub at_statement: Option<usize>,
 }
 
 /// Both spellings are query names, not locale-dependent identities or client-generated SQL.
@@ -64,6 +65,8 @@ pub struct QueryCatalogPage {
     pub context_fingerprint: String,
     pub limited_context: bool,
     pub parameters: Vec<crate::project::query::virtual_tables::Parameter>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub temporary_tables: Vec<crate::project::query::constructor::TemporaryTable>,
 }
 
 impl QueryCatalogRequest {
@@ -71,7 +74,15 @@ impl QueryCatalogRequest {
     fn validate(&self) -> Result<(), QuerySessionError> {
         let limit = self.limit.unwrap_or(200);
         if limit == 0
-            || (self.source.is_some() && self.scope.is_some())
+            || [
+                self.source.is_some(),
+                self.scope.is_some(),
+                self.at_statement.is_some(),
+            ]
+            .into_iter()
+            .filter(|selected| *selected)
+            .count()
+                > 1
             || limit > 500
             || self.search.len() > 1024
             || self.table.as_ref().is_some_and(|value| value.len() > 4096)
@@ -103,7 +114,7 @@ impl ProjectSession {
         request: &QueryCatalogRequest,
     ) -> Result<QueryCatalogPage, QuerySessionError> {
         request.validate()?;
-        if request.source.is_some() || request.scope.is_some() {
+        if request.source.is_some() || request.scope.is_some() || request.at_statement.is_some() {
             return Err(QueryError::InvalidPosition.into());
         }
         let limit = request.limit.unwrap_or(200);
@@ -144,6 +155,7 @@ impl ProjectSession {
             context_fingerprint: context.fingerprint,
             limited_context: context.context.limited_context(),
             parameters: choices.parameters,
+            temporary_tables: Vec::new(),
         })
     }
 }

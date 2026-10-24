@@ -647,6 +647,7 @@ impl Item {
                 join_projection(&text, &input[clause.range.start..clause.body.start])
             }
             ClauseKind::TotalGroups => super::totals::project(&text),
+            ClauseKind::Into | ClauseKind::Destroy | ClauseKind::Index => None,
         }
     }
 }

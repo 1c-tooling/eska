@@ -12,6 +12,7 @@ use super::{
 #[serde(rename_all = "camelCase")]
 pub enum ClauseKind {
     Fields,
+    Into,
     Sources,
     Joins,
     Conditions,
@@ -19,6 +20,8 @@ pub enum ClauseKind {
     Order,
     Totals,
     TotalGroups,
+    Destroy,
+    Index,
 }
 
 impl ClauseKind {
@@ -51,13 +54,15 @@ impl ClauseKind {
     pub(super) const fn rank(self) -> u8 {
         match self {
             Self::Fields => 0,
-            Self::Sources => 1,
-            Self::Joins => 2,
-            Self::Conditions => 3,
-            Self::Group => 4,
-            Self::Order => 5,
-            Self::Totals => 6,
-            Self::TotalGroups => 7,
+            Self::Into | Self::Destroy => 1,
+            Self::Sources => 2,
+            Self::Joins => 3,
+            Self::Conditions => 4,
+            Self::Group => 5,
+            Self::Index => 6,
+            Self::Order => 7,
+            Self::Totals => 8,
+            Self::TotalGroups => 9,
         }
     }
 
@@ -66,6 +71,12 @@ impl ClauseKind {
         match (self, russian) {
             (Self::Fields, true) => "ВЫБРАТЬ",
             (Self::Fields, false) => "SELECT",
+            (Self::Into, true) => "ПОМЕСТИТЬ",
+            (Self::Into, false) => "INTO",
+            (Self::Destroy, true) => "УНИЧТОЖИТЬ",
+            (Self::Destroy, false) => "DESTROY",
+            (Self::Index, true) => "ИНДЕКСИРОВАТЬ ПО",
+            (Self::Index, false) => "INDEX BY",
             (Self::Sources, true) => "ИЗ",
             (Self::Sources, false) => "FROM",
             (Self::Joins, true) => "ВНУТРЕННЕЕ СОЕДИНЕНИЕ",
@@ -164,6 +175,16 @@ impl Statement {
     #[must_use]
     pub fn append_unavailable(&self, kind: ClauseKind) -> Option<Error> {
         if self.unavailable.is_some()
+            || self
+                .clauses
+                .iter()
+                .any(|clause| clause.kind == ClauseKind::Destroy)
+            || kind == ClauseKind::Destroy
+            || (kind == ClauseKind::Into
+                && (self.nested
+                    || self.branch != 0
+                    || self.clauses.iter().any(|clause| clause.kind == kind)))
+            || (kind == ClauseKind::Index && (self.nested || !self.result))
             || (matches!(
                 kind,
                 ClauseKind::Order | ClauseKind::Totals | ClauseKind::TotalGroups
@@ -191,6 +212,18 @@ pub struct Model {
 }
 
 impl Model {
+    /// Package-aware adapters are required before exposing a temporary destination or destruction statement.
+    #[must_use]
+    pub fn requires_packages(&self, index: usize) -> bool {
+        self.statements.get(index).is_some_and(|statement| {
+            statement.clauses.iter().any(|clause| {
+                matches!(
+                    clause.kind,
+                    ClauseKind::Into | ClauseKind::Destroy | ClauseKind::Index
+                )
+            })
+        })
+    }
     /// Composite definitions need a scope-aware adapter; an older conservative view remains opaque.
     #[must_use]
     pub fn requires_scopes(&self, index: usize) -> bool {
@@ -343,6 +376,9 @@ pub(super) fn parse_statement(
     let Some(first) = top.first() else {
         return opaque(range, Unavailable::UnsupportedStatement);
     };
+    if first.keyword(input, &["DESTROY", "УНИЧТОЖИТЬ"]) {
+        return destroy_statement(input, range, tokens, depth, &top);
+    }
     if !first.keyword(input, &["SELECT", "ВЫБРАТЬ"]) {
         return opaque(range, Unavailable::UnsupportedStatement);
     }
@@ -386,6 +422,23 @@ pub(super) fn parse_statement(
         }
         clauses.push(clause);
     }
+    if clauses.iter().any(|clause| {
+        clause.kind == ClauseKind::Into
+            && (depth != 0
+                || clause.items.len() != 1
+                || !super::packages::identifier(&clause.items[0].expression(input)))
+    }) {
+        return opaque(range, Unavailable::InvalidSyntax);
+    }
+    if clauses.iter().any(|clause| {
+        clause.kind == ClauseKind::Index
+            && clause
+                .items
+                .iter()
+                .any(|item| !super::packages::identifier(&item.expression(input)))
+    }) {
+        return opaque(range, Unavailable::UnsupportedConstruct);
+    }
     if clauses
         .iter()
         .any(|clause| clause.kind == ClauseKind::Totals)
@@ -407,6 +460,37 @@ pub(super) fn parse_statement(
     }
 }
 
+/// DESTROY has exactly one identifier and cannot be nested or combined with SELECT clauses.
+fn destroy_statement(
+    input: &str,
+    range: Range<usize>,
+    tokens: &[&Token],
+    depth: u16,
+    top: &[&Token],
+) -> Statement {
+    if top.len() != 2 || !super::packages::identifier(&input[top[1].range.clone()]) || depth != 0 {
+        return opaque(range, Unavailable::InvalidSyntax);
+    }
+    let clause = clause(
+        input,
+        ClauseKind::Destroy,
+        range.clone(),
+        top[0].range.end..range.end,
+        tokens,
+        depth,
+    );
+    Statement {
+        range,
+        russian: top[0].keyword(input, &["УНИЧТОЖИТЬ"]),
+        unavailable: None,
+        clauses: vec![clause],
+        scope: 0,
+        branch: 0,
+        nested: false,
+        result: true,
+    }
+}
+
 /// Unsupported control syntax is kept opaque rather than guessed from a partial expression model.
 fn unsupported_controls(input: &str, tokens: &[&Token], top: &[&Token]) -> bool {
     if tokens
@@ -420,10 +504,6 @@ fn unsupported_controls(input: &str, tokens: &[&Token], top: &[&Token]) -> bool 
                     "ВЫБРАТЬ",
                     "UNION",
                     "ОБЪЕДИНИТЬ",
-                    "INTO",
-                    "ПОМЕСТИТЬ",
-                    "INDEX",
-                    "ИНДЕКСИРОВАТЬ",
                     "HAVING",
                     "ИМЕЮЩИЕ",
                     "FOR",
@@ -445,10 +525,19 @@ fn unsupported_controls(input: &str, tokens: &[&Token], top: &[&Token]) -> bool 
             && top
                 .get(index + 1)
                 .is_none_or(|next| next.kind != Kind::Number))
-            || (token.keyword(input, &["GROUP", "СГРУППИРОВАТЬ", "ORDER", "УПОРЯДОЧИТЬ"])
-                && top
-                    .get(index + 1)
-                    .is_none_or(|next| !next.keyword(input, &["BY", "ПО"])))
+            || (token.keyword(
+                input,
+                &[
+                    "GROUP",
+                    "СГРУППИРОВАТЬ",
+                    "ORDER",
+                    "УПОРЯДОЧИТЬ",
+                    "INDEX",
+                    "ИНДЕКСИРОВАТЬ",
+                ],
+            ) && top
+                .get(index + 1)
+                .is_none_or(|next| !next.keyword(input, &["BY", "ПО"])))
     }) {
         return true;
     }
@@ -485,6 +574,10 @@ fn header(
 ) -> Option<(ClauseKind, usize, usize)> {
     let kind = if token.keyword(input, &["FROM", "ИЗ"]) {
         ClauseKind::Sources
+    } else if token.keyword(input, &["INTO", "ПОМЕСТИТЬ"]) {
+        ClauseKind::Into
+    } else if token.keyword(input, &["INDEX", "ИНДЕКСИРОВАТЬ"]) {
+        ClauseKind::Index
     } else if token.keyword(input, &["WHERE", "ГДЕ"]) {
         ClauseKind::Conditions
     } else if token.keyword(input, &["TOTALS", "ИТОГИ"]) {
@@ -534,7 +627,10 @@ fn header(
             start -= 1;
         }
     }
-    let end = if matches!(kind, ClauseKind::Group | ClauseKind::Order) {
+    let end = if matches!(
+        kind,
+        ClauseKind::Group | ClauseKind::Order | ClauseKind::Index
+    ) {
         top[index + 1].range.end
     } else {
         token.range.end

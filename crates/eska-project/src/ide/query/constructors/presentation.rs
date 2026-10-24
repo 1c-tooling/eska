@@ -13,12 +13,12 @@ pub(super) fn model(
     value: &Constructor,
     id: &str,
     writable: bool,
-    advanced: bool,
+    minor: u32,
 ) -> Result<Value, Value> {
     let view = View {
         value,
         writable,
-        advanced,
+        minor,
     };
     let input = value.text();
     let statements: Vec<_> = value
@@ -30,7 +30,7 @@ pub(super) fn model(
         .collect();
     let mut output = json!({"id":id,"revision":value.revision().to_string(),"snapshot":snapshot(input),"text":input,
         "bytes":input.len(),"writable":writable,"statements":statements});
-    if advanced {
+    if minor >= 23 {
         output["focus"] = json!(value.focus());
         output["issues"] = json!(
             value
@@ -42,6 +42,17 @@ pub(super) fn model(
         );
         output["scopes"] = json!(value.model().scopes.iter().enumerate().map(|(index, scope)| json!({"index":index,"range":bytes(&scope.range),"parent":scope.parent,"branches":scope.branches,
             "result":scope.branches.last(),"unions":scope.unions.iter().map(|union|json!({"all":union.all.is_some()})).collect::<Vec<_>>()})).collect::<Vec<_>>());
+    }
+    if minor >= 26
+        && let Some(issues) = output["issues"].as_array_mut()
+    {
+        issues.extend(
+            value
+                .model()
+                .package_issues(input)
+                .iter()
+                .map(|issue| json!(issue)),
+        );
     }
     if serde_json::to_vec(&output)
         .map_err(|_| error(-32603))?
@@ -56,14 +67,15 @@ pub(super) fn model(
 struct View<'a> {
     value: &'a Constructor,
     writable: bool,
-    advanced: bool,
+    minor: u32,
 }
 
 impl View<'_> {
     /// Older negotiated adapters see composite queries as exact opaque text rather than unknown clause identifiers.
     fn statement(&self, index: usize, statement: &Statement) -> Value {
         let input = self.value.text();
-        let opaque = !self.advanced && self.value.model().requires_scopes(index);
+        let opaque = (self.minor < 23 && self.value.model().requires_scopes(index))
+            || (self.minor < 26 && self.value.model().requires_packages(index));
         let clauses: Vec<_> = if opaque {
             Vec::new()
         } else {
@@ -74,8 +86,14 @@ impl View<'_> {
                 .map(|(clause, value)| self.clause(index, clause, value))
                 .collect()
         };
-        let append: Vec<_> = ClauseKind::all(self.advanced).iter().map(|kind| json!({"kind":kind,"unavailable":
-            if !self.writable {json!("read_only")} else if opaque {json!("unsupported")} else {json!(statement.append_unavailable(*kind))}})).collect();
+        let kinds = ClauseKind::all(self.minor >= 23).iter().copied().chain(
+            (self.minor >= 26)
+                .then_some([ClauseKind::Into, ClauseKind::Destroy, ClauseKind::Index])
+                .into_iter()
+                .flatten(),
+        );
+        let append: Vec<_> = kinds.map(|kind| json!({"kind":kind,"unavailable":
+            if !self.writable {json!("read_only")} else if opaque {json!("unsupported")} else {json!(statement.append_unavailable(kind))}})).collect();
         let sources: Vec<_> = statement
             .source_bindings(input)
             .into_iter()
@@ -107,9 +125,29 @@ impl View<'_> {
                     .filter_map(|item| item.output_name(input, clause))
             })
             .collect();
-        json!({"index":index,"range":bytes(&statement.range),"russian":statement.russian,"sources":sources,"scope":statement.scope,
+        let mut output = json!({"index":index,"range":bytes(&statement.range),"russian":statement.russian,"sources":sources,"scope":statement.scope,
             "branch":statement.branch,"result":statement.result,"nested":statement.nested,"columns":columns,
-            "unavailable":if opaque {json!("unsupported_construct")} else {json!(statement.unavailable)},"preview":preview(&input[statement.range.clone()]),"clauses":clauses,"append":append})
+            "unavailable":if opaque {json!(if statement.clauses.iter().any(|c| c.kind==ClauseKind::Destroy) {"unsupported_statement"} else {"unsupported_construct"})} else {json!(statement.unavailable)},"preview":preview(&input[statement.range.clone()]),"clauses":clauses,"append":append});
+        if self.minor >= 26 {
+            let roots: Vec<_> = self
+                .value
+                .model()
+                .scopes
+                .iter()
+                .filter(|scope| scope.parent.is_none())
+                .collect();
+            let position = roots
+                .iter()
+                .position(|scope| scope.branches.contains(&index));
+            output["package"] = json!({"operation": self.value.model().package_operation(index), "position":position,
+                "first":first, "destination": self.value.model().temporary_destination(input, statement.scope),
+                "add":self.writable && !opaque && !statement.nested && statement.unavailable.is_none(),
+                "remove":self.writable && position.is_some() && roots.len()>1 && statement.unavailable.is_none(),
+                "moveUp":position.filter(|_|self.writable && statement.unavailable.is_none()).and_then(|at| at.checked_sub(1)),
+                "moveDown":position.filter(|at|self.writable && statement.unavailable.is_none() && at+1<roots.len()).map(|at|at+1),
+                "setInto":self.writable && !statement.nested && self.value.model().package_operation(index)==Some(eska_project_core::project::query::constructor::PackageOperation::Select)});
+        }
+        output
     }
 
     /// Clause ordering and exact headers are supplied once by ESKA.
@@ -135,8 +173,8 @@ impl View<'_> {
         let input = self.value.text();
         let expression = item.expression(input);
         let too_large = expression.len() > MAX_EXPRESSION;
-        let visual = item.visual(input, clause).filter(|_| self.advanced || !matches!(clause.kind, ClauseKind::Totals | ClauseKind::TotalGroups))
-            .filter(|value| self.advanced || !matches!(value, eska_project_core::project::query::constructor::Expression::VirtualSource { .. } | eska_project_core::project::query::constructor::Expression::VirtualJoin { .. }));
+        let visual = item.visual(input, clause).filter(|_| (self.minor >= 23) || !matches!(clause.kind, ClauseKind::Totals | ClauseKind::TotalGroups))
+            .filter(|value| (self.minor >= 23) || !matches!(value, eska_project_core::project::query::constructor::Expression::VirtualSource { .. } | eska_project_core::project::query::constructor::Expression::VirtualJoin { .. }));
         let up = self.writable
             && index
                 .checked_sub(1)

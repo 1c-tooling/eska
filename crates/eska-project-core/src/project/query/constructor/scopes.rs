@@ -112,11 +112,22 @@ fn append(
         statement.branch = branch;
         statement.nested = parent.is_some();
         statement.result = branch == scope.unions.len();
+        if statement.branch != 0
+            && statement.clauses.iter().any(|clause| {
+                matches!(
+                    clause.kind,
+                    super::ClauseKind::Into | super::ClauseKind::Destroy
+                )
+            })
+        {
+            statement.unavailable = Some(Unavailable::UnsupportedConstruct);
+        }
         if (parent.is_some() || !statement.result)
             && statement.clauses.iter().any(|clause| {
                 matches!(
                     clause.kind,
                     super::ClauseKind::Order
+                        | super::ClauseKind::Index
                         | super::ClauseKind::Totals
                         | super::ClauseKind::TotalGroups
                 )
@@ -131,8 +142,34 @@ fn append(
             .get(branch)
             .map_or(end, |value| value.range.end);
     }
+    check_package_shape(&scope, result);
     result.scopes.push(scope);
     nested(input, tokens, id, result)
+}
+
+/// Destinations belong to the first SELECT; destroy and orphan index clauses cannot be UNION branches.
+fn check_package_shape(scope: &QueryScope, result: &mut Model) {
+    if (!scope.unions.is_empty()
+        && scope.branches.iter().any(|&branch| {
+            result.statements[branch]
+                .clauses
+                .iter()
+                .any(|c| c.kind == super::ClauseKind::Destroy)
+        }))
+        || (scope.branches.iter().any(|&branch| {
+            result.statements[branch]
+                .clauses
+                .iter()
+                .any(|c| c.kind == super::ClauseKind::Index)
+        }) && !result.statements[scope.branches[0]]
+            .clauses
+            .iter()
+            .any(|c| c.kind == super::ClauseKind::Into))
+    {
+        for &branch in &scope.branches {
+            result.statements[branch].unavailable = Some(Unavailable::UnsupportedConstruct);
+        }
+    }
 }
 
 /// UNION ALL is one separator; an extra SELECT or trailing UNION stays an exact opaque branch.
@@ -168,7 +205,7 @@ fn tail_start(input: &str, top: &[&Token]) -> Option<usize> {
         .enumerate()
         .skip(last)
         .find(|(index, token)| {
-            token.keyword(input, &["TOTALS", "ИТОГИ"])
+            token.keyword(input, &["TOTALS", "ИТОГИ", "INDEX", "ИНДЕКСИРОВАТЬ"])
                 || (token.keyword(input, &["ORDER", "УПОРЯДОЧИТЬ"])
                     && top
                         .get(index + 1)

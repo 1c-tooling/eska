@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "constructors/packages.rs"]
+mod packages;
+
 const DRAFT: &str = "SELECT A, // keep 😀\n B FROM T;\nDESTROY Temp";
 
 /// The same application overlay and related chart reach both localized clients without adapter schema rules.

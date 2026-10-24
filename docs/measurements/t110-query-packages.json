@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "task": "T110",
+  "status": "DONE",
+  "date": "2026-10-24",
+  "metadataApi": "1.26",
+  "domainOwner": "eska-project-core",
+  "adapter": "eska-vscode-explorer: typed transport validation and presentation only",
+  "features": [
+    "INTO destination and lifetime-scoped rename with preserved explicit aliases",
+    "Add, remove and reorder package operators; DESTROY closes a lifetime",
+    "UNION cloning/removal preserves one destination in its first branch",
+    "Lazy temporary projections, nested consumers, metadata-backed wildcard chains and recreation",
+    "Atomic dependency rejection for known lifetimes and qualified explicit columns",
+    "Ordinary INDEX BY; exact no-op and explicit comment decisions"
+  ],
+  "checks": [
+    {
+      "name": "fmt",
+      "exitCode": 0,
+      "seconds": 1.0
+    },
+    {
+      "name": "check",
+      "exitCode": 0,
+      "seconds": 0.21
+    },
+    {
+      "name": "clippy",
+      "exitCode": 0,
+      "seconds": 1.59
+    },
+    {
+      "name": "rustdoc",
+      "exitCode": 0,
+      "seconds": 2.83
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "seconds": 34.97
+    },
+    {
+      "name": "typescript",
+      "exitCode": 0,
+      "seconds": 0.42
+    },
+    {
+      "name": "node",
+      "exitCode": 0,
+      "seconds": 17.39
+    },
+    {
+      "name": "bun",
+      "exitCode": 0,
+      "seconds": 31.44
+    }
+  ],
+  "rustTestTotals": {
+    "passed": 1104,
+    "failed": 0,
+    "ignored": 12
+  },
+  "node": {
+    "passed": 286,
+    "skipped": 3,
+    "failed": 0
+  },
+  "bun": {
+    "passed": 286,
+    "skipped": 3,
+    "failed": 0
+  },
+  "native": [
+    {
+      "name": "t110-query-package-host-en",
+      "exitCode": 0,
+      "seconds": 5.9,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-package",
+          "locale": "en",
+          "accepted": [
+            "package_cancel_keeps_same_draft",
+            "temporary_catalog_projection_and_atomic_rename_preserve_explicit_alias",
+            "package_apply_native_undo_redo_and_parent_single_undo_preserve_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t110-query-builder-host-en",
+      "exitCode": 0,
+      "seconds": 6.66,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-builder",
+          "locale": "en",
+          "accepted": [
+            "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+            "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+            "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t110-query-advanced-host-en",
+      "exitCode": 0,
+      "seconds": 6.65,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-advanced",
+          "locale": "en",
+          "accepted": [
+            "virtual_catalog_parameter_labels_positional_values_and_core_call_generation",
+            "same_panel_child_navigation_parent_hidden_and_current_derived_projection",
+            "union_duplicate_policy_scope_tail_order_overall_totals_and_period_fill",
+            "advanced_draft_one_undo_redo_unsaved_parent_apply_and_one_owner_undo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t110-query-package-host-ru",
+      "exitCode": 0,
+      "seconds": 9.66,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-package",
+          "locale": "ru",
+          "accepted": [
+            "package_cancel_keeps_same_draft",
+            "temporary_catalog_projection_and_atomic_rename_preserve_explicit_alias",
+            "package_apply_native_undo_redo_and_parent_single_undo_preserve_disk"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t110-query-builder-host-ru",
+      "exitCode": 0,
+      "seconds": 10.02,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-builder",
+          "locale": "ru",
+          "accepted": [
+            "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+            "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+            "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t110-query-advanced-host-ru",
+      "exitCode": 0,
+      "seconds": 10.42,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-advanced",
+          "locale": "ru",
+          "accepted": [
+            "virtual_catalog_parameter_labels_positional_values_and_core_call_generation",
+            "same_panel_child_navigation_parent_hidden_and_current_derived_projection",
+            "union_duplicate_policy_scope_tail_order_overall_totals_and_period_fill",
+            "advanced_draft_one_undo_redo_unsaved_parent_apply_and_one_owner_undo"
+          ]
+        }
+      ]
+    }
+  ],
+  "artifacts": {
+    "backend": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/bin/eska-project-t110",
+      "sha256": "98b428f0ddc9c9fd41697b0a424831ab8a11419d603d4df9dac3881fe55c9db5"
+    },
+    "vsix": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/query-t110.vsix",
+      "sha256": "cd0d2b5d3fce6da626c285c89963ee2c2f4e39a41bd3ae149a07a9800ebe33ac"
+    }
+  },
+  "vsixFiles": 1325,
+  "screenshots": [
+    "query-package-en.png",
+    "query-package-ru.png"
+  ],
+  "limits": [
+    "Table identifiers: 1024 UTF-8 bytes",
+    "Existing model token, scope, nesting and byte limits apply"
+  ],
+  "limitations": [
+    "Full query type checking and execution deferred to T114",
+    "Column checks rely on proven qualified references and explicit projections; wildcard schemas use application metadata",
+    "INDEX BY SETS, UNIQUE and APPEND TO are outside the visual subset",
+    "Windows, macOS, Microsoft VS Code and Remote remain unverified"
+  ]
+}

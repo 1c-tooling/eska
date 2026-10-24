@@ -50,15 +50,15 @@ pub(super) fn is_cleanup(method: &str) -> bool {
 }
 
 /// Visual editing is explicit, lossless, bounded and fenced at the same canonical draft used by XML/BSL sessions.
-pub(super) fn capability(visual: bool, advanced: bool) -> Value {
+pub(super) fn capability(minor: u32) -> Value {
     let mut result = json!({"schemaVersion":1,"writesOwner":false,"writesDraft":true,"explicitFinish":true,"exclusiveDraft":true,
         "maxTokens":65536,"maxStatements":256,"maxStatementClauses":128,"maxStatementSeparators":2048,"lossless":true,"nativeDraftPlan":true,"sourceCommentPositions":true,"maxExpressionBytes":MAX_EXPRESSION,"maxModelBytes":MAX_MODEL_BYTES,"sharedQueryBudget":true,
         "clauses":["fields","sources","joins","conditions","group","order"]});
-    if visual {
+    if minor >= 22 {
         result["visualExpressions"] = json!(true);
         result["metadataCatalog"] = json!(true);
     }
-    if advanced {
+    if minor >= 23 {
         result["virtualTables"] = json!(true);
         result["nestedQueries"] = json!(true);
         result["unions"] = json!(true);
@@ -66,6 +66,13 @@ pub(super) fn capability(visual: bool, advanced: bool) -> Value {
         result["maxNesting"] = json!(32);
         result["totals"] = json!(true);
         result["clauses"] = json!(ClauseKind::all(true));
+    }
+    if minor >= 26 {
+        result["packages"] = json!(true);
+        result["temporaryTables"] = json!(true);
+        let mut clauses = ClauseKind::all(true).to_vec();
+        clauses.extend([ClauseKind::Into, ClauseKind::Destroy, ClauseKind::Index]);
+        result["clauses"] = json!(clauses);
     }
     result
 }
@@ -118,7 +125,7 @@ impl State {
         args: &Value,
         recovery: &mut recovery::State,
         forbidden: &[PathBuf],
-        advanced: bool,
+        minor: u32,
     ) -> Result<Value, Value> {
         #[derive(Deserialize)]
         #[serde(rename_all = "camelCase")]
@@ -175,16 +182,16 @@ impl State {
                 value,
                 &input.constructor_id,
                 entry.core.constructor_writable(),
-                advanced,
+                minor,
             )?;
             return Ok(output);
         }
         let mut core = entry.core.clone();
-        let (id, plan, released) = transition(&mut core, method, args, advanced)?;
+        let (id, plan, released) = transition(&mut core, method, args, minor)?;
         self.admit_change(entry.core.retained_bytes(), core.retained_bytes())?;
         let view = id
             .as_deref()
-            .map(|id| bound_model(&core, id, advanced))
+            .map(|id| bound_model(&core, id, minor))
             .transpose()?;
         let stored = if method == "query/constructorFinish" {
             let project_key = entry.stored.record.metadata()["projectKey"]
@@ -240,14 +247,14 @@ type Transition = (
 fn bound_model(
     core: &eska_project_core::project::metadata_workspace::QuerySession,
     id: &str,
-    advanced: bool,
+    minor: u32,
 ) -> Result<Value, Value> {
     model(
         core.constructor(params::counter(id)?)
             .map_err(session_error)?,
         id,
         core.constructor_writable(),
-        advanced,
+        minor,
     )
 }
 
@@ -256,7 +263,7 @@ fn transition(
     core: &mut eska_project_core::project::metadata_workspace::QuerySession,
     method: &str,
     args: &Value,
-    advanced: bool,
+    minor: u32,
 ) -> Result<Transition, Value> {
     #[derive(Deserialize)]
     struct Revision {
@@ -287,12 +294,21 @@ fn transition(
     match method {
         "query/constructorAction" => {
             let input: Operation = params::decode(args)?;
-            if !advanced
+            if minor < 23
                 && core
                     .constructor(id)
                     .map_err(session_error)?
                     .model()
                     .requires_scopes(input.action.statement())
+            {
+                return Err(failure("constructor_unsupported"));
+            }
+            if minor < 26
+                && core
+                    .constructor(id)
+                    .map_err(session_error)?
+                    .model()
+                    .requires_packages(input.action.statement())
             {
                 return Err(failure("constructor_unsupported"));
             }
