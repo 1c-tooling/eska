@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "task": "T103",
+  "date": "2026-10-24",
+  "status": "prototype; adapter not implemented",
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e",
+  "analyzer": {
+    "path": "/home/akalsin/.local/bin/bsl-analyzer-app",
+    "version": "0.3.2",
+    "contract": "3.4",
+    "sha256": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d"
+  },
+  "processesPerRun": 1,
+  "context": "Real Designer XML module URI; a generated small configuration with typed catalog and tabular-section attributes",
+  "findings": {
+    "bslUnsavedCompletion": [
+      "Артикул",
+      "Код"
+    ],
+    "bslChangedDiagnostics": "QueryParseError after didChange; native module disk bytes unchanged",
+    "pullDiagnostic": "textDocument/diagnostic returns a full report with resultId even though default capabilities do not advertise diagnosticProvider",
+    "pushDiagnosticVersion": null,
+    "directSdblXml": "Server returns -32603 File is not BSL, request unsupported",
+    "xmlOwnerParametersScdExtensionsDynamicListKeys": "Not supported by the tested direct LSP document contract; must remain explicitly unaccepted"
+  },
+  "evidence": [
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/probe.py",
+      "sha256": "2e1dbb23d9aad3197982d61ddd0c63b45bd17c15092469c7a141b0d74969b54b"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/probe-pull.py",
+      "sha256": "a711eca2e85e243ad636920a529eb3586f9c5160c4fa1dd1c315a637aa4f392b"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/typed-prototype-result.json",
+      "sha256": "b6e85309b303dcb1c0477f8d84541a887354002a5bf29f836a974eb1d09558aa"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/typed-notifications.json",
+      "sha256": "610c71d02f68194d5bb842ba90236f062bcb2f2059a65f220da6e28ab6125d53"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/typed-lsp-stderr.log",
+      "sha256": "7b65a8a69159d0b2b1186c2768b1c23cf33c9752402bc9d36fb689a2d6b25b19"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/pull-prototype-result.json",
+      "sha256": "da99eab7c318733efba163c2cd291b7e44ca08f778da8cbece0e2c5f1a9f732d"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/pull-notifications.json",
+      "sha256": "610c71d02f68194d5bb842ba90236f062bcb2f2059a65f220da6e28ab6125d53"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t103-language-1urtuy9e/pull-lsp-stderr.log",
+      "sha256": "b3c58a0c2ca077dc0c6031c05582f9efbf6c19eca3b6e41a58e2dca0cf4f1f64"
+    }
+  ],
+  "rejectedFixture": "Original generic tree fixtures omitted Attribute.Type and produced metadata_objects=0. Adding real Designer types loaded 2 objects and enabled metadata completion; source files of the user were never changed. No BOM or format conversion workaround is used.",
+  "next": "ESKA owns immutable BSL projection, position and edit translation; the adapter binds it to its existing LSP client with strict revision guards and restoration of native synchronization",
+  "sources": [
+    "https://github.com/itrous/bsl-analyzer/blob/v0.3.2/crates/bsl-analyzer/src/handlers/notification.rs",
+    "https://github.com/itrous/bsl-analyzer/blob/v0.3.2/crates/ide/src/completion/sdbl/mod.rs"
+  ]
+}
