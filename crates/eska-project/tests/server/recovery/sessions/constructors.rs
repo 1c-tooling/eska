@@ -2,6 +2,75 @@ use super::*;
 
 const DRAFT: &str = "SELECT A, // keep 😀\n B FROM T;\nDESTROY Temp";
 
+/// The same application overlay and related chart reach both localized clients without adapter schema rules.
+#[test]
+fn catalog_rpc_composes_base_and_extension_schemas_independently_of_locale() {
+    let (directory, old_root, private) = source_fixture();
+    let root = directory.0.join("base");
+    fs::rename(old_root, &root).unwrap();
+    fs::write(
+        root.join("eska.toml"),
+        "[project]\nname='base'\ntype='configuration'\nsource='src'\n",
+    )
+    .unwrap();
+    let extension = directory.0.join("extension");
+    fs::create_dir_all(extension.join("src/AccountingRegisters")).unwrap();
+    fs::write(
+        extension.join("eska.toml"),
+        "[project]\nname='extension'\ntype='extension'\nsource='src'\n",
+    )
+    .unwrap();
+    fs::write(extension.join("src/Configuration.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='33333333-3333-3333-3333-333333333333'><Properties><Name>Extension</Name><ConfigurationExtensionPurpose>Patch</ConfigurationExtensionPurpose></Properties><ChildObjects><AccountingRegister>Ledger</AccountingRegister></ChildObjects></Configuration></MetaDataObject>").unwrap();
+    fs::write(directory.0.join("eska.toml"), "[workspace]\nmembers=['base','extension']\n[applications.main]\nconfiguration='base'\nextensions=['extension']\n").unwrap();
+    let config = root.join("src/Configuration.xml");
+    fs::write(&config, fs::read_to_string(&config).unwrap().replace("</ChildObjects>", "<AccountingRegister>Ledger</AccountingRegister><ChartOfAccounts>Accounts</ChartOfAccounts></ChildObjects>")).unwrap();
+    fs::create_dir_all(root.join("src/AccountingRegisters")).unwrap();
+    fs::create_dir_all(root.join("src/ChartsOfAccounts")).unwrap();
+    fs::write(root.join("src/ChartsOfAccounts/Accounts.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><ChartOfAccounts uuid='44444444-4444-4444-4444-444444444444'><Properties><Name>Accounts</Name><MaxExtDimensionCount>3</MaxExtDimensionCount></Properties></ChartOfAccounts></MetaDataObject>").unwrap();
+    fs::write(root.join("src/AccountingRegisters/Ledger.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><AccountingRegister uuid='55555555-5555-5555-5555-555555555555'><Properties><Name>Ledger</Name><Correspondence>true</Correspondence><ChartOfAccounts>ChartOfAccounts.Accounts</ChartOfAccounts></Properties></AccountingRegister></MetaDataObject>").unwrap();
+    fs::write(extension.join("src/AccountingRegisters/Ledger.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><AccountingRegister uuid='55555555-5555-5555-5555-555555555555'><Properties><Name>Ledger</Name><ObjectBelonging>Adopted</ObjectBelonging></Properties><ChildObjects><Resource uuid='66666666-6666-6666-6666-666666666666'><Properties><Name>Quantity</Name><Balance>false</Balance></Properties></Resource></ChildObjects></AccountingRegister></MetaDataObject>").unwrap();
+    let mut expected = None;
+    for locale in ["ru-RU", "en-US"] {
+        let mut client = Client::new(&root, locale);
+        let binding = source_connect_version(&mut client, &root, &private.join(locale), locale, 23);
+        let state = open_source(&mut client, &binding, XML, false);
+        let opened = client.request(
+            "query/constructorOpen",
+            &source_args(
+                &binding,
+                json!({"querySessionId":state["querySessionId"],"revision":state["revision"]}),
+            ),
+        );
+        let page = client.request("query/constructorCatalog", &constructor_args(&binding, &opened, json!({"query":{"table":"AccountingRegister.Ledger.RecordsWithExtDimensions","virtualTables":true}})));
+        let catalog = &page["catalog"];
+        assert_eq!(catalog["found"], true);
+        assert!(
+            catalog["fields"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|f| f["english"] == "QuantityDr")
+        );
+        assert!(
+            catalog["fields"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|f| f["english"] == "ExtDimensionDr3")
+        );
+        if let Some(expected) = &expected {
+            assert_eq!(catalog, expected);
+        } else {
+            expected = Some(catalog.clone());
+        }
+        client.finish();
+    }
+    assert_eq!(
+        fs::read_to_string(root.join("src").join(SOURCE)).unwrap(),
+        XML
+    );
+}
+
 /// Total sections and result projections share the same private draft and negotiated compatibility boundary.
 #[test]
 fn totals_rpc_is_localized_private_and_unavailable_to_older_clients() {

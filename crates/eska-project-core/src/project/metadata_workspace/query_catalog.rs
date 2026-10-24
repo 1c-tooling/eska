@@ -4,14 +4,14 @@ use std::collections::BTreeMap;
 
 mod constructor;
 mod fields;
+mod schema;
 mod virtuals;
 
 use serde::{Deserialize, Serialize};
 
 use super::{ProjectSession, QueryDocumentError, QuerySessionError, WorkspaceError};
 use crate::project::{
-    designer_source,
-    metadata_model::{MetadataKind, NodeId, ObjectId, ProjectScope},
+    metadata_model::MetadataKind,
     metadata_parser::{self, PropertiesMode},
     query::QueryError,
 };
@@ -108,20 +108,9 @@ impl ProjectSession {
         }
         let limit = request.limit.unwrap_or(200);
         let context = self.query_context(application)?;
+        let sources = schema::Sources::open(self, &context.context)?;
         let mut choices = CatalogContents::default();
-        for source in context.context.sources() {
-            if source.project().source() == self.project().source() {
-                collect(self, request, &mut choices)?;
-            } else {
-                let scope = source.member().map_or(ProjectScope::Standalone, |name| {
-                    ProjectScope::Member(name.clone())
-                });
-                let source = designer_source::open_project(source.project().clone(), scope, true)
-                    .map_err(|error| workspace_error(WorkspaceError::Source(error)))?;
-                let project = Self::open(source).map_err(workspace_error)?;
-                collect(&project, request, &mut choices)?;
-            }
-        }
+        collect(&sources, request, &mut choices)?;
         let search = request.search.to_lowercase();
         let mut matching = choices
             .tables
@@ -170,19 +159,15 @@ struct CatalogContents {
 
 /// Root declarations enumerate physical tables without opening every catalog, document or register.
 fn collect(
-    project: &ProjectSession,
+    sources: &schema::Sources<'_>,
     request: &QueryCatalogRequest,
     choices: &mut CatalogContents,
 ) -> Result<(), QuerySessionError> {
-    for object in project
-        .objects
-        .values()
-        .filter(|object| object.parent.is_none())
-    {
-        let Some((russian, english)) = prefixes(object.kind) else {
+    for ((kind, _), name) in sources.roots() {
+        let Some((russian, english)) = prefixes(kind) else {
             continue;
         };
-        let table = choice(object.kind, &object.name, russian, english);
+        let table = choice(kind, name, russian, english);
         if let Some(requested) = request.table.as_deref() {
             let matches = [table.russian.as_str(), table.english.as_str()]
                 .iter()
@@ -193,7 +178,7 @@ fn collect(
                             .starts_with(&format!("{}.", name.to_lowercase()))
                 });
             if matches {
-                collect_fields(project, &object.id, &table, request, choices)?;
+                collect_fields(sources, &table, request, choices)?;
             }
         } else {
             choices
@@ -205,37 +190,26 @@ fn collect(
     Ok(())
 }
 
-/// Fields and tabular sections are loaded from this single checked descriptor; modules and neighboring descriptors stay unread.
+/// Inspect only this effective owner schema and explicitly related schemas; modules stay unread.
 fn collect_fields(
-    project: &ProjectSession,
-    id: &ObjectId,
+    sources: &schema::Sources<'_>,
     table: &QueryTableChoice,
     request: &QueryCatalogRequest,
     choices: &mut CatalogContents,
 ) -> Result<(), QuerySessionError> {
-    let parsed = metadata_parser::load(&project.source, id, PropertiesMode::Summary)
-        .map_err(|error| workspace_error(WorkspaceError::Load(error)))?;
-    let location = project
-        .source
-        .object_descriptor(id)
-        .map_err(|error| workspace_error(WorkspaceError::Source(error)))?
-        .ok_or_else(|| {
-            workspace_error(WorkspaceError::MissingSource(NodeId::Object(id.clone())))
-        })?;
-    let input = project
-        .source
-        .read_xml(&location.path)
-        .map_err(|error| workspace_error(WorkspaceError::Source(error)))?
-        .ok_or_else(|| {
-            workspace_error(WorkspaceError::MissingSource(NodeId::Object(id.clone())))
-        })?;
+    let input = sources
+        .descriptor(table.category, &table.name)?
+        .ok_or(QueryError::NotFound)?;
+    let parsed = metadata_parser::parse(&input, None, PropertiesMode::Summary)
+        .map_err(|_| QueryError::InvalidXml)?;
     let document = roxmltree::Document::parse(&input)
         .map_err(|_| QuerySessionError::from(QueryError::InvalidXml))?;
     let owner = parsed
         .objects
         .iter()
-        .find(|object| object.metadata.id() == id)
-        .ok_or_else(|| workspace_error(WorkspaceError::UnknownObject(id.clone())))?;
+        .find(|object| object.metadata.parent().is_none())
+        .ok_or(QueryError::InvalidXml)?;
+    let id = owner.metadata.id();
     let requested = request
         .table
         .as_deref()
@@ -244,11 +218,11 @@ fn collect_fields(
     if request.virtual_tables {
         let node = fields::object_node(&document, owner)?;
         if is_root {
-            virtuals::choices(project, table, node, &mut choices.tables)?;
+            virtuals::choices(sources, table, node, &mut choices.tables)?;
         } else if let Some((category, virtual_table)) =
             crate::project::query::virtual_tables::VirtualTable::resolve(requested)
         {
-            if virtuals::selected_available(project, virtual_table, category, node, requested)? {
+            if virtuals::selected_available(sources, virtual_table, category, node, requested)? {
                 choices.found = true;
                 if choices.parameters.is_empty() {
                     choices.parameters = virtual_table.parameters(
@@ -257,7 +231,7 @@ fn collect_fields(
                     );
                 }
                 return virtuals::fields(
-                    project,
+                    sources,
                     table,
                     &document,
                     &parsed,

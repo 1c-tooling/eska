@@ -1,9 +1,7 @@
 //! Calculation virtual tables follow the explicitly assigned schedule and base calculation-type charts.
 
 use super::super::fields::{insert, property};
-use super::{
-    ProjectSession, QueryFieldChoice, QuerySessionError, QueryTableChoice, enabled, related,
-};
+use super::{QueryFieldChoice, QuerySessionError, QueryTableChoice, Sources, enabled};
 use crate::project::{
     metadata_model::MetadataKind,
     query::{QueryError, virtual_tables::VirtualTable},
@@ -15,12 +13,12 @@ const MD: &str = "http://v8.1c.ru/8.3/MDClasses";
 
 /// Base tables are named after actual registers assigned to the owner's declared base charts.
 pub(super) fn choices(
-    project: &ProjectSession,
+    sources: &Sources<'_>,
     table: &QueryTableChoice,
     owner: Node<'_, '_>,
     output: &mut BTreeMap<String, QueryTableChoice>,
 ) -> Result<(), QuerySessionError> {
-    for (name, _) in bases(project, owner)? {
+    for (name, _) in bases(sources, owner)? {
         let russian = format!("База{name}");
         let english = format!("Base{name}");
         let value = QueryTableChoice {
@@ -38,7 +36,7 @@ pub(super) fn choices(
 
 /// The requested suffix cannot select an unrelated register, even if it exists in the same project.
 pub(super) fn base_register(
-    project: &ProjectSession,
+    sources: &Sources<'_>,
     owner: Node<'_, '_>,
     requested: &str,
 ) -> Result<Option<String>, QuerySessionError> {
@@ -47,7 +45,7 @@ pub(super) fn base_register(
         .next()
         .unwrap_or_default()
         .to_lowercase();
-    Ok(bases(project, owner)?
+    Ok(bases(sources, owner)?
         .into_iter()
         .find(|(name, _)| {
             [format!("base{name}"), format!("база{name}")]
@@ -59,7 +57,7 @@ pub(super) fn base_register(
 
 /// Only calculation descriptors need inspection, and only after expanding a register that declares base-period support.
 fn bases(
-    project: &ProjectSession,
+    sources: &Sources<'_>,
     owner: Node<'_, '_>,
 ) -> Result<Vec<(String, String)>, QuerySessionError> {
     if !enabled(owner, "BasePeriodUse") {
@@ -68,8 +66,7 @@ fn bases(
     let Some(chart) = property(owner, "ChartOfCalculationTypes") else {
         return Ok(Vec::new());
     };
-    let Some(text) = related::descriptor(project, MetadataKind::ChartOfCalculationTypes, chart)?
-    else {
+    let Some(text) = sources.descriptor(MetadataKind::ChartOfCalculationTypes, chart)? else {
         return Ok(Vec::new());
     };
     let document = Document::parse(&text).map_err(|_| QueryError::InvalidXml)?;
@@ -94,14 +91,11 @@ fn bases(
         .map(str::to_owned)
         .collect();
     let mut result = Vec::new();
-    for candidate in project
-        .objects
-        .values()
-        .filter(|value| value.kind == MetadataKind::CalculationRegister)
-    {
-        let Some(text) =
-            related::descriptor(project, MetadataKind::CalculationRegister, &candidate.name)?
-        else {
+    for ((kind, _), name) in sources.roots() {
+        if kind != MetadataKind::CalculationRegister {
+            continue;
+        }
+        let Some(text) = sources.descriptor(kind, name)? else {
             continue;
         };
         let document = Document::parse(&text).map_err(|_| QueryError::InvalidXml)?;
@@ -109,7 +103,7 @@ fn bases(
             return Err(QueryError::InvalidXml.into());
         };
         if property(node, "ChartOfCalculationTypes").is_some_and(|value| charts.contains(value)) {
-            result.push((candidate.name.clone(), text));
+            result.push((name.to_owned(), text));
         }
     }
     Ok(result)
@@ -117,7 +111,7 @@ fn bases(
 
 /// Standard owner columns and resource-derived columns share the same backend schema for every IDE.
 pub(super) fn fields(
-    project: &ProjectSession,
+    sources: &Sources<'_>,
     owner: Node<'_, '_>,
     kind: VirtualTable,
     requested: &str,
@@ -154,8 +148,7 @@ pub(super) fn fields(
     }
     if kind == VirtualTable::ScheduleData {
         if let Some(schedule) = property(owner, "Schedule")
-            && let Some(text) =
-                related::descriptor(project, MetadataKind::InformationRegister, schedule)?
+            && let Some(text) = sources.descriptor(MetadataKind::InformationRegister, schedule)?
         {
             let document = Document::parse(&text).map_err(|_| QueryError::InvalidXml)?;
             let node = object(&document, "InformationRegister").ok_or(QueryError::InvalidXml)?;
@@ -185,7 +178,7 @@ pub(super) fn fields(
             }
         }
     } else if kind == VirtualTable::Base
-        && let Some(text) = base_register(project, owner, requested)?
+        && let Some(text) = base_register(sources, owner, requested)?
     {
         let document = Document::parse(&text).map_err(|_| QueryError::InvalidXml)?;
         let node = object(&document, "CalculationRegister").ok_or(QueryError::InvalidXml)?;

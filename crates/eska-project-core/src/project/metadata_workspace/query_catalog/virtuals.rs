@@ -2,11 +2,11 @@
 
 mod calculation;
 mod columns;
-mod related;
 
 use super::{
-    ProjectSession, QueryFieldChoice, QuerySessionError, QueryTableChoice,
+    QueryFieldChoice, QuerySessionError, QueryTableChoice,
     fields::{self, property},
+    schema::Sources,
 };
 use crate::project::{
     metadata_model::MetadataKind,
@@ -40,7 +40,7 @@ pub(super) fn available(kind: VirtualTable, category: MetadataKind, owner: Node<
 
 /// Expand one register into its supported virtual tables only when its descriptor is requested.
 pub(super) fn choices(
-    project: &ProjectSession,
+    sources: &Sources<'_>,
     table: &QueryTableChoice,
     owner: Node<'_, '_>,
     tables: &mut BTreeMap<String, QueryTableChoice>,
@@ -61,14 +61,14 @@ pub(super) fn choices(
         tables.entry(value.english.to_lowercase()).or_insert(value);
     }
     if table.category == MetadataKind::CalculationRegister {
-        calculation::choices(project, table, owner, tables)?;
+        calculation::choices(sources, table, owner, tables)?;
     }
     Ok(())
 }
 
 /// A calculated base table must name a register related through the assigned calculation-type chart.
 pub(super) fn selected_available(
-    project: &ProjectSession,
+    sources: &Sources<'_>,
     kind: VirtualTable,
     category: MetadataKind,
     owner: Node<'_, '_>,
@@ -78,14 +78,14 @@ pub(super) fn selected_available(
         return Ok(false);
     }
     if kind == VirtualTable::Base {
-        return Ok(calculation::base_register(project, owner, requested)?.is_some());
+        return Ok(calculation::base_register(sources, owner, requested)?.is_some());
     }
     Ok(true)
 }
 
 /// Virtual rows derive from the descriptor's own dimensions/resources and the platform's table-specific column rules.
 pub(super) fn fields(
-    project: &ProjectSession,
+    sources: &Sources<'_>,
     table: &QueryTableChoice,
     document: &Document<'_>,
     parsed: &ParsedDescriptor,
@@ -108,7 +108,7 @@ pub(super) fn fields(
         fields::append(document, parsed, owner, table.category, output)?;
     }
     let context = columns::Context {
-        project,
+        sources,
         document,
         parsed,
         owner,
@@ -118,7 +118,7 @@ pub(super) fn fields(
     };
     context.append(output)?;
     if table.category == MetadataKind::CalculationRegister {
-        calculation::fields(project, node, kind, requested, output)?;
+        calculation::fields(sources, node, kind, requested, output)?;
     }
     Ok(())
 }

@@ -1,12 +1,12 @@
 //! Register-specific virtual columns never leak into a physical record table.
 
 use super::super::{
-    ProjectSession, QueryFieldChoice, QuerySessionError, WorkspaceError,
+    QueryFieldChoice, QuerySessionError,
     fields::{insert, object_node, property},
-    workspace_error,
+    schema::Sources,
 };
 use crate::project::{
-    metadata_model::{MetadataKind, NodeId},
+    metadata_model::MetadataKind,
     metadata_parser::{ParsedDescriptor, ParsedObject},
     query::{QueryError, virtual_tables::VirtualTable},
 };
@@ -14,7 +14,7 @@ use roxmltree::{Document, Node};
 use std::collections::BTreeMap;
 
 pub(super) struct Context<'a, 'input> {
-    pub project: &'a ProjectSession,
+    pub sources: &'a Sources<'a>,
     pub document: &'a Document<'input>,
     pub parsed: &'a ParsedDescriptor,
     pub owner: &'a ParsedObject,
@@ -310,39 +310,21 @@ impl Context<'_, '_> {
         let Some(reference) = property(self.node, "ChartOfAccounts") else {
             return Ok(0);
         };
-        let name = reference.rsplit('.').next().unwrap_or(reference);
-        let Some(object) = self
-            .project
-            .objects
-            .values()
-            .find(|object| object.kind == MetadataKind::ChartOfAccounts && object.name == name)
+        let Some(text) = self
+            .sources
+            .descriptor(MetadataKind::ChartOfAccounts, reference)?
         else {
             return Ok(0);
         };
-        let location = self
-            .project
-            .source
-            .object_descriptor(&object.id)
-            .map_err(|error| workspace_error(WorkspaceError::Source(error)))?
-            .ok_or_else(|| {
-                workspace_error(WorkspaceError::MissingSource(NodeId::Object(
-                    object.id.clone(),
-                )))
-            })?;
-        let text = self
-            .project
-            .source
-            .read_xml(&location.path)
-            .map_err(|error| workspace_error(WorkspaceError::Source(error)))?
-            .ok_or_else(|| {
-                workspace_error(WorkspaceError::MissingSource(NodeId::Object(
-                    object.id.clone(),
-                )))
-            })?;
         let doc = Document::parse(&text).map_err(|_| QueryError::InvalidXml)?;
         Ok(doc
             .descendants()
-            .find(|node| node.tag_name().name() == "ChartOfAccounts")
+            .find(|node| {
+                node.has_tag_name((
+                    crate::project::metadata_parser::MD_NAMESPACE,
+                    "ChartOfAccounts",
+                ))
+            })
             .and_then(|node| property(node, "MaxExtDimensionCount"))
             .and_then(|value| value.parse().ok())
             .unwrap_or(0)
