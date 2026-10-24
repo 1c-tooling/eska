@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 1,
+  "task": "T108",
+  "status": "DONE",
+  "date": "2026-10-24",
+  "acceptedEnvironment": {
+    "os": "Linux x86_64",
+    "vscodium": "1.109.51242",
+    "vscodiumCommit": "2a5b258b5b38d3d4c830bdaaa6e5c610eaacbd15",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "rust": "1.99.1",
+    "referencePlatform": "8.3.27.2325",
+    "analyzer": "0.3.2, published contract 3.4",
+    "locales": [
+      "en",
+      "ru"
+    ]
+  },
+  "scope": {
+    "metadataApi": "1.23",
+    "domainOwner": "eska-project-core",
+    "rpcOwner": "eska-project",
+    "adapterOwner": "eska-vscode-explorer: transport DTO validation, native views, inputs and Undo only",
+    "features": [
+      "Metadata-backed register virtual tables, bilingual field paths, positional optional/required arguments and keyword choices",
+      "Nested SELECT scopes with same-panel parent/child navigation and metadata-backed wildcard expansion",
+      "UNION/UNION ALL branch add/copy, duplicate policy, removal and atomic output column alignment with NULL placeholders",
+      "Scope-wide order and totals; overall, hierarchy, only-hierarchy and filling date periods",
+      "Lossless no-op, comments, revision checks, private draft ownership, finish/cancel and unchanged source until explicit native apply"
+    ],
+    "virtualTables": [
+      "sliceFirst",
+      "sliceLast",
+      "balance",
+      "turnovers",
+      "balanceAndTurnovers",
+      "recordsWithExtDimensions",
+      "drCrTurnovers",
+      "extDimensions",
+      "adjustedEffectivePeriod",
+      "scheduleData",
+      "base"
+    ],
+    "pages": [
+      "tablesFields",
+      "joins",
+      "group",
+      "conditions",
+      "order",
+      "unions",
+      "totals"
+    ],
+    "limits": {
+      "maxScopes": 256,
+      "maxStatements": 256,
+      "maxNesting": 32,
+      "maxExpressionBytes": 16384,
+      "maxModelBytes": 33554432
+    }
+  },
+  "reference": {
+    "kind": "Installed platform primary query/table help; inspected as data, never executed",
+    "sourceCopiedIntoRepositories": false,
+    "files": [
+      {
+        "file": "shcntx_ru.hbk",
+        "sha256": "f8e853952e63c447e17e53c39a57f9690769a67198a888185bd7f0230f96e14b"
+      },
+      {
+        "file": "shquery_ru.hbk",
+        "sha256": "dab4df702bc093607c44de2e1046ee116af31ea15e67192a5eefb409f62ed5f2"
+      }
+    ],
+    "derivedReviewData": "platform-query-tables.json in the owned stand",
+    "cloudItsHelp": "Unavailable without NAPARNIK_TOKEN; local installed primary help used instead"
+  },
+  "sourceCommits": {
+    "core": {
+      "acceptedCodeHead": "6a2b4aaa9970cebd50a612cc115c1de8cb06a027",
+      "commits": [
+        {
+          "hash": "64aa6d50000a36ed52cf3b6a995baef7134b7cc4",
+          "message": "feat(query): Добавлены виртуальные таблицы регистров с позиционными параметрами"
+        },
+        {
+          "hash": "b73e1e151e2b4c194bfe3e0cb969ae78b3cb0a21",
+          "message": "feat(query): Добавлены области вложенных запросов и согласованные ветки объединений"
+        },
+        {
+          "hash": "d1963970bac20e0e9be3a0c96952b9b388e524a3",
+          "message": "feat(query): Добавлены общие итоги, иерархия и заполнение периодов"
+        },
+        {
+          "hash": "f32dab34a5fec5b4d7f057abae89d02802cf6ce6",
+          "message": "fix(query): Уточнены поля виртуальных таблиц по связанным метаданным"
+        },
+        {
+          "hash": "7c9f3fb205353da6fc0eaeecb496b76a46c1428d",
+          "message": "fix(query): Сохранена область конструктора после удаления ветки объединения"
+        },
+        {
+          "hash": "6a2b4aaa9970cebd50a612cc115c1de8cb06a027",
+          "message": "fix(query): Учтён регистр букв в именах базовых виртуальных таблиц"
+        }
+      ]
+    },
+    "explorer": {
+      "acceptedHead": "29dd397574fa23457b6a68ff5571a7fd58a72789",
+      "commits": [
+        {
+          "hash": "53d2e2963bd5f86e0b47abf63d408215168ed42e",
+          "message": "feat(query): Добавлен клиент API 1.23 для составных запросов и итогов"
+        },
+        {
+          "hash": "29dd397574fa23457b6a68ff5571a7fd58a72789",
+          "message": "feat(query): Добавлен интерфейс виртуальных таблиц и составных запросов"
+        }
+      ]
+    }
+  },
+  "artifacts": {
+    "standRelativeToCore": "../eska-playground/query-advanced-g4m2a395",
+    "backend": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/query-advanced-g4m2a395/bin/eska-project",
+      "sha256": "93c4650559c0520b13abafded20dd729a2b8324e754004254965b21500d53244",
+      "bytes": 12275952,
+      "profile": "dist, optimized with thin LTO"
+    },
+    "vsix": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/query-advanced-g4m2a395/query-advanced.vsix",
+      "sha256": "fe33eb203c92a0c967a2450eb06c3b0f5ce75f5ec932a079c0e1d45410bd64ea",
+      "bytes": 2117511,
+      "verifiedPayloadFiles": 1324
+    },
+    "analyzer": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/bin/bsl-analyzer-app",
+      "sha256": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+      "bytes": 75963744
+    },
+    "languagePack": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/installed-russian-language-pack.vsix",
+      "sha256": "210ec158fd3092bc2730cf5ba378e1ea1f8bae1f01862ad584fcac150ca1e0e8",
+      "bytes": 585950
+    },
+    "screenshots": [
+      "screenshots/query-advanced-en.png",
+      "screenshots/query-advanced-ru.png",
+      "screenshots/query-builder-en.png",
+      "screenshots/query-builder-ru.png"
+    ]
+  },
+  "checks": {
+    "rustGates": [
+      {
+        "name": "fmt",
+        "exitCode": 0,
+        "seconds": 1.02
+      },
+      {
+        "name": "check",
+        "exitCode": 0,
+        "seconds": 1.95
+      },
+      {
+        "name": "clippy",
+        "exitCode": 0,
+        "seconds": 6.33
+      },
+      {
+        "name": "rustdoc",
+        "exitCode": 0,
+        "seconds": 26.21
+      },
+      {
+        "name": "test",
+        "exitCode": 0,
+        "seconds": 47.04
+      }
+    ],
+    "rustTests": {
+      "passed": 1085,
+      "failed": 0,
+      "ignored": 12,
+      "suites": 35,
+      "log": "final-test.log"
+    },
+    "node": {
+      "tests": 281,
+      "passed": 278,
+      "skipped": 3,
+      "failed": 0,
+      "log": "final-node-tests.log"
+    },
+    "bun": {
+      "tests": 281,
+      "passed": 278,
+      "skipped": 3,
+      "failed": 0,
+      "log": "final-bun-tests.log"
+    },
+    "typescript": {
+      "check": true,
+      "compile": true
+    },
+    "package": {
+      "vsixPayloadValidated": true
+    },
+    "native": {
+      "suiteRuns": 14,
+      "acceptedWindowResults": 16,
+      "registrationWarmupsExcluded": true,
+      "resultsFile": "native-checks.json",
+      "suites": [
+        {
+          "name": "query-advanced-host-en",
+          "exitCode": 0,
+          "seconds": 10.72,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-builder-host-en",
+          "exitCode": 0,
+          "seconds": 7.13,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-modal-normal-host-en",
+          "exitCode": 0,
+          "seconds": 8.22,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-modal-restore-host-en",
+          "exitCode": 0,
+          "seconds": 8.04,
+          "acceptedWindowResults": 2
+        },
+        {
+          "name": "query-installed-host-en",
+          "exitCode": 0,
+          "seconds": 12.8,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-builder-host-legacy122-en",
+          "exitCode": 0,
+          "seconds": 6.67,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-advanced-host-ru",
+          "exitCode": 0,
+          "seconds": 9.88,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-builder-host-ru",
+          "exitCode": 0,
+          "seconds": 9.86,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-modal-host-en",
+          "exitCode": 0,
+          "seconds": 7.36,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-modal-host-ru",
+          "exitCode": 0,
+          "seconds": 11.94,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-modal-normal-host-ru",
+          "exitCode": 0,
+          "seconds": 11.2,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-modal-restore-host-ru",
+          "exitCode": 0,
+          "seconds": 11.9,
+          "acceptedWindowResults": 2
+        },
+        {
+          "name": "query-installed-host-ru",
+          "exitCode": 0,
+          "seconds": 16.84,
+          "acceptedWindowResults": 1
+        },
+        {
+          "name": "query-builder-host-legacy122-ru",
+          "exitCode": 0,
+          "seconds": 9.94,
+          "acceptedWindowResults": 1
+        }
+      ],
+      "validated": [
+        "Normal installed advanced constructor DOM in ru/en; no test-mode extension API",
+        "Virtual signature inputs, nested parent hiding/return, derived fields, union duplicate policy, branch removal/recreation, global order and period totals",
+        "Same draft one-step Undo/Redo and one-step unsaved module apply/Undo",
+        "Clean and dirty parent input protection, read-only comparison, cancellation, dirty save decisions and recovery across normal host restart",
+        "Real buhmfo copy with published analyzer completion before constructor, seven pages and native owner apply/Undo",
+        "Same VSIX against the previous API 1.22 backend, metadata selection and five legacy pages"
+      ],
+      "testCorrections": [
+        "Updated the previous buhmfo acceptance assertion from five tabs to seven",
+        "Replaced an overstrict zero-tab assertion after programmatic WorkspaceEdit with actual dirty-parent focus/input protection and preservation checks in both locales; production modal code was unchanged"
+      ],
+      "legacyBackend": {
+        "metadataApi": "1.22",
+        "file": "/home/akalsin/Documents/Projects/eska-playground/query-configurator-uo019ew3/bin/eska-project",
+        "sha256": "aba06918ced023d6b1900b47662798d5f526272a9af18ec52b3e3e344954dfca"
+      }
+    }
+  },
+  "manualStand": {
+    "standRelativeToCore": "../eska-playground/buhmfo-query-manual-d5inc0y_",
+    "backupRelativeToStand": "backups/before-advanced-20261024T190457Z",
+    "acceptedBundleSha256": "e9d371bc181cd10b724cc1dd488fc5c0ecc8dfda29d50c7c70984b3c7553706f",
+    "updated": [
+      "packages/eska-query.vsix",
+      "bin/eska-project",
+      "artifacts.json",
+      "stand.json",
+      "README.md"
+    ],
+    "sourcesAndNativeProfileTouched": false,
+    "liveWindowReloaded": false,
+    "artifactsVerified": true
+  },
+  "knownLimits": [
+    "Windows, macOS, VS Code and Remote are unverified",
+    "No infobase query execution or full semantic type validation was performed; these are constructor/source-editing checks",
+    "INTO, HAVING, SCD language extensions and multiple sequential totals sections remain opaque; nested scopes do not expose global order/totals",
+    "Related calculation schedule/base-chart schemas were verified on Designer metadata fixtures; cross-member inherited related schemas were not separately accepted",
+    "An external programmatic edit may retain a dirty parent tab in the background; interactive navigation is redirected to the child without discarding the buffer"
+  ],
+  "delivery": {
+    "branches": {
+      "core": "codex/design-xml-analyzer",
+      "explorer": "codex/design-xml-analyzer"
+    },
+    "pushPerformed": false,
+    "preexistingUserChanges": "Both task checkouts were clean before implementation",
+    "remainingUncommittedChangesAfterFinalDocsCommit": "None; checked with git status after the documentation commit"
+  }
+}
