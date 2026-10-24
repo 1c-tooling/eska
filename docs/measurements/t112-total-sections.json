@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "task": "T112",
+  "status": "DONE",
+  "date": "2026-10-25",
+  "metadataApi": "1.28",
+  "domainOwner": "eska-project-core",
+  "features": [
+    "Independent sequential TOTALS/BY pairs in the result tail",
+    "Typed section-specific fields/groups, addition, removal and reordering",
+    "Removing the last group removes only its own pair",
+    "Comment decisions, CRLF preservation, UNION and nested scope fences",
+    "Opaque legacy DTOs omit hidden clauses and source bindings"
+  ],
+  "checks": [
+    {
+      "name": "fmt",
+      "exitCode": 0,
+      "seconds": 1.04
+    },
+    {
+      "name": "check",
+      "exitCode": 0,
+      "seconds": 5.49
+    },
+    {
+      "name": "clippy",
+      "exitCode": 0,
+      "seconds": 6.37
+    },
+    {
+      "name": "rustdoc",
+      "exitCode": 0,
+      "seconds": 25.89
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "seconds": 64.69
+    },
+    {
+      "name": "typescript",
+      "exitCode": 0,
+      "seconds": 0.32
+    },
+    {
+      "name": "node",
+      "exitCode": 0,
+      "seconds": 14.76
+    },
+    {
+      "name": "bun",
+      "exitCode": 0,
+      "seconds": 31.62
+    }
+  ],
+  "rustTestTotals": {
+    "passed": 1114,
+    "failed": 0,
+    "ignored": 12
+  },
+  "node": {
+    "passed": 292,
+    "skipped": 3,
+    "failed": 0
+  },
+  "bun": {
+    "passed": 292,
+    "skipped": 3,
+    "failed": 0
+  },
+  "native": [
+    {
+      "name": "t112-query-total-sections-host-en",
+      "exitCode": 0,
+      "seconds": 5.78,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-total-sections",
+          "locale": "en",
+          "accepted": [
+            "independent_total_sections_add_select_move_remove_cancel_apply_and_native_undo_redo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t112-query-advanced-host-en",
+      "exitCode": 0,
+      "seconds": 6.78,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-advanced",
+          "locale": "en",
+          "accepted": [
+            "virtual_catalog_parameter_labels_positional_values_and_core_call_generation",
+            "same_panel_child_navigation_parent_hidden_and_current_derived_projection",
+            "union_duplicate_policy_scope_tail_order_overall_totals_and_period_fill",
+            "advanced_draft_one_undo_redo_unsaved_parent_apply_and_one_owner_undo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t112-query-total-sections-host-ru",
+      "exitCode": 0,
+      "seconds": 10.54,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-total-sections",
+          "locale": "ru",
+          "accepted": [
+            "independent_total_sections_add_select_move_remove_cancel_apply_and_native_undo_redo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t112-query-advanced-host-ru",
+      "exitCode": 0,
+      "seconds": 9.84,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-advanced",
+          "locale": "ru",
+          "accepted": [
+            "virtual_catalog_parameter_labels_positional_values_and_core_call_generation",
+            "same_panel_child_navigation_parent_hidden_and_current_derived_projection",
+            "union_duplicate_policy_scope_tail_order_overall_totals_and_period_fill",
+            "advanced_draft_one_undo_redo_unsaved_parent_apply_and_one_owner_undo"
+          ]
+        }
+      ]
+    }
+  ],
+  "artifacts": {
+    "backend": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/bin/eska-project-t112",
+      "sha256": "461da9f7e84f2f0de5ce02dbf129ba7bc1b281287be84ef5a76db518fd2bd50c"
+    },
+    "vsix": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/query-t112.vsix",
+      "sha256": "ccb1f6374ed82125d921978d9644648caa41a7c0dea00e601dfab4696346930f"
+    }
+  },
+  "vsixFiles": 1325,
+  "limitations": [
+    "Platform execution deferred to T114",
+    "Windows, macOS, Microsoft VS Code and Remote remain unverified"
+  ]
+}

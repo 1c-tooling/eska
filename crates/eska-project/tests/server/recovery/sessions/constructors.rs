@@ -4,6 +4,8 @@ use super::*;
 mod having;
 #[path = "constructors/packages.rs"]
 mod packages;
+#[path = "constructors/total_sections.rs"]
+mod total_sections;
 
 const DRAFT: &str = "SELECT A, // keep 😀\n B FROM T;\nDESTROY Temp";
 

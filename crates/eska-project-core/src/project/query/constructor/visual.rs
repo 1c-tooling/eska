@@ -124,7 +124,7 @@ pub struct SourceBinding {
 
 impl Expression {
     /// The expression type determines its destination clause.
-    const fn clause(&self) -> ClauseKind {
+    pub(super) const fn clause(&self) -> ClauseKind {
         match self {
             Self::Source { .. } | Self::VirtualSource { .. } | Self::SubquerySource { .. } => {
                 ClauseKind::Sources
@@ -456,6 +456,7 @@ pub(super) fn compose(
             .iter()
             .enumerate()
             .filter(|(_, clause)| clause.kind == ClauseKind::TotalGroups)
+            .take(1)
         {
             if let Some((item, value)) =
                 group.items.iter().enumerate().find(|(_, item)| {

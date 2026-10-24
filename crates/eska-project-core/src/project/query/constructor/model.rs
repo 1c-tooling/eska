@@ -175,6 +175,24 @@ pub struct Statement {
 }
 
 impl Statement {
+    /// Each totals header owns exactly its immediately following BY clause.
+    #[must_use]
+    pub fn total_sections(&self) -> Vec<super::TotalSection> {
+        self.clauses
+            .windows(2)
+            .enumerate()
+            .filter(|(_, pair)| {
+                pair[0].kind == ClauseKind::Totals && pair[1].kind == ClauseKind::TotalGroups
+            })
+            .enumerate()
+            .map(|(index, (fields, pair))| super::TotalSection {
+                index,
+                fields,
+                groups: fields + 1,
+                range: pair[0].range.start..pair[1].range.end,
+            })
+            .collect()
+    }
     /// Inserting a JOIN requires a main source; opaque syntax never grants permission for a partial rewrite.
     #[must_use]
     pub fn append_unavailable(&self, kind: ClauseKind) -> Option<Error> {
@@ -216,6 +234,13 @@ pub struct Model {
 }
 
 impl Model {
+    /// Several totals pairs need an adapter that preserves their individual ownership and order.
+    #[must_use]
+    pub fn requires_multiple_totals(&self, index: usize) -> bool {
+        self.statements
+            .get(index)
+            .is_some_and(|statement| statement.total_sections().len() > 1)
+    }
     /// Package-aware adapters are required before exposing a temporary destination or destruction statement.
     #[must_use]
     pub fn requires_packages(&self, index: usize) -> bool {
@@ -423,7 +448,8 @@ pub(super) fn parse_statement(
         return opaque(range, Unavailable::ModelLimit);
     }
     if headers.windows(2).any(|pair| {
-        pair[0].0.rank() > pair[1].0.rank()
+        (pair[0].0.rank() > pair[1].0.rank()
+            && !(pair[0].0 == ClauseKind::TotalGroups && pair[1].0 == ClauseKind::Totals))
             || (pair[0].0 == pair[1].0 && pair[0].0 != ClauseKind::Joins)
     }) {
         return opaque(range, Unavailable::UnsupportedConstruct);
@@ -454,14 +480,8 @@ pub(super) fn parse_statement(
     }) {
         return opaque(range, Unavailable::UnsupportedConstruct);
     }
-    if clauses
-        .iter()
-        .any(|clause| clause.kind == ClauseKind::Totals)
-        && !clauses
-            .iter()
-            .any(|clause| clause.kind == ClauseKind::TotalGroups)
-    {
-        return opaque(range, Unavailable::InvalidSyntax);
+    if let Some(reason) = totals_unavailable(input, &clauses) {
+        return opaque(range, reason);
     }
     Statement {
         range,
@@ -473,6 +493,37 @@ pub(super) fn parse_statement(
         nested: false,
         result: true,
     }
+}
+
+/// Every totals header has one BY owner, with OVERALL first and a bounded number of sequential pairs.
+fn totals_unavailable(input: &str, clauses: &[Clause]) -> Option<Unavailable> {
+    if clauses.iter().enumerate().any(|(index, clause)| {
+        (clause.kind == ClauseKind::Totals
+            && clauses
+                .get(index + 1)
+                .is_none_or(|next| next.kind != ClauseKind::TotalGroups))
+            || (clause.kind == ClauseKind::TotalGroups
+                && index
+                    .checked_sub(1)
+                    .and_then(|index| clauses.get(index))
+                    .is_none_or(|previous| previous.kind != ClauseKind::Totals))
+            || (clause.kind == ClauseKind::TotalGroups
+                && clause.items.iter().enumerate().any(|(index, item)| {
+                    index != 0
+                        && matches!(item.visual(input, clause), Some(super::Expression::Overall))
+                }))
+    }) {
+        return Some(Unavailable::InvalidSyntax);
+    }
+    if clauses
+        .iter()
+        .filter(|clause| clause.kind == ClauseKind::Totals)
+        .count()
+        > 32
+    {
+        return Some(Unavailable::ModelLimit);
+    }
+    None
 }
 
 /// DESTROY has exactly one identifier and cannot be nested or combined with SELECT clauses.

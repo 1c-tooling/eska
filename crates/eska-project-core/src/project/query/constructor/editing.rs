@@ -12,6 +12,11 @@ use super::{
 pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<EditPlan, Error> {
     let edits = match action {
         Action::Compose { .. }
+        | Action::AddTotals { .. }
+        | Action::RemoveTotals { .. }
+        | Action::MoveTotals { .. }
+        | Action::ComposeTotal { .. }
+        | Action::AppendTotal { .. }
         | Action::SetInto { .. }
         | Action::AddStatement { .. }
         | Action::RemoveStatement { .. }
@@ -41,7 +46,12 @@ pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<EditPl
         } => {
             let (clause, _) = item_at(model, *selection)?;
             if clause.kind == ClauseKind::TotalGroups && clause.items.len() == 1 {
-                remove_totals(input, statement_at(model, selection.statement)?, *comments)?
+                remove_totals(
+                    input,
+                    statement_at(model, selection.statement)?,
+                    selection.clause,
+                    *comments,
+                )?
             } else {
                 remove(input, clause, selection.item, *comments)?
             }
@@ -124,7 +134,7 @@ fn fragment(text: &str) -> Result<(), Error> {
 }
 
 /// Add only a requested node; language and line endings come from its existing statement.
-fn append(
+pub(super) fn append(
     input: &str,
     statement: &Statement,
     kind: ClauseKind,
@@ -236,20 +246,21 @@ pub(super) fn replace(input: &str, item: &Item, text: &str) -> Result<Vec<Replac
 }
 
 /// An empty last grouping removes the whole totals section; no orphan BY or implicit totals are left behind.
-fn remove_totals(
+pub(super) fn remove_totals(
     input: &str,
     statement: &Statement,
+    group: usize,
     decision: Option<CommentDecision>,
 ) -> Result<Vec<Replacement>, Error> {
     let totals = statement
         .clauses
-        .iter()
-        .find(|clause| clause.kind == ClauseKind::Totals)
+        .get(group.checked_sub(1).ok_or(Error::InvalidSelection)?)
+        .filter(|clause| clause.kind == ClauseKind::Totals)
         .ok_or(Error::InvalidSelection)?;
     let groups = statement
         .clauses
-        .iter()
-        .find(|clause| clause.kind == ClauseKind::TotalGroups)
+        .get(group)
+        .filter(|clause| clause.kind == ClauseKind::TotalGroups)
         .ok_or(Error::InvalidSelection)?;
     let comments: Vec<_> = totals
         .comments

@@ -43,6 +43,9 @@ pub(super) fn model(
         output["scopes"] = json!(value.model().scopes.iter().enumerate().map(|(index, scope)| json!({"index":index,"range":bytes(&scope.range),"parent":scope.parent,"branches":scope.branches,
             "result":scope.branches.last(),"unions":scope.unions.iter().map(|union|json!({"all":union.all.is_some()})).collect::<Vec<_>>()})).collect::<Vec<_>>());
     }
+    if minor >= 28 {
+        output["totalFocus"] = json!(value.total_focus());
+    }
     if minor >= 26
         && let Some(issues) = output["issues"].as_array_mut()
     {
@@ -76,7 +79,8 @@ impl View<'_> {
         let input = self.value.text();
         let opaque = (self.minor < 23 && self.value.model().requires_scopes(index))
             || (self.minor < 26 && self.value.model().requires_packages(index))
-            || (self.minor < 27 && self.value.model().requires_having(index));
+            || (self.minor < 27 && self.value.model().requires_having(index))
+            || (self.minor < 28 && self.value.model().requires_multiple_totals(index));
         let clauses: Vec<_> = if opaque {
             Vec::new()
         } else {
@@ -155,6 +159,19 @@ impl View<'_> {
                 "moveUp":position.filter(|_|self.writable && statement.unavailable.is_none()).and_then(|at| at.checked_sub(1)),
                 "moveDown":position.filter(|at|self.writable && statement.unavailable.is_none() && at+1<roots.len()).map(|at|at+1),
                 "setInto":self.writable && !statement.nested && self.value.model().package_operation(index)==Some(eska_project_core::project::query::constructor::PackageOperation::Select)});
+        }
+        if self.minor >= 28 {
+            let sections = if opaque {
+                Vec::new()
+            } else {
+                statement.total_sections()
+            };
+            let allowed = self.writable
+                && !opaque
+                && statement.append_unavailable(ClauseKind::Totals).is_none();
+            output["addTotals"] = json!(allowed && sections.len() < 32);
+            output["totalSections"] = json!(sections.iter().map(|section| json!({"index":section.index,"fields":section.fields,"groups":section.groups,"range":bytes(&section.range),"remove":allowed,
+                "moveUp":section.index.checked_sub(1).filter(|_|allowed), "moveDown":(allowed && section.index+1<sections.len()).then_some(section.index+1)})).collect::<Vec<_>>());
         }
         output
     }

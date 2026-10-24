@@ -1747,3 +1747,32 @@ AND/И. Она принадлежит конкретной ветке, в том
 непрозрачным; его изменение отклоняется до изменения черновика. Keyword spelling
 определяется языком SELECT, не locale. Сохраняются CAS, лимиты, точный no-op,
 комментарии и атомарный отказ при попытке фрагмента выйти в соседний оператор.
+
+### API 1.28: последовательные секции итогов
+
+`queryConstructor.multipleTotals=true` и `maxTotalSections=32` разрешают
+несколько последовательных пар TOTALS/BY. Словарь clauses 1.27 не меняется:
+`totals` и `totalGroups` могут повторяться с разными индексами.
+У каждого statement добавлены `addTotals:boolean` и
+`totalSections:[{index,fields,groups,range,remove,moveUp,moveDown}]`, где fields
+и groups — индексы принадлежащих секции clauses, range — её общий byte range,
+remove — разрешение, moveUp/moveDown — целевой индекс либо null. В model добавлен
+`totalFocus:number|null` — сохранившаяся/добавленная секция после операции.
+Вложенные и непрозрачные операторы не получают разрешений на правку итогов.
+
+Новые actions: `addTotals:{statement,after:number|null}` (null — в конец),
+`removeTotals:{statement,section,comments?}`, `moveTotals:{statement,section,to}`,
+`composeTotal:{statement,section,selection:null|Selection,expression}` и
+`appendTotal:{statement,section,clause:totals|totalGroups,text}`.
+ComposeTotal принимает только totalField, totalGroup или overall; selection
+должна принадлежать этой секции. Добавленная секция содержит автоматические
+итоги и OVERALL; поля/группировки редактируются отдельно. OVERALL идемпотентен
+внутри своей секции и остаётся первым. Порядок, иерархия, периоды и комментарии
+относятся к конкретной паре, а общий хвост — к последней ветке UNION.
+
+Удаление последней строки totalGroups убирает её пару; последняя строка totals
+оставляет автоматические итоги. Старый compose/append для итогов адресует первую
+секцию; replace/remove/move по точной selection сохраняют принадлежность.
+Новые actions требуют minor ≥ 28; старые клиенты видят оператор с несколькими
+секциями непрозрачным. Правки сохраняют CAS, byte no-op, комментарии и атомарный
+отказ при неверной секции/типе/границе; конструктор не пишет владельца.

@@ -17,7 +17,7 @@ use crate::project::metadata_edit::{EditPlan, snapshot};
 pub use model::{Clause, ClauseKind, Item, Model, Statement, Unavailable};
 pub use packages::{PackageIssue, PackageIssueKind, PackageOperation, TemporaryTable};
 pub use scopes::{QueryScope, Union};
-pub use totals::{Hierarchy, PeriodRange, PeriodUnit};
+pub use totals::{Hierarchy, PeriodRange, PeriodUnit, TotalSection};
 pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
 
 /// A selection is valid only with the exact constructor revision that supplied its indices.
@@ -52,6 +52,32 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    AddTotals {
+        statement: usize,
+        after: Option<usize>,
+    },
+    RemoveTotals {
+        statement: usize,
+        section: usize,
+        comments: Option<CommentDecision>,
+    },
+    MoveTotals {
+        statement: usize,
+        section: usize,
+        to: usize,
+    },
+    ComposeTotal {
+        statement: usize,
+        section: usize,
+        selection: Option<Selection>,
+        expression: Expression,
+    },
+    AppendTotal {
+        statement: usize,
+        section: usize,
+        clause: ClauseKind,
+        text: String,
+    },
     SetInto {
         statement: usize,
         name: Option<String>,
@@ -117,7 +143,12 @@ impl Action {
     #[must_use]
     pub const fn statement(&self) -> usize {
         match self {
-            Self::SetInto { statement, .. }
+            Self::AddTotals { statement, .. }
+            | Self::RemoveTotals { statement, .. }
+            | Self::MoveTotals { statement, .. }
+            | Self::ComposeTotal { statement, .. }
+            | Self::AppendTotal { statement, .. }
+            | Self::SetInto { statement, .. }
             | Self::AddStatement { statement, .. }
             | Self::RemoveStatement { statement, .. }
             | Self::MoveStatement { statement, .. }
@@ -158,6 +189,7 @@ pub struct Constructor {
     model: Arc<Model>,
     revision: u64,
     focus: Option<usize>,
+    total_focus: Option<usize>,
 }
 
 impl Constructor {
@@ -177,6 +209,7 @@ impl Constructor {
             model,
             revision: 1,
             focus,
+            total_focus: None,
         })
     }
 
@@ -204,6 +237,12 @@ impl Constructor {
         self.focus
     }
 
+    /// A section intention selects its survivor without requiring an IDE to infer shifted clause indices.
+    #[must_use]
+    pub const fn total_focus(&self) -> Option<usize> {
+        self.total_focus
+    }
+
     /// A stable hash binds streamed preview bodies and final native text plans.
     #[must_use]
     pub fn snapshot(&self) -> String {
@@ -228,6 +267,12 @@ impl Constructor {
     pub fn apply(&mut self, expected: u64, action: &Action) -> Result<EditPlan, Error> {
         if expected != self.revision {
             return Err(Error::StaleRevision);
+        }
+        if let Some(plan) = totals::section_plan(&self.working, &self.model, action)? {
+            let model = Model::parse(plan.output())?;
+            totals::check_sections(&self.model, &model, action)?;
+            self.accept(&plan, model, action)?;
+            return Ok(plan);
         }
         if let Some(plan) = packages::plan(&self.working, &self.model, action)? {
             let model = Model::parse(plan.output())?;
@@ -342,12 +387,14 @@ impl Constructor {
         packages::check(&self.working, &self.model, plan.output(), &model)?;
         let focus = packages::focus(&self.model, &model, action)
             .or_else(|| scopes::focus(&self.model, &model, plan, action));
+        let total_focus = totals::section_focus(&self.model, &model, action);
         if !plan.is_empty() {
             self.revision = self.revision.checked_add(1).ok_or(Error::TooLarge)?;
             self.working = Arc::from(plan.output());
             self.model = Arc::new(model);
         }
         self.focus = focus;
+        self.total_focus = total_focus;
         Ok(())
     }
 
@@ -417,8 +464,11 @@ fn check_shape(before: &Model, after: &Model, action: &Action) -> Result<(), Err
         Action::Remove { selection, .. } if old.clauses[selection.clause].items.len() == 1 => {
             let kind = old.clauses[selection.clause].kind;
             if kind == ClauseKind::TotalGroups {
-                expected
-                    .retain(|kind| !matches!(kind, ClauseKind::Totals | ClauseKind::TotalGroups));
+                let fields = selection
+                    .clause
+                    .checked_sub(1)
+                    .ok_or(Error::InvalidExpression)?;
+                expected.drain(fields..=selection.clause);
             } else if kind != ClauseKind::Totals {
                 expected.remove(selection.clause);
             }

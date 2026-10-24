@@ -103,6 +103,12 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
         };
     }
     if method == "query/constructorAction" {
+        if matches!(
+            args["action"]["kind"].as_str(),
+            Some("addTotals" | "removeTotals" | "moveTotals" | "composeTotal" | "appendTotal")
+        ) {
+            return 28;
+        }
         if args["action"]["clause"] == "having" || args["action"]["expression"]["kind"] == "having"
         {
             return 27;

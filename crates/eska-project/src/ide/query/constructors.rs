@@ -78,6 +78,10 @@ pub(super) fn capability(minor: u32) -> Value {
         }
         result["clauses"] = json!(clauses);
     }
+    if minor >= 28 {
+        result["multipleTotals"] = json!(true);
+        result["maxTotalSections"] = json!(32);
+    }
     result
 }
 
@@ -298,35 +302,11 @@ fn transition(
     match method {
         "query/constructorAction" => {
             let input: Operation = params::decode(args)?;
-            if minor < 23
-                && core
-                    .constructor(id)
-                    .map_err(session_error)?
-                    .model()
-                    .requires_scopes(input.action.statement())
-            {
-                return Err(failure("constructor_unsupported"));
-            }
-            if minor < 26
-                && core
-                    .constructor(id)
-                    .map_err(session_error)?
-                    .model()
-                    .requires_packages(input.action.statement())
-            {
-                return Err(failure("constructor_unsupported"));
-            }
-            if minor < 27
-                && core
-                    .constructor(id)
-                    .map_err(session_error)?
-                    .model()
-                    .requires_having(input.action.statement())
-            {
-                return Err(failure("constructor_unsupported"));
-            }
+            check_compatibility(core, id, &input.action, minor)?;
             let text = match &input.action {
-                Action::Append { text, .. } | Action::Replace { text, .. } => Some(text),
+                Action::Append { text, .. }
+                | Action::Replace { text, .. }
+                | Action::AppendTotal { text, .. } => Some(text),
                 _ => None,
             };
             if text.is_some_and(|text| text.len() > MAX_EXPRESSION) {
@@ -367,6 +347,25 @@ fn transition(
         }
         _ => Err(error(-32601)),
     }
+}
+
+/// Older clients cannot mutate a statement whose required vocabulary is absent from their negotiated model.
+fn check_compatibility(
+    core: &eska_project_core::project::metadata_workspace::QuerySession,
+    id: u64,
+    action: &Action,
+    minor: u32,
+) -> Result<(), Value> {
+    let model = core.constructor(id).map_err(session_error)?.model();
+    let statement = action.statement();
+    if (minor < 23 && model.requires_scopes(statement))
+        || (minor < 26 && model.requires_packages(statement))
+        || (minor < 27 && model.requires_having(statement))
+        || (minor < 28 && model.requires_multiple_totals(statement))
+    {
+        return Err(failure("constructor_unsupported"));
+    }
+    Ok(())
 }
 
 /// Native UTF-16 destinations become core byte anchors, so another IDE need not implement query/source coordinate rules.

@@ -2,6 +2,18 @@
 
 use super::{Error, Expression, lex, visual};
 
+mod sections;
+pub(super) use sections::{check_sections, plan as section_plan, section_focus};
+
+/// A totals section keeps its own expression and grouping clauses in the shared result tail.
+#[derive(Clone, Debug)]
+pub struct TotalSection {
+    pub index: usize,
+    pub fields: usize,
+    pub groups: usize,
+    pub range: std::ops::Range<usize>,
+}
+
 /// OVERALL is idempotent and always precedes ordinary groupings.
 pub(super) fn plan(
     input: &str,

@@ -3,6 +3,7 @@ use super::*;
 mod having;
 mod nested;
 mod packages;
+mod total_sections;
 mod totals;
 mod unions;
 mod virtuals;
