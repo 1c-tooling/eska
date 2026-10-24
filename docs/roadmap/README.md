@@ -411,8 +411,8 @@ BSL LSP и визуальный редактор форм в это направ
 | T101 | DONE | Вкладки XML-запросов, save/recovery, VSIX ru/en и загрузка платформой | [16-query-editing.md](16-query-editing.md) |
 | T102 | DONE | BSL-черновики, защищённый снимок и явное применение | [16-query-editing.md](16-query-editing.md) |
 | T103 | DONE | Контекстный анализ черновика внешним bsl-analyzer | [16-query-editing.md](16-query-editing.md) |
-| T104 | IN-PROGRESS | Конструктор запросов с сохранением комментариев | [16-query-editing.md](16-query-editing.md) |
-| T105 | PLANNED | Приёмка редактора запросов, сохранности и производительности | [16-query-editing.md](16-query-editing.md) |
+| T104 | DONE | Конструктор запросов с сохранением комментариев | [16-query-editing.md](16-query-editing.md) |
+| T105 | IN-PROGRESS | Приёмка редактора запросов, сохранности и производительности | [16-query-editing.md](16-query-editing.md) |
 | T106 | DONE | 12 исходных performance gates пройдены на Linux/VSCodium; прежние failed-серии сохранены | [17-language-performance.md](17-language-performance.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
