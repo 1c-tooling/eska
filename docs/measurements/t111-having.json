@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "task": "T111",
+  "status": "DONE",
+  "date": "2026-10-25",
+  "metadataApi": "1.27",
+  "domainOwner": "eska-project-core",
+  "features": [
+    "Typed HAVING distinct from WHERE, sorted after grouping",
+    "Independent filters in UNION branches and nested SELECTs",
+    "Global aggregate filters without artificial grouping",
+    "Comment decisions, movement, exact no-op and atomic fragment rejection",
+    "Opaque legacy DTOs omit bindings to hidden clauses"
+  ],
+  "checks": [
+    {
+      "name": "fmt",
+      "exitCode": 0,
+      "seconds": 1.57
+    },
+    {
+      "name": "check",
+      "exitCode": 0,
+      "seconds": 0.92
+    },
+    {
+      "name": "clippy",
+      "exitCode": 0,
+      "seconds": 4.13
+    },
+    {
+      "name": "rustdoc",
+      "exitCode": 0,
+      "seconds": 7.46
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "seconds": 54.7
+    },
+    {
+      "name": "typescript",
+      "exitCode": 0,
+      "seconds": 0.71
+    },
+    {
+      "name": "node",
+      "exitCode": 0,
+      "seconds": 28.14
+    },
+    {
+      "name": "bun",
+      "exitCode": 0,
+      "seconds": 49.76
+    }
+  ],
+  "rustTestTotals": {
+    "passed": 1108,
+    "failed": 0,
+    "ignored": 12
+  },
+  "node": {
+    "passed": 289,
+    "skipped": 3,
+    "failed": 0
+  },
+  "bun": {
+    "passed": 289,
+    "skipped": 3,
+    "failed": 0
+  },
+  "native": [
+    {
+      "name": "t111-query-having-host-en",
+      "exitCode": 0,
+      "seconds": 20.65,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-having",
+          "locale": "en",
+          "accepted": [
+            "separate_typed_where_having_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t111-query-builder-host-en",
+      "exitCode": 0,
+      "seconds": 13.3,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-builder",
+          "locale": "en",
+          "accepted": [
+            "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+            "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+            "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t111-query-having-host-ru",
+      "exitCode": 0,
+      "seconds": 17.23,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-having",
+          "locale": "ru",
+          "accepted": [
+            "separate_typed_where_having_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t111-query-builder-host-ru",
+      "exitCode": 0,
+      "seconds": 18.02,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-builder",
+          "locale": "ru",
+          "accepted": [
+            "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+            "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+            "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+          ]
+        }
+      ]
+    }
+  ],
+  "artifacts": {
+    "backend": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/bin/eska-project-t111",
+      "sha256": "f69fb51521572a9d1a4dead2fed2f3a24c32a4643b16c025475ce9e988174ea0"
+    },
+    "vsix": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/query-t111.vsix",
+      "sha256": "be917617bf9a6d8b0944c96f9d9c690f0d6285784791a5272a496d1224973b90"
+    }
+  },
+  "vsixFiles": 1325,
+  "compatibilityRegression": "A source-bearing opaque INTO statement reproduced stale source-clause indices for API 1.25; the regression now verifies an empty source binding list",
+  "limitations": [
+    "Complete platform type checking and execution deferred to T114",
+    "Windows, macOS, Microsoft VS Code and Remote remain unverified"
+  ]
+}

@@ -75,7 +75,8 @@ impl View<'_> {
     fn statement(&self, index: usize, statement: &Statement) -> Value {
         let input = self.value.text();
         let opaque = (self.minor < 23 && self.value.model().requires_scopes(index))
-            || (self.minor < 26 && self.value.model().requires_packages(index));
+            || (self.minor < 26 && self.value.model().requires_packages(index))
+            || (self.minor < 27 && self.value.model().requires_having(index));
         let clauses: Vec<_> = if opaque {
             Vec::new()
         } else {
@@ -86,16 +87,24 @@ impl View<'_> {
                 .map(|(clause, value)| self.clause(index, clause, value))
                 .collect()
         };
-        let kinds = ClauseKind::all(self.minor >= 23).iter().copied().chain(
-            (self.minor >= 26)
-                .then_some([ClauseKind::Into, ClauseKind::Destroy, ClauseKind::Index])
-                .into_iter()
-                .flatten(),
-        );
+        let kinds = ClauseKind::all(self.minor >= 23)
+            .iter()
+            .copied()
+            .chain(
+                (self.minor >= 26)
+                    .then_some([ClauseKind::Into, ClauseKind::Destroy, ClauseKind::Index])
+                    .into_iter()
+                    .flatten(),
+            )
+            .chain((self.minor >= 27).then_some(ClauseKind::Having));
         let append: Vec<_> = kinds.map(|kind| json!({"kind":kind,"unavailable":
             if !self.writable {json!("read_only")} else if opaque {json!("unsupported")} else {json!(statement.append_unavailable(kind))}})).collect();
-        let sources: Vec<_> = statement
-            .source_bindings(input)
+        let bindings = if opaque {
+            Vec::new()
+        } else {
+            statement.source_bindings(input)
+        };
+        let sources: Vec<_> = bindings
             .into_iter()
             .map(|source| {
                 let nested = source

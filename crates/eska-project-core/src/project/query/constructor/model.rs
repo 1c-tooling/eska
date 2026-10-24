@@ -17,6 +17,7 @@ pub enum ClauseKind {
     Joins,
     Conditions,
     Group,
+    Having,
     Order,
     Totals,
     TotalGroups,
@@ -59,10 +60,11 @@ impl ClauseKind {
             Self::Joins => 3,
             Self::Conditions => 4,
             Self::Group => 5,
-            Self::Index => 6,
-            Self::Order => 7,
-            Self::Totals => 8,
-            Self::TotalGroups => 9,
+            Self::Having => 6,
+            Self::Index => 7,
+            Self::Order => 8,
+            Self::Totals => 9,
+            Self::TotalGroups => 10,
         }
     }
 
@@ -85,6 +87,8 @@ impl ClauseKind {
             (Self::Conditions, false) => "WHERE",
             (Self::Group, true) => "СГРУППИРОВАТЬ ПО",
             (Self::Group, false) => "GROUP BY",
+            (Self::Having, true) => "ИМЕЮЩИЕ",
+            (Self::Having, false) => "HAVING",
             (Self::Order, true) => "УПОРЯДОЧИТЬ ПО",
             (Self::Order, false) => "ORDER BY",
             (Self::Totals, true) => "ИТОГИ",
@@ -224,6 +228,17 @@ impl Model {
             })
         })
     }
+    /// Aggregate filters require a distinct clause rather than a client-side WHERE convention.
+    #[must_use]
+    pub fn requires_having(&self, index: usize) -> bool {
+        self.statements.get(index).is_some_and(|statement| {
+            statement
+                .clauses
+                .iter()
+                .any(|clause| clause.kind == ClauseKind::Having)
+        })
+    }
+
     /// Composite definitions need a scope-aware adapter; an older conservative view remains opaque.
     #[must_use]
     pub fn requires_scopes(&self, index: usize) -> bool {
@@ -504,8 +519,6 @@ fn unsupported_controls(input: &str, tokens: &[&Token], top: &[&Token]) -> bool 
                     "ВЫБРАТЬ",
                     "UNION",
                     "ОБЪЕДИНИТЬ",
-                    "HAVING",
-                    "ИМЕЮЩИЕ",
                     "FOR",
                     "ДЛЯ",
                     "OR",
@@ -580,6 +593,8 @@ fn header(
         ClauseKind::Index
     } else if token.keyword(input, &["WHERE", "ГДЕ"]) {
         ClauseKind::Conditions
+    } else if token.keyword(input, &["HAVING", "ИМЕЮЩИЕ"]) {
+        ClauseKind::Having
     } else if token.keyword(input, &["TOTALS", "ИТОГИ"]) {
         ClauseKind::Totals
     } else if token.keyword(input, &["BY", "ПО"])
@@ -664,9 +679,12 @@ fn clause(
             token.range.start >= body.start
                 && token.range.end <= body.end
                 && token.depth == depth
-                && ((!matches!(kind, ClauseKind::Conditions | ClauseKind::Joins)
-                    && token.kind == Kind::Symbol(','))
-                    || (kind == ClauseKind::Conditions && token.keyword(input, &["AND", "И"])))
+                && ((!matches!(
+                    kind,
+                    ClauseKind::Conditions | ClauseKind::Having | ClauseKind::Joins
+                ) && token.kind == Kind::Symbol(','))
+                    || (matches!(kind, ClauseKind::Conditions | ClauseKind::Having)
+                        && token.keyword(input, &["AND", "И"])))
         })
         .map(|token| (token.range.start, token.range.end))
         .chain([(body.end, body.end)])

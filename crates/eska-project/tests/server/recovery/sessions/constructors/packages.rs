@@ -9,7 +9,8 @@ fn package_rpc_is_negotiated_revision_bound_and_independent_of_locale() {
             let mut client = Client::new(&root, locale);
             let binding = source_connect_version(&mut client, &root, &private, locale, minor);
             let state = open_source(&mut client, &binding, XML, false);
-            let draft = "SELECT 1 AS A INTO Temp; SELECT T.A FROM Temp AS T";
+            let draft =
+                "SELECT I.Ref AS A INTO Temp FROM Catalog.Items AS I; SELECT T.A FROM Temp AS T";
             let state = source_draft(&mut client, &binding, &state, draft);
             let opened = client.request(
                 "query/constructorOpen",
@@ -28,6 +29,7 @@ fn package_rpc_is_negotiated_revision_bound_and_independent_of_locale() {
                     opened["constructor"]["statements"][0]["unavailable"],
                     "unsupported_construct"
                 );
+                assert_eq!(opened["constructor"]["statements"][0]["sources"], json!([]));
                 assert_eq!(
                     client.response("query/constructorAction", &intention)["error"]["code"],
                     -32601

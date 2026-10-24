@@ -96,6 +96,11 @@ pub enum Expression {
         comparison: Comparison,
         right: String,
     },
+    Having {
+        left: String,
+        comparison: Comparison,
+        right: String,
+    },
     Group {
         expression: String,
     },
@@ -129,6 +134,7 @@ impl Expression {
                 ClauseKind::Joins
             }
             Self::Condition { .. } => ClauseKind::Conditions,
+            Self::Having { .. } => ClauseKind::Having,
             Self::Group { .. } => ClauseKind::Group,
             Self::Order { .. } => ClauseKind::Order,
             Self::TotalField { .. } => ClauseKind::Totals,
@@ -152,7 +158,7 @@ impl Expression {
             Self::Join {
                 table, left, right, ..
             } => !table.trim().is_empty() && !left.trim().is_empty() && !right.trim().is_empty(),
-            Self::Condition { left, right, .. } => {
+            Self::Condition { left, right, .. } | Self::Having { left, right, .. } => {
                 !left.trim().is_empty() && !right.trim().is_empty()
             }
             Self::Overall => true,
@@ -199,6 +205,11 @@ impl Expression {
                 with_alias(&value, alias)?
             }
             Self::Condition {
+                left,
+                comparison,
+                right,
+            }
+            | Self::Having {
                 left,
                 comparison,
                 right,
@@ -620,12 +631,20 @@ impl Item {
                     },
                 )
             }
-            ClauseKind::Conditions => {
+            ClauseKind::Conditions | ClauseKind::Having => {
                 let (left, comparison, right) = comparison(&text)?;
-                Some(Expression::Condition {
-                    left,
-                    comparison,
-                    right,
+                Some(if clause.kind == ClauseKind::Having {
+                    Expression::Having {
+                        left,
+                        comparison,
+                        right,
+                    }
+                } else {
+                    Expression::Condition {
+                        left,
+                        comparison,
+                        right,
+                    }
                 })
             }
             ClauseKind::Group => Some(Expression::Group { expression: text }),

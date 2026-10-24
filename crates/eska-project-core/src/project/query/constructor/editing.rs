@@ -175,12 +175,12 @@ fn append(
                 text: format!(" {text}{newline}"),
             }]);
         };
-        let separator = if kind == ClauseKind::Conditions {
+        let separator = if matches!(kind, ClauseKind::Conditions | ClauseKind::Having) {
             if statement.russian { "И" } else { "AND" }
         } else {
             ","
         };
-        let text = if kind == ClauseKind::Conditions {
+        let text = if matches!(kind, ClauseKind::Conditions | ClauseKind::Having) {
             format!("{newline}{separator} {text}")
         } else {
             format!(

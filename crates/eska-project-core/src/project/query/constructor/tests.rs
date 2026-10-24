@@ -1,5 +1,6 @@
 use super::*;
 
+mod having;
 mod nested;
 mod packages;
 mod totals;

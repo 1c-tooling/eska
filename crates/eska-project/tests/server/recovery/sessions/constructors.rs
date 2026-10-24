@@ -1,5 +1,7 @@
 use super::*;
 
+#[path = "constructors/having.rs"]
+mod having;
 #[path = "constructors/packages.rs"]
 mod packages;
 

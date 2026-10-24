@@ -72,6 +72,10 @@ pub(super) fn capability(minor: u32) -> Value {
         result["temporaryTables"] = json!(true);
         let mut clauses = ClauseKind::all(true).to_vec();
         clauses.extend([ClauseKind::Into, ClauseKind::Destroy, ClauseKind::Index]);
+        if minor >= 27 {
+            clauses.push(ClauseKind::Having);
+            result["having"] = json!(true);
+        }
         result["clauses"] = json!(clauses);
     }
     result
@@ -309,6 +313,15 @@ fn transition(
                     .map_err(session_error)?
                     .model()
                     .requires_packages(input.action.statement())
+            {
+                return Err(failure("constructor_unsupported"));
+            }
+            if minor < 27
+                && core
+                    .constructor(id)
+                    .map_err(session_error)?
+                    .model()
+                    .requires_having(input.action.statement())
             {
                 return Err(failure("constructor_unsupported"));
             }
