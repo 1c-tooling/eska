@@ -1,6 +1,7 @@
 use super::*;
 
 mod nested;
+mod totals;
 mod unions;
 mod virtuals;
 

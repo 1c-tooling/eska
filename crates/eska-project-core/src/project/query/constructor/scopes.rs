@@ -112,11 +112,15 @@ fn append(
         statement.branch = branch;
         statement.nested = parent.is_some();
         statement.result = branch == scope.unions.len();
-        if parent.is_some()
-            && statement
-                .clauses
-                .iter()
-                .any(|clause| clause.kind == super::ClauseKind::Order)
+        if (parent.is_some() || !statement.result)
+            && statement.clauses.iter().any(|clause| {
+                matches!(
+                    clause.kind,
+                    super::ClauseKind::Order
+                        | super::ClauseKind::Totals
+                        | super::ClauseKind::TotalGroups
+                )
+            })
         {
             statement.unavailable = Some(Unavailable::UnsupportedConstruct);
         }

@@ -17,9 +17,36 @@ pub enum ClauseKind {
     Conditions,
     Group,
     Order,
+    Totals,
+    TotalGroups,
 }
 
 impl ClauseKind {
+    /// Negotiated clients receive only clause identifiers they can render safely.
+    #[must_use]
+    pub const fn all(advanced: bool) -> &'static [Self] {
+        if advanced {
+            &[
+                Self::Fields,
+                Self::Sources,
+                Self::Joins,
+                Self::Conditions,
+                Self::Group,
+                Self::Order,
+                Self::Totals,
+                Self::TotalGroups,
+            ]
+        } else {
+            &[
+                Self::Fields,
+                Self::Sources,
+                Self::Joins,
+                Self::Conditions,
+                Self::Group,
+                Self::Order,
+            ]
+        }
+    }
     /// Clause rank chooses an insertion point without moving unsupported or unrelated package text.
     pub(super) const fn rank(self) -> u8 {
         match self {
@@ -29,6 +56,8 @@ impl ClauseKind {
             Self::Conditions => 3,
             Self::Group => 4,
             Self::Order => 5,
+            Self::Totals => 6,
+            Self::TotalGroups => 7,
         }
     }
 
@@ -47,6 +76,10 @@ impl ClauseKind {
             (Self::Group, false) => "GROUP BY",
             (Self::Order, true) => "УПОРЯДОЧИТЬ ПО",
             (Self::Order, false) => "ORDER BY",
+            (Self::Totals, true) => "ИТОГИ",
+            (Self::Totals, false) => "TOTALS",
+            (Self::TotalGroups, true) => "ПО",
+            (Self::TotalGroups, false) => "BY",
         }
     }
 }
@@ -93,6 +126,26 @@ pub struct Clause {
     pub comments: Vec<Range<usize>>,
 }
 
+impl Clause {
+    /// Movement eligibility is shared with adapters; the OVERALL grouping cannot be moved away from its first position.
+    #[must_use]
+    pub fn move_unavailable(&self, input: &str, from: usize, to: usize) -> Option<Error> {
+        if from >= self.items.len() || to >= self.items.len() {
+            return Some(Error::InvalidSelection);
+        }
+        if self.kind == ClauseKind::Joins
+            || (self.kind == ClauseKind::TotalGroups
+                && self.items.iter().enumerate().any(|(index, item)| {
+                    (index == from || index == to)
+                        && matches!(item.visual(input, self), Some(super::Expression::Overall))
+                }))
+        {
+            return Some(Error::UnsafeMove);
+        }
+        None
+    }
+}
+
 /// Every statement keeps its original range even when no visual operation is safe.
 #[derive(Clone, Debug)]
 pub struct Statement {
@@ -111,7 +164,10 @@ impl Statement {
     #[must_use]
     pub fn append_unavailable(&self, kind: ClauseKind) -> Option<Error> {
         if self.unavailable.is_some()
-            || (kind == ClauseKind::Order && (self.nested || !self.result))
+            || (matches!(
+                kind,
+                ClauseKind::Order | ClauseKind::Totals | ClauseKind::TotalGroups
+            ) && (self.nested || !self.result))
         {
             Some(Error::Unsupported)
         } else if kind == ClauseKind::Joins
@@ -140,6 +196,9 @@ impl Model {
     pub fn requires_scopes(&self, index: usize) -> bool {
         self.statements.get(index).is_some_and(|statement| {
             statement.nested
+                || statement.clauses.iter().any(|clause| {
+                    matches!(clause.kind, ClauseKind::Totals | ClauseKind::TotalGroups)
+                })
                 || self.scopes[statement.scope].branches.len() > 1
                 || self.scopes.iter().any(|scope| scope.parent == Some(index))
         })
@@ -322,10 +381,19 @@ pub(super) fn parse_statement(
     for (index, &(kind, start, body)) in headers.iter().enumerate() {
         let end = headers.get(index + 1).map_or(range.end, |header| header.1);
         let clause = clause(input, kind, start..end, body..end, tokens, depth);
-        if clause.items.is_empty() {
+        if clause.items.is_empty() && kind != ClauseKind::Totals {
             return opaque(range, Unavailable::InvalidSyntax);
         }
         clauses.push(clause);
+    }
+    if clauses
+        .iter()
+        .any(|clause| clause.kind == ClauseKind::Totals)
+        && !clauses
+            .iter()
+            .any(|clause| clause.kind == ClauseKind::TotalGroups)
+    {
+        return opaque(range, Unavailable::InvalidSyntax);
     }
     Statement {
         range,
@@ -356,8 +424,6 @@ fn unsupported_controls(input: &str, tokens: &[&Token], top: &[&Token]) -> bool 
                     "ПОМЕСТИТЬ",
                     "INDEX",
                     "ИНДЕКСИРОВАТЬ",
-                    "TOTALS",
-                    "ИТОГИ",
                     "HAVING",
                     "ИМЕЮЩИЕ",
                     "FOR",
@@ -421,6 +487,14 @@ fn header(
         ClauseKind::Sources
     } else if token.keyword(input, &["WHERE", "ГДЕ"]) {
         ClauseKind::Conditions
+    } else if token.keyword(input, &["TOTALS", "ИТОГИ"]) {
+        ClauseKind::Totals
+    } else if token.keyword(input, &["BY", "ПО"])
+        && top[..index]
+            .iter()
+            .any(|token| token.keyword(input, &["TOTALS", "ИТОГИ"]))
+    {
+        ClauseKind::TotalGroups
     } else if token.keyword(input, &["JOIN", "СОЕДИНЕНИЕ"]) {
         ClauseKind::Joins
     } else if token.keyword(input, &["GROUP", "СГРУППИРОВАТЬ"])

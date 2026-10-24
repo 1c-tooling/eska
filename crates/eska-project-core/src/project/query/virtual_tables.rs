@@ -26,6 +26,15 @@ pub enum VirtualTable {
 pub struct Parameter {
     pub key: &'static str,
     pub required: bool,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub choices: Vec<KeywordChoice>,
+}
+
+/// Grammar values are provided by ESKA in both query spellings, without asking a renderer to generate keywords.
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct KeywordChoice {
+    pub russian: &'static str,
+    pub english: &'static str,
 }
 
 impl VirtualTable {
@@ -178,9 +187,43 @@ impl VirtualTable {
             .map(|(index, &key)| Parameter {
                 key,
                 required: self == Self::Base && index < 2,
+                choices: parameter_choices(key, category, self),
             })
             .collect()
     }
+}
+
+/// Periodicity differs from PERIODS grouping units and from the period-complement method.
+fn parameter_choices(key: &str, category: MetadataKind, table: VirtualTable) -> Vec<KeywordChoice> {
+    let mut values = Vec::new();
+    if key == "periodicity" {
+        values.extend([
+            ("Период", "Period"),
+            ("Запись", "Record"),
+            ("Регистратор", "Recorder"),
+        ]);
+        if category == MetadataKind::AccountingRegister && table != VirtualTable::DrCrTurnovers {
+            values.push(("УточнениеПериода", "PeriodAdjustment"));
+        }
+        values.extend(
+            super::constructor::PeriodUnit::ALL
+                .iter()
+                .map(|unit| unit.names()),
+        );
+        values.push(("Авто", "Auto"));
+    } else if key == "complementMethod" {
+        values.extend([
+            ("Движения", "RegisterRecords"),
+            (
+                "ДвиженияИГраницыПериода",
+                "RegisterRecordsAndPeriodBoundaries",
+            ),
+        ]);
+    }
+    values
+        .into_iter()
+        .map(|(russian, english)| KeywordChoice { russian, english })
+        .collect()
 }
 
 /// Format positional values without letting one input escape into another argument or statement.
@@ -198,21 +241,36 @@ pub(super) fn call(table: &str, parameters: &[String]) -> Result<String, Error> 
         if text.len() > 16_384 {
             return Err(Error::TooLarge);
         }
-        let tokens = lex::tokens(text)?;
-        if tokens.iter().any(|token| {
-            matches!(
-                token.kind,
-                lex::Kind::Comment | lex::Kind::Symbol(';' | '{' | '}' | '\'' | '`')
-            ) || (token.depth == 0 && token.kind == lex::Kind::Symbol(','))
-        }) {
-            return Err(Error::InvalidExpression);
-        }
+        validate_argument(text)?;
     }
     Ok(format!("{table}({})", parameters.join(", ")))
 }
 
+/// One positional operand cannot hide a closing bracket, another slot or a package separator.
+pub(super) fn validate_argument(text: &str) -> Result<(), Error> {
+    if text.len() > 16_384 {
+        return Err(Error::TooLarge);
+    }
+    if lex::tokens(text)?.iter().any(|token| {
+        matches!(
+            token.kind,
+            lex::Kind::Comment | lex::Kind::Symbol(';' | '{' | '}' | '\'' | '`')
+        ) || (token.depth == 0 && token.kind == lex::Kind::Symbol(','))
+    }) {
+        return Err(Error::InvalidExpression);
+    }
+    Ok(())
+}
+
 /// Losslessly split an existing call for ordinary parameter controls; comments require exact preservation.
 pub(crate) fn split_call(table: &str) -> Option<(&str, Vec<String>)> {
+    let (name, parameters) = split_arguments(table)?;
+    VirtualTable::resolve(name)?;
+    Some((name, parameters))
+}
+
+/// Split argument positions with the shared lexer, including empty slots and nested calls.
+pub(super) fn split_arguments(table: &str) -> Option<(&str, Vec<String>)> {
     let tokens = lex::tokens(table).ok()?;
     let open = tokens
         .iter()
@@ -222,7 +280,6 @@ pub(crate) fn split_call(table: &str) -> Option<(&str, Vec<String>)> {
         return None;
     }
     let name = table[..tokens[open].range.start].trim();
-    VirtualTable::resolve(name)?;
     let mut parameters = Vec::new();
     let mut start = tokens[open].range.end;
     for end in tokens[open + 1..]

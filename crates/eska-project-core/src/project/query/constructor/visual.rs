@@ -38,6 +38,18 @@ pub enum Comparison {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Expression {
+    TotalField {
+        expression: String,
+        alias: String,
+        aggregate: Option<Aggregate>,
+    },
+    TotalGroup {
+        expression: String,
+        alias: String,
+        hierarchy: super::Hierarchy,
+        period: Option<super::PeriodRange>,
+    },
+    Overall,
     SubquerySource {
         alias: String,
     },
@@ -119,20 +131,22 @@ impl Expression {
             Self::Condition { .. } => ClauseKind::Conditions,
             Self::Group { .. } => ClauseKind::Group,
             Self::Order { .. } => ClauseKind::Order,
+            Self::TotalField { .. } => ClauseKind::Totals,
+            Self::TotalGroup { .. } | Self::Overall => ClauseKind::TotalGroups,
         }
     }
 
-    /// Generate only the requested fragment; the lossless editor still validates boundaries and owns comments.
-    pub(super) fn text(&self, russian: bool) -> Result<String, Error> {
-        let complete = match self {
+    /// Required controls reject empty operands before any formatting or mutation.
+    fn complete(&self) -> bool {
+        match self {
             Self::VirtualSource { .. }
             | Self::VirtualJoin { .. }
             | Self::SubquerySource { .. }
-            | Self::SubqueryJoin { .. } => {
-                return Err(Error::InvalidExpression);
-            }
+            | Self::SubqueryJoin { .. } => false,
             Self::Source { table, .. } => !table.trim().is_empty(),
             Self::Field { expression, .. }
+            | Self::TotalField { expression, .. }
+            | Self::TotalGroup { expression, .. }
             | Self::Group { expression }
             | Self::Order { expression, .. } => !expression.trim().is_empty(),
             Self::Join {
@@ -141,8 +155,13 @@ impl Expression {
             Self::Condition { left, right, .. } => {
                 !left.trim().is_empty() && !right.trim().is_empty()
             }
-        };
-        if !complete {
+            Self::Overall => true,
+        }
+    }
+
+    /// Generate only the requested fragment; the lossless editor still validates boundaries and owns comments.
+    pub(super) fn text(&self, russian: bool) -> Result<String, Error> {
+        if !self.complete() {
             return Err(Error::InvalidExpression);
         }
         let with_alias = |text: &str, alias: &str| -> Result<String, Error> {
@@ -164,6 +183,11 @@ impl Expression {
             }
             Self::Source { table, alias } => with_alias(table, alias)?,
             Self::Field {
+                expression,
+                alias,
+                aggregate,
+            }
+            | Self::TotalField {
                 expression,
                 alias,
                 aggregate,
@@ -212,6 +236,19 @@ impl Expression {
                     (false, false) => "ASC",
                 }
             ),
+            Self::TotalGroup {
+                expression,
+                alias,
+                hierarchy,
+                period,
+            } => super::totals::group(expression, alias, *hierarchy, period.as_ref(), russian)?,
+            Self::Overall => {
+                if russian {
+                    "ОБЩИЕ".into()
+                } else {
+                    "OVERALL".into()
+                }
+            }
         })
     }
 }
@@ -323,6 +360,72 @@ fn normalize_virtual(expression: &Expression, russian: bool) -> Result<Option<Ex
     })
 }
 
+/// A new source receives one collision-free alias in the query language, including derived tables.
+fn automatic_alias(
+    input: &str,
+    owner: &super::Statement,
+    expression: &Expression,
+) -> Result<Option<Expression>, Error> {
+    let (Expression::Source { table, alias } | Expression::Join { table, alias, .. }) = expression
+    else {
+        return Ok(None);
+    };
+    if !alias.is_empty() {
+        return Ok(None);
+    }
+    let name = if table.starts_with('(') {
+        if owner.russian {
+            "ВложенныйЗапрос"
+        } else {
+            "NestedQuery"
+        }
+    } else {
+        table
+            .split('(')
+            .next()
+            .unwrap_or(table)
+            .rsplit('.')
+            .next()
+            .ok_or(Error::InvalidExpression)?
+    };
+    identifier(name)?;
+    let bindings = owner.source_bindings(input);
+    let mut alias = name.to_owned();
+    let mut suffix = 1;
+    while bindings.iter().any(|binding| {
+        binding.alias.to_lowercase() == alias.to_lowercase()
+            || binding
+                .alias
+                .rsplit_once('.')
+                .is_some_and(|(_, name)| name.to_lowercase() == alias.to_lowercase())
+    }) {
+        suffix += 1;
+        alias = format!("{name}{suffix}");
+    }
+    Ok(Some(match expression {
+        Expression::Source { table, .. } => Expression::Source {
+            table: table.clone(),
+            alias,
+        },
+        Expression::Join {
+            table,
+            join,
+            left,
+            comparison,
+            right,
+            ..
+        } => Expression::Join {
+            table: table.clone(),
+            alias,
+            join: *join,
+            left: left.clone(),
+            comparison: *comparison,
+            right: right.clone(),
+        },
+        _ => return Err(Error::InvalidExpression),
+    }))
+}
+
 /// Lower a visual form to the same minimal operation used by the expression editor.
 pub(super) fn compose(
     input: &str,
@@ -336,69 +439,37 @@ pub(super) fn compose(
         .statements
         .get(statement)
         .ok_or(Error::InvalidSelection)?;
+    if matches!(expression, Expression::Overall) && selection.is_none() {
+        for (clause, group) in owner
+            .clauses
+            .iter()
+            .enumerate()
+            .filter(|(_, clause)| clause.kind == ClauseKind::TotalGroups)
+        {
+            if let Some((item, value)) =
+                group.items.iter().enumerate().find(|(_, item)| {
+                    matches!(item.visual(input, group), Some(Expression::Overall))
+                })
+            {
+                return Ok(Action::Replace {
+                    selection: Selection {
+                        statement,
+                        clause,
+                        item,
+                    },
+                    text: value.expression(input),
+                });
+            }
+        }
+    }
     let normalized = normalize_virtual(expression, owner.russian)?;
     let expression = normalized.as_ref().unwrap_or(expression);
-    let automatic;
-    let expression = if let Expression::Source { table, alias }
-    | Expression::Join { table, alias, .. } = expression
-        && alias.is_empty()
-        && selection.is_none()
-    {
-        let name = if table.starts_with('(') {
-            if owner.russian {
-                "ВложенныйЗапрос"
-            } else {
-                "NestedQuery"
-            }
-        } else {
-            table
-                .split('(')
-                .next()
-                .unwrap_or(table)
-                .rsplit('.')
-                .next()
-                .ok_or(Error::InvalidExpression)?
-        };
-        identifier(name)?;
-        let bindings = owner.source_bindings(input);
-        let mut alias = name.to_owned();
-        let mut suffix = 1;
-        while bindings.iter().any(|binding| {
-            binding.alias.to_lowercase() == alias.to_lowercase()
-                || binding
-                    .alias
-                    .rsplit_once('.')
-                    .is_some_and(|(_, name)| name.to_lowercase() == alias.to_lowercase())
-        }) {
-            suffix += 1;
-            alias = format!("{name}{suffix}");
-        }
-        automatic = match expression {
-            Expression::Source { table, .. } => Expression::Source {
-                table: table.clone(),
-                alias,
-            },
-            Expression::Join {
-                table,
-                join,
-                left,
-                comparison,
-                right,
-                ..
-            } => Expression::Join {
-                table: table.clone(),
-                alias,
-                join: *join,
-                left: left.clone(),
-                comparison: *comparison,
-                right: right.clone(),
-            },
-            _ => return Err(Error::InvalidExpression),
-        };
-        &automatic
+    let automatic = if selection.is_none() {
+        automatic_alias(input, owner, expression)?
     } else {
-        expression
+        None
     };
+    let expression = automatic.as_ref().unwrap_or(expression);
     let mut text = expression.text(owner.russian)?;
     if text.len() > 16_384 {
         return Err(Error::TooLarge);
@@ -511,13 +582,21 @@ impl Item {
     pub fn visual(&self, input: &str, clause: &Clause) -> Option<Expression> {
         let text = self.expression(input);
         match clause.kind {
-            ClauseKind::Fields => {
+            ClauseKind::Fields | ClauseKind::Totals => {
                 let (value, alias) = split_alias(&text)?;
                 let (expression, aggregate) = split_aggregate(&value);
-                Some(Expression::Field {
-                    expression,
-                    alias,
-                    aggregate,
+                Some(if clause.kind == ClauseKind::Totals {
+                    Expression::TotalField {
+                        expression,
+                        alias,
+                        aggregate,
+                    }
+                } else {
+                    Expression::Field {
+                        expression,
+                        alias,
+                        aggregate,
+                    }
                 })
             }
             ClauseKind::Sources => {
@@ -567,6 +646,7 @@ impl Item {
             ClauseKind::Joins => {
                 join_projection(&text, &input[clause.range.start..clause.body.start])
             }
+            ClauseKind::TotalGroups => super::totals::project(&text),
         }
     }
 }
@@ -701,7 +781,7 @@ pub(super) fn identifier(value: &str) -> Result<(), Error> {
 }
 
 /// Split only a terminal explicit AS alias, never AS inside strings or a nested expression.
-fn split_alias(text: &str) -> Option<(String, String)> {
+pub(super) fn split_alias(text: &str) -> Option<(String, String)> {
     let tokens = lex::tokens(text).ok()?;
     if let Some((index, token)) = tokens
         .iter()

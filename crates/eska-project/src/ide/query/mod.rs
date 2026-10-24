@@ -90,7 +90,10 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
         return 0;
     }
     if method == "query/constructorCatalog" {
-        return if args["query"]["virtualTables"] == true || !args["query"]["source"].is_null() {
+        return if args["query"]["virtualTables"] == true
+            || !args["query"]["source"].is_null()
+            || !args["query"]["scope"].is_null()
+        {
             23
         } else {
             22
@@ -105,7 +108,21 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
         }
         if matches!(
             args["action"]["expression"]["kind"].as_str(),
-            Some("virtualSource" | "virtualJoin" | "subquerySource" | "subqueryJoin")
+            Some(
+                "virtualSource"
+                    | "virtualJoin"
+                    | "subquerySource"
+                    | "subqueryJoin"
+                    | "totalField"
+                    | "totalGroup"
+                    | "overall"
+            )
+        ) {
+            return 23;
+        }
+        if matches!(
+            args["action"]["clause"].as_str(),
+            Some("totals" | "totalGroups")
         ) {
             return 23;
         }

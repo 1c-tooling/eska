@@ -36,7 +36,11 @@ pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<EditPl
             comments,
         } => {
             let (clause, _) = item_at(model, *selection)?;
-            remove(input, clause, selection.item, *comments)?
+            if clause.kind == ClauseKind::TotalGroups && clause.items.len() == 1 {
+                remove_totals(input, statement_at(model, selection.statement)?, *comments)?
+            } else {
+                remove(input, clause, selection.item, *comments)?
+            }
         }
         Action::Move { selection, to } => {
             let (clause, _) = item_at(model, *selection)?;
@@ -128,10 +132,45 @@ fn append(
     }
     fragment(text)?;
     let newline = newline(input);
+    if matches!(kind, ClauseKind::Totals | ClauseKind::TotalGroups)
+        && !statement
+            .clauses
+            .iter()
+            .any(|clause| clause.kind == ClauseKind::Totals)
+    {
+        let position = statement
+            .clauses
+            .last()
+            .and_then(|clause| clause.items.last())
+            .map_or(statement.range.end, |item| item.range.end);
+        let totals = ClauseKind::Totals.keyword(statement.russian);
+        let groups = ClauseKind::TotalGroups.keyword(statement.russian);
+        let body = if kind == ClauseKind::Totals {
+            format!(
+                "{text}{newline}{groups} {}",
+                if statement.russian {
+                    "ОБЩИЕ"
+                } else {
+                    "OVERALL"
+                }
+            )
+        } else {
+            format!("{newline}{groups} {text}")
+        };
+        return Ok(vec![Replacement {
+            range: position..position,
+            text: format!("{newline}{totals} {body}{newline}"),
+        }]);
+    }
     if kind != ClauseKind::Joins
         && let Some(clause) = statement.clauses.iter().find(|clause| clause.kind == kind)
     {
-        let item = clause.items.last().ok_or(Error::InvalidSelection)?;
+        let Some(item) = clause.items.last() else {
+            return Ok(vec![Replacement {
+                range: clause.body.start..clause.body.start,
+                text: format!(" {text}{newline}"),
+            }]);
+        };
         let separator = if kind == ClauseKind::Conditions {
             if statement.russian { "И" } else { "AND" }
         } else {
@@ -192,6 +231,42 @@ pub(super) fn replace(input: &str, item: &Item, text: &str) -> Result<Vec<Replac
     }])
 }
 
+/// An empty last grouping removes the whole totals section; no orphan BY or implicit totals are left behind.
+fn remove_totals(
+    input: &str,
+    statement: &Statement,
+    decision: Option<CommentDecision>,
+) -> Result<Vec<Replacement>, Error> {
+    let totals = statement
+        .clauses
+        .iter()
+        .find(|clause| clause.kind == ClauseKind::Totals)
+        .ok_or(Error::InvalidSelection)?;
+    let groups = statement
+        .clauses
+        .iter()
+        .find(|clause| clause.kind == ClauseKind::TotalGroups)
+        .ok_or(Error::InvalidSelection)?;
+    let comments: Vec<_> = totals
+        .comments
+        .iter()
+        .chain(&groups.comments)
+        .cloned()
+        .collect();
+    if !comments.is_empty() && decision.is_none() {
+        return Err(Error::CommentsRequireDecision);
+    }
+    let text = if matches!(decision, Some(CommentDecision::Keep)) {
+        retained_comments(input, &comments)
+    } else {
+        String::new()
+    };
+    Ok(vec![Replacement {
+        range: totals.range.start..groups.range.end,
+        text,
+    }])
+}
+
 /// Required lists cannot become empty, and deleting a commented node always requires an explicit disposition.
 fn remove(
     input: &str,
@@ -203,7 +278,7 @@ fn remove(
         return Err(Error::RequiredItem);
     }
     let item = &clause.items[index];
-    let comments = if clause.items.len() == 1 {
+    let comments = if clause.items.len() == 1 && clause.kind != ClauseKind::Totals {
         &clause.comments
     } else {
         &item.comments
@@ -216,7 +291,9 @@ fn remove(
     } else {
         String::new()
     };
-    let range = if clause.items.len() == 1 {
+    let range = if clause.items.len() == 1 && clause.kind == ClauseKind::Totals {
+        item.range.clone()
+    } else if clause.items.len() == 1 {
         clause.range.clone()
     } else if let Some(next) = clause.items.get(index + 1) {
         item.range.start..next.range.start
@@ -244,8 +321,8 @@ fn move_item(
     if from == to {
         return Ok(Vec::new());
     }
-    if clause.kind == ClauseKind::Joins {
-        return Err(Error::UnsafeMove);
+    if let Some(error) = clause.move_unavailable(input, from, to) {
+        return Err(error);
     }
     let mut order: Vec<_> = (0..clause.items.len()).collect();
     let moved = order.remove(from);

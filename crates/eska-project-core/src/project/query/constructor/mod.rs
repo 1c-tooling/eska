@@ -5,6 +5,7 @@ pub(super) mod lex;
 mod model;
 mod nested;
 mod scopes;
+mod totals;
 mod unions;
 mod visual;
 
@@ -14,6 +15,7 @@ use crate::project::metadata_edit::{EditPlan, snapshot};
 
 pub use model::{Clause, ClauseKind, Item, Model, Statement, Unavailable};
 pub use scopes::{QueryScope, Union};
+pub use totals::{Hierarchy, PeriodRange, PeriodUnit};
 pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
 
 /// A selection is valid only with the exact constructor revision that supplied its indices.
@@ -281,7 +283,9 @@ impl Constructor {
         } else {
             action
         };
-        let plan = if let Some(plan) = nested::plan(&self.working, &self.model, original_action)? {
+        let plan = if let Some(plan) = totals::plan(&self.working, &self.model, original_action)? {
+            plan
+        } else if let Some(plan) = nested::plan(&self.working, &self.model, original_action)? {
             plan
         } else {
             editing::plan(&self.working, &self.model, action)?
@@ -356,6 +360,12 @@ fn check_shape(before: &Model, after: &Model, action: &Action) -> Result<(), Err
     }
     let mut expected: Vec<_> = old.clauses.iter().map(|clause| clause.kind).collect();
     match action {
+        Action::Append {
+            clause: ClauseKind::Totals | ClauseKind::TotalGroups,
+            ..
+        } if !expected.contains(&ClauseKind::Totals) => {
+            expected.extend([ClauseKind::Totals, ClauseKind::TotalGroups]);
+        }
         Action::Append { clause, .. }
             if *clause == ClauseKind::Joins || !expected.contains(clause) =>
         {
@@ -366,7 +376,13 @@ fn check_shape(before: &Model, after: &Model, action: &Action) -> Result<(), Err
             expected.insert(position, *clause);
         }
         Action::Remove { selection, .. } if old.clauses[selection.clause].items.len() == 1 => {
-            expected.remove(selection.clause);
+            let kind = old.clauses[selection.clause].kind;
+            if kind == ClauseKind::TotalGroups {
+                expected
+                    .retain(|kind| !matches!(kind, ClauseKind::Totals | ClauseKind::TotalGroups));
+            } else if kind != ClauseKind::Totals {
+                expected.remove(selection.clause);
+            }
         }
         _ => (),
     }

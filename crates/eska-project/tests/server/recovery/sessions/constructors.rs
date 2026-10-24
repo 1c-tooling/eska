@@ -2,6 +2,84 @@ use super::*;
 
 const DRAFT: &str = "SELECT A, // keep 😀\n B FROM T;\nDESTROY Temp";
 
+/// Total sections and result projections share the same private draft and negotiated compatibility boundary.
+#[test]
+fn totals_rpc_is_localized_private_and_unavailable_to_older_clients() {
+    for locale in ["en-US", "ru-RU"] {
+        for minor in [22, 23] {
+            let (_directory, root, private) = source_fixture();
+            let mut client = Client::new(&root, locale);
+            let binding = source_connect_version(&mut client, &root, &private, locale, minor);
+            let state = open_source(&mut client, &binding, XML, false);
+            let draft = if locale == "ru-RU" {
+                "ВЫБРАТЬ 1 КАК Value"
+            } else {
+                "SELECT 1 AS Value"
+            };
+            let state = source_draft(&mut client, &binding, &state, draft);
+            let opened = client.request(
+                "query/constructorOpen",
+                &source_args(
+                    &binding,
+                    json!({"querySessionId":state["querySessionId"],"revision":state["revision"]}),
+                ),
+            );
+            let action = constructor_args(
+                &binding,
+                &opened,
+                json!({"action":{"kind":"compose","statement":0,"selection":null,
+                "expression":{"kind":"totalField","expression":"Value","alias":"","aggregate":"sum"}}}),
+            );
+            if minor < 23 {
+                assert_eq!(
+                    client.response("query/constructorAction", &action)["error"]["code"],
+                    -32601
+                );
+                continue;
+            }
+            let changed = client.request("query/constructorAction", &action);
+            let model = &changed["constructor"];
+            assert!(
+                model["text"]
+                    .as_str()
+                    .unwrap()
+                    .contains(if locale == "ru-RU" {
+                        "ИТОГИ"
+                    } else {
+                        "TOTALS"
+                    })
+            );
+            assert_eq!(
+                model["statements"][0]["append"].as_array().unwrap().len(),
+                8
+            );
+            assert_eq!(
+                model["statements"][0]["clauses"][2]["items"][0]["visual"]["kind"],
+                "overall"
+            );
+            let projection = client.request(
+                "query/constructorCatalog",
+                &constructor_args(&binding, &changed, json!({"query":{"scope":0}})),
+            );
+            assert_eq!(projection["catalog"]["fields"][0]["english"], "Value");
+            let cleared = client.request("query/constructorAction", &constructor_args(&binding, &changed,
+                json!({"action":{"kind":"remove","selection":{"statement":0,"clause":2,"item":0}}})));
+            assert_eq!(
+                cleared["constructor"]["statements"][0]["clauses"]
+                    .as_array()
+                    .unwrap()
+                    .len(),
+                1
+            );
+            assert_eq!(source_parts(&mut client, &binding, &cleared)[3], draft);
+            assert_eq!(
+                fs::read_to_string(root.join("src").join(SOURCE)).unwrap(),
+                XML
+            );
+        }
+    }
+}
+
 /// Every scope and source selector belongs to one revision; nested and UNION editing remain private until explicit finish.
 #[test]
 fn nested_and_union_rpc_share_revision_bound_sources_and_aligned_columns() {

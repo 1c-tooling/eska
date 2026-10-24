@@ -30,6 +30,7 @@ pub struct QueryCatalogRequest {
     #[serde(default)]
     pub virtual_tables: bool,
     pub source: Option<crate::project::query::constructor::Selection>,
+    pub scope: Option<usize>,
 }
 
 /// Both spellings are query names, not locale-dependent identities or client-generated SQL.
@@ -70,6 +71,7 @@ impl QueryCatalogRequest {
     fn validate(&self) -> Result<(), QuerySessionError> {
         let limit = self.limit.unwrap_or(200);
         if limit == 0
+            || (self.source.is_some() && self.scope.is_some())
             || limit > 500
             || self.search.len() > 1024
             || self.table.as_ref().is_some_and(|value| value.len() > 4096)
@@ -101,7 +103,7 @@ impl ProjectSession {
         request: &QueryCatalogRequest,
     ) -> Result<QueryCatalogPage, QuerySessionError> {
         request.validate()?;
-        if request.source.is_some() {
+        if request.source.is_some() || request.scope.is_some() {
             return Err(QueryError::InvalidPosition.into());
         }
         let limit = request.limit.unwrap_or(200);

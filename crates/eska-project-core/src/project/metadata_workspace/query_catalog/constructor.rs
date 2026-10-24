@@ -35,6 +35,15 @@ impl ProjectSession {
         if depth > 32 {
             return Err(QueryError::TooLarge.into());
         }
+        if let Some(scope) = request.scope {
+            return self.constructor_catalog_projection(
+                constructor,
+                application,
+                request,
+                scope,
+                depth,
+            );
+        }
         let Some(selection) = request.source else {
             return self.query_catalog(application, request);
         };
@@ -61,7 +70,21 @@ impl ProjectSession {
         let scope = model
             .source_scope(selection)
             .ok_or(QueryError::InvalidPosition)?;
-        let branch = *model.scopes[scope]
+        self.constructor_catalog_projection(constructor, application, request, scope, depth)
+    }
+
+    /// Root and nested results share the same ordinal projection and wildcard expansion rules.
+    fn constructor_catalog_projection(
+        &self,
+        constructor: &Constructor,
+        application: Option<&str>,
+        request: &QueryCatalogRequest,
+        scope: usize,
+        depth: usize,
+    ) -> Result<QueryCatalogPage, QuerySessionError> {
+        let model = constructor.model();
+        let selected = model.scopes.get(scope).ok_or(QueryError::InvalidPosition)?;
+        let branch = *selected
             .branches
             .first()
             .ok_or(QueryError::InvalidPosition)?;

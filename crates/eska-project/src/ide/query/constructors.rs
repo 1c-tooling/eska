@@ -1,11 +1,12 @@
 //! Constructor ownership and text transformations live in ESKA; a native adapter displays only these DTOs.
 
+mod presentation;
+use eska_project_core::project::metadata_edit::snapshot;
+use presentation::model;
+
 use std::path::PathBuf;
 
-use eska_project_core::project::{
-    metadata_edit::snapshot,
-    query::constructor::{Action, ClauseKind, Constructor},
-};
+use eska_project_core::project::query::constructor::{Action, ClauseKind};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -63,6 +64,8 @@ pub(super) fn capability(visual: bool, advanced: bool) -> Value {
         result["unions"] = json!(true);
         result["maxScopes"] = json!(256);
         result["maxNesting"] = json!(32);
+        result["totals"] = json!(true);
+        result["clauses"] = json!(ClauseKind::all(true));
     }
     result
 }
@@ -335,60 +338,6 @@ fn transition(
         }
         _ => Err(error(-32601)),
     }
-}
-
-/// DTO text is the exact working draft; long expressions remain readable but cannot be replaced through a short input control.
-fn model(value: &Constructor, id: &str, writable: bool, advanced: bool) -> Result<Value, Value> {
-    let input = value.text();
-    let statements: Vec<_> = value.model().statements.iter().enumerate().map(|(index, statement)| {
-        let clauses: Vec<_> = statement.clauses.iter().enumerate().map(|(index, clause)| {
-            let items: Vec<_> = clause.items.iter().enumerate().map(|(index, item)| {
-                let expression = item.expression(input);
-                let too_large = expression.len() > MAX_EXPRESSION;
-                let visual = item.visual(input, clause).filter(|value| advanced || !matches!(value, eska_project_core::project::query::constructor::Expression::VirtualSource { .. } | eska_project_core::project::query::constructor::Expression::VirtualJoin { .. } | eska_project_core::project::query::constructor::Expression::SubquerySource { .. } | eska_project_core::project::query::constructor::Expression::SubqueryJoin { .. }));
-                json!({"index":index,"range":dto::bytes(&item.range),"preview":preview(&input[item.range.clone()]),"visual":if too_large {None} else {visual},
-                    "expression":if too_large {None} else {Some(expression)},"comments":item.comments.len(),
-                    "removable":writable && (clause.items.len()>1 || !matches!(clause.kind,ClauseKind::Fields|ClauseKind::Sources)),
-                    "movable":writable && clause.kind!=ClauseKind::Joins && clause.items.len()>1,
-                    "unavailable":{
-                        "replace":if !writable {Some("read_only")} else if too_large {Some("expression_too_large")} else {None},
-                        "remove":if !writable {Some("read_only")} else if clause.items.len()==1 && matches!(clause.kind,ClauseKind::Fields|ClauseKind::Sources) {Some("required_item")} else {None},
-                        "move":if !writable {Some("read_only")} else if clause.kind==ClauseKind::Joins {Some("join_order_dependency")} else if clause.items.len()<2 {Some("single_item")} else {None}
-                    }})
-            }).collect();
-            json!({"index":index,"kind":clause.kind,"header":preview(input[clause.range.start..clause.body.start].trim()),"items":items})
-        }).collect();
-        let append: Vec<_> = [ClauseKind::Fields, ClauseKind::Sources, ClauseKind::Joins, ClauseKind::Conditions, ClauseKind::Group, ClauseKind::Order]
-            .into_iter().map(|kind| json!({"kind":kind,"unavailable":if writable {json!(statement.append_unavailable(kind))} else {json!("read_only")}})).collect();
-        let legacy_opaque = !advanced && value.model().requires_scopes(index);
-        json!({"index":index,"range":dto::bytes(&statement.range),"russian":statement.russian,"sources":statement.source_bindings(input),"scope":statement.scope,"branch":statement.branch,"result":statement.result,"nested":statement.nested,
-            "unavailable":if legacy_opaque {json!("unsupported_construct")} else {json!(statement.unavailable)},"preview":preview(&input[statement.range.clone()]),"clauses":if legacy_opaque {Vec::new()} else {clauses},"append":append})
-    }).collect();
-    let mut output = json!({"id":id,"revision":value.revision().to_string(),"snapshot":snapshot(input),"text":input,"bytes":input.len(),"writable":writable,"statements":statements});
-    if advanced {
-        output["issues"] = json!(
-            value
-                .model()
-                .union_mismatches(input)
-                .into_iter()
-                .map(|scope| json!({"code":"union_field_count","scope":scope}))
-                .collect::<Vec<_>>()
-        );
-        output["scopes"] = json!(value.model().scopes.iter().enumerate().map(|(index, scope)| json!({"index":index,"range":dto::bytes(&scope.range),"parent":scope.parent,"branches":scope.branches,"unions":scope.unions.iter().map(|union|json!({"all":union.all.is_some()})).collect::<Vec<_>>()})).collect::<Vec<_>>());
-    }
-    if serde_json::to_vec(&output)
-        .map_err(|_| error(-32603))?
-        .len()
-        > MAX_MODEL_BYTES
-    {
-        return Err(failure("constructor_limit"));
-    }
-    Ok(output)
-}
-
-/// Preview clipping uses Unicode scalar boundaries and never changes the canonical text or operation ranges.
-fn preview(input: &str) -> String {
-    input.chars().take(256).collect()
 }
 
 /// Native UTF-16 destinations become core byte anchors, so another IDE need not implement query/source coordinate rules.

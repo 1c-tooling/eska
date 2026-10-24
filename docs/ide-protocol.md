@@ -1565,14 +1565,14 @@ constructor_unsafe_move, constructor_comments_require_decision, stale_constructo
 параметры, UNION/INTO/TOTALS/HAVING, вложенные источники и расширения СКД не
 объявлены новым визуальным подмножеством; неизвестный текст сохраняется.
 
-### API 1.23: виртуальные таблицы конструктора
+### API 1.23: виртуальные таблицы и составные запросы
 
 `queryConstructor.virtualTables=true` разрешает структурированные вызовы
 виртуальных таблиц. В `query/constructorCatalog.query` добавлен
 `virtualTables?:bool` (по умолчанию false). При раскрытии регистра возвращаются
 доступные виртуальные таблицы с `virtualTable` — стабильным английским enum.
 При выборе такой таблицы `catalog.parameters` содержит упорядоченные
-`{key:string,required:bool}`. Подписи параметров локализуются адаптером;
+`{key:string,required:bool,choices?:[{russian,english}]}`. Подписи параметров локализуются адаптером;
 позиционные значения, включая пропущенные необязательные позиции, хранит ESKA.
 
 `compose.expression` получает варианты `virtualSource` (`table,alias,parameters`)
@@ -1584,7 +1584,7 @@ constructor_unsafe_move, constructor_comments_require_decision, stale_constructo
 новых вариантов `visual`.
 
 `nestedQueries=true` и `unions=true` добавляют `constructor.scopes`:
-`[{index,range,parent:number|null,branches:[statementIndex],unions:[{all:bool}]}]`.
+`[{index,range,parent:number|null,branches:[statementIndex],result:statementIndex,unions:[{all:bool}]}]`.
 У каждого statement есть `scope`, порядковый `branch`, `nested` и `result`.
 Последний флаг указывает ветку с общим порядком/итогами; внутри вложенной
 области эти секции не создаются. Все индексы привязаны к ревизии конструктора.
@@ -1607,3 +1607,21 @@ constructor_unsafe_move, constructor_comments_require_decision, stale_constructo
 несовпадение количества полей; изменённый запрос с такой ошибкой не публикуется.
 При переименовании доказанного выходного поля ESKA обновляет ссылки родителей
 и общего хвоста, исключая строки, параметры и затенённые области.
+
+`totals=true` расширяет `clauses` до `fields,sources,joins,conditions,group,order,totals,totalGroups`.
+`totalField:{expression,alias,aggregate}` задаёт итоговое выражение, `overall`
+добавляет общие итоги, `totalGroup:{expression,alias,hierarchy,period}` — группировку.
+`hierarchy` принимает `none|hierarchy|onlyHierarchy`; `period:null|{unit,begin,end}`
+задаёт заполнение периодов, где границы — выражения либо null, а единица —
+`second|minute|hour|day|week|tenDays|month|quarter|halfYear|year`.
+ESKA создаёт целую секцию `TOTALS … BY`, допускает пустые `totals.items` для
+автоматических итогов и удаляет секцию при удалении последней группировки.
+`overall` всегда первый; его повторное добавление не меняет текст.
+
+`query.scope` в каталоге возвращает выходные колонки области; он взаимоисключающий
+с `query.source`. `statements[].columns` содержит доказанные выходные имена
+первой ветки. `sources[]` дополнительно содержит `clause,item,derived,nestedScope`;
+у элемента есть `children:[scopeIndex]`, `moveUp,moveDown` с разрешениями для
+каждой стрелки. Это навигационные данные ESKA, а не результат разбора в IDE.
+Клиенты ниже 1.23 видят составные запросы и итоги как точный непрозрачный текст;
+их операции над такими областями отклоняются до изменения состояния.
