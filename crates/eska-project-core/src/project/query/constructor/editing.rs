@@ -11,7 +11,11 @@ use super::{
 /// Resolve indices only against the supplied immutable model revision.
 pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<EditPlan, Error> {
     let edits = match action {
-        Action::Compose { .. } | Action::AppendFields { .. } => {
+        Action::Compose { .. }
+        | Action::AppendFields { .. }
+        | Action::AddUnion { .. }
+        | Action::SetUnion { .. }
+        | Action::RemoveUnion { .. } => {
             return Err(Error::InvalidExpression);
         }
         Action::Append {
@@ -176,7 +180,7 @@ fn append(
 }
 
 /// Existing comment bytes remain attached when an expression changes; unchanged expressions are exact no-ops.
-fn replace(input: &str, item: &Item, text: &str) -> Result<Vec<Replacement>, Error> {
+pub(super) fn replace(input: &str, item: &Item, text: &str) -> Result<Vec<Replacement>, Error> {
     if item.expression(input) == text.trim() {
         return Ok(Vec::new());
     }
@@ -274,7 +278,7 @@ fn retained_comments(input: &str, comments: &[std::ops::Range<usize>]) -> String
 }
 
 /// Only newly inserted syntax follows this physical line ending; unchanged ranges stay byte-exact.
-fn newline(input: &str) -> &'static str {
+pub(super) fn newline(input: &str) -> &'static str {
     if input.contains("\r\n") { "\r\n" } else { "\n" }
 }
 

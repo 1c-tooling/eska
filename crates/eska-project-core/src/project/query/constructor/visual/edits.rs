@@ -37,39 +37,18 @@ pub(in super::super) fn augment(
         .get(selection.item)
         .ok_or(Error::InvalidSelection)?;
     let mut edits = plan.replacements().to_vec();
-    if let Expression::Join { join, .. } | Expression::VirtualJoin { join, .. } = expression {
+    if let Expression::Join { join, .. }
+    | Expression::VirtualJoin { join, .. }
+    | Expression::SubqueryJoin { join, .. } = expression
+    {
         edits.extend(join_header(input, clause, *join, owner.russian)?);
     }
     let old = item.visual(input, clause);
-    if let (
-        Some(
-            Expression::Source {
-                table: old_table,
-                alias: old_alias,
-            }
-            | Expression::VirtualSource {
-                table: old_table,
-                alias: old_alias,
-                ..
-            }
-            | Expression::VirtualJoin {
-                table: old_table,
-                alias: old_alias,
-                ..
-            }
-            | Expression::Join {
-                table: old_table,
-                alias: old_alias,
-                ..
-            },
-        ),
-        Expression::Source { table, alias }
-        | Expression::Join { table, alias, .. }
-        | Expression::VirtualSource { table, alias, .. }
-        | Expression::VirtualJoin { table, alias, .. },
-    ) = (old, expression)
-    {
-        let previous = implicit_alias(&old_table, &old_alias);
+    if let (Some((old_table, old_alias)), Some((table, alias))) = (
+        old.as_ref().and_then(source_parts),
+        source_parts(expression),
+    ) {
+        let previous = implicit_alias(old_table, old_alias);
         let replacement = implicit_alias(table, alias);
         if previous.to_lowercase() != replacement.to_lowercase() {
             if owner
@@ -79,7 +58,14 @@ pub(in super::super) fn augment(
             {
                 return Err(Error::InvalidExpression);
             }
-            let protected = source_prefixes(input, owner)?;
+            let mut protected = source_prefixes(input, owner)?;
+            protected.extend(
+                model
+                    .scopes
+                    .iter()
+                    .filter(|scope| scope.parent == Some(*statement))
+                    .map(|scope| scope.range.clone()),
+            );
             let found = references(input, &owner.range, previous, replacement)?;
             for reference in found {
                 if !protected
@@ -96,8 +82,18 @@ pub(in super::super) fn augment(
                 expression,
                 Expression::Join { .. } | Expression::VirtualJoin { .. }
             ) {
-                for edit in edits.iter_mut().filter(|edit| edit.range == item.range) {
-                    let start = on_end(&edit.text)?.unwrap_or(edit.text.len());
+                let predicate = on_end(&input[item.range.clone()])?.map(|at| item.range.start + at);
+                for edit in edits.iter_mut().filter(|edit| {
+                    edit.range == item.range
+                        || predicate.is_some_and(|start| {
+                            edit.range.start >= start && edit.range.end <= item.range.end
+                        })
+                }) {
+                    let start = if edit.range == item.range {
+                        on_end(&edit.text)?.unwrap_or(edit.text.len())
+                    } else {
+                        0
+                    };
                     let replacements =
                         references(&edit.text, &(start..edit.text.len()), previous, replacement)?;
                     let renamed = EditPlan::from_replacements(&edit.text, replacements)
@@ -109,6 +105,20 @@ pub(in super::super) fn augment(
     }
     edits.sort_by_key(|edit| edit.range.start);
     EditPlan::from_replacements(input, edits).map_err(|_| Error::InvalidExpression)
+}
+
+/// Source aliases have one common representation regardless of physical, virtual or nested table controls.
+fn source_parts(expression: &Expression) -> Option<(&str, &str)> {
+    match expression {
+        Expression::Source { table, alias }
+        | Expression::Join { table, alias, .. }
+        | Expression::VirtualSource { table, alias, .. }
+        | Expression::VirtualJoin { table, alias, .. } => Some((table, alias)),
+        Expression::SubquerySource { alias } | Expression::SubqueryJoin { alias, .. } => {
+            Some(("", alias))
+        }
+        _ => None,
+    }
 }
 
 /// A missing explicit alias retains the fully qualified source name; no SQL is inferred by an adapter.
@@ -167,7 +177,10 @@ fn join_header(
 }
 
 /// Metadata paths and source declarations are not alias references; JOIN predicates remain eligible.
-fn source_prefixes(input: &str, owner: &Statement) -> Result<Vec<Range<usize>>, Error> {
+pub(in super::super) fn source_prefixes(
+    input: &str,
+    owner: &Statement,
+) -> Result<Vec<Range<usize>>, Error> {
     let mut ranges = Vec::new();
     for clause in &owner.clauses {
         if clause.kind == ClauseKind::Sources {
@@ -199,6 +212,17 @@ fn references(
     old: &str,
     new: &str,
 ) -> Result<Vec<Replacement>, Error> {
+    path_references(input, range, old, new, true)
+}
+
+/// Qualified output columns need the same lexical boundaries but can end without another qualification dot.
+pub(in super::super) fn path_references(
+    input: &str,
+    range: &Range<usize>,
+    old: &str,
+    new: &str,
+    require_dot: bool,
+) -> Result<Vec<Replacement>, Error> {
     let text = &input[range.clone()];
     let tokens: Vec<_> = lex::tokens(text)?
         .into_iter()
@@ -219,11 +243,14 @@ fn references(
         return Err(Error::Unsupported);
     }
     let mut edits = Vec::new();
-    for (index, window) in tokens.windows(prefix.len() + 1).enumerate() {
+    for (index, window) in tokens.windows(prefix.len()).enumerate() {
         if index > 0 && tokens[index - 1].kind == Kind::Symbol('.') {
             continue;
         }
-        if window[prefix.len()].kind != Kind::Symbol('.')
+        if (require_dot
+            && tokens
+                .get(index + prefix.len())
+                .is_none_or(|token| token.kind != Kind::Symbol('.')))
             || !prefix.iter().zip(window).all(|(expected, actual)| {
                 let expected_text = &old[expected.range.clone()];
                 let actual_text = &text[actual.range.clone()];

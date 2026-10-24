@@ -3,6 +3,9 @@
 mod editing;
 pub(super) mod lex;
 mod model;
+mod nested;
+mod scopes;
+mod unions;
 mod visual;
 
 use std::sync::Arc;
@@ -10,10 +13,11 @@ use std::sync::Arc;
 use crate::project::metadata_edit::{EditPlan, snapshot};
 
 pub use model::{Clause, ClauseKind, Item, Model, Statement, Unavailable};
+pub use scopes::{QueryScope, Union};
 pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
 
 /// A selection is valid only with the exact constructor revision that supplied its indices.
-#[derive(Clone, Copy, Debug, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Selection {
     pub statement: usize,
@@ -44,6 +48,18 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    AddUnion {
+        statement: usize,
+        all: bool,
+    },
+    SetUnion {
+        statement: usize,
+        all: bool,
+    },
+    RemoveUnion {
+        statement: usize,
+        comments: Option<CommentDecision>,
+    },
     AppendFields {
         statement: usize,
         fields: Vec<String>,
@@ -72,6 +88,24 @@ pub enum Action {
         selection: Selection,
         to: usize,
     },
+}
+
+impl Action {
+    /// Every intention addresses one branch of the revision that supplied its indices.
+    #[must_use]
+    pub const fn statement(&self) -> usize {
+        match self {
+            Self::AddUnion { statement, .. }
+            | Self::SetUnion { statement, .. }
+            | Self::RemoveUnion { statement, .. }
+            | Self::AppendFields { statement, .. }
+            | Self::Compose { statement, .. }
+            | Self::Append { statement, .. } => *statement,
+            Self::Replace { selection, .. }
+            | Self::Remove { selection, .. }
+            | Self::Move { selection, .. } => selection.statement,
+        }
+    }
 }
 
 /// Constructor failures are stable domain categories, with no localized text or native editor types.
@@ -160,6 +194,12 @@ impl Constructor {
         if expected != self.revision {
             return Err(Error::StaleRevision);
         }
+        if let Some(plan) = unions::plan(&self.working, &self.model, action)? {
+            let model = Model::parse(plan.output())?;
+            unions::check_shape(&self.model, &model, action)?;
+            self.accept(&plan, model)?;
+            return Ok(plan);
+        }
         if let Action::AppendFields { statement, fields } = action {
             if fields.len() > 512 {
                 return Err(Error::TooLarge);
@@ -194,6 +234,34 @@ impl Constructor {
             *self = staged;
             return Ok(plan);
         }
+        if let Some(actions) = unions::field_actions(&self.working, &self.model, action)? {
+            let mut replacements = Vec::new();
+            for intention in &actions {
+                replacements.extend(
+                    self.plan_action(intention)?
+                        .0
+                        .replacements()
+                        .iter()
+                        .cloned(),
+                );
+            }
+            replacements.sort_by_key(|edit| edit.range.start);
+            let plan = EditPlan::from_replacements(&self.working, replacements)
+                .map_err(|_| Error::InvalidExpression)?;
+            let model = Model::parse(plan.output())?;
+            check_shape(&self.model, &model, action)?;
+            self.accept(&plan, model)?;
+            return Ok(plan);
+        }
+        let (plan, lowered) = self.plan_action(action)?;
+        let model = Model::parse(plan.output())?;
+        check_shape(&self.model, &model, &lowered)?;
+        self.accept(&plan, model)?;
+        Ok(plan)
+    }
+
+    /// Lower one intention without mutating text, so independent UNION-column edits can be published atomically.
+    fn plan_action(&self, action: &Action) -> Result<(EditPlan, Action), Error> {
         let original_action = action;
         let composed;
         let action = if let Action::Compose {
@@ -213,19 +281,27 @@ impl Constructor {
         } else {
             action
         };
-        let plan = editing::plan(&self.working, &self.model, action)?;
+        let plan = if let Some(plan) = nested::plan(&self.working, &self.model, original_action)? {
+            plan
+        } else {
+            editing::plan(&self.working, &self.model, action)?
+        };
         let plan = visual::augment(&self.working, &self.model, original_action, plan)?;
+        let plan = nested::output_plan(&self.working, &self.model, original_action, plan)?;
+        Ok((plan, action.clone()))
+    }
+
+    /// All multi-part operations share one checked publication and one revision increment.
+    fn accept(&mut self, plan: &EditPlan, model: Model) -> Result<(), Error> {
         if plan.output().len() > super::MAX_SNAPSHOT_BYTES {
             return Err(Error::TooLarge);
         }
         if !plan.is_empty() {
-            let model = Model::parse(plan.output())?;
-            check_shape(&self.model, &model, action)?;
             self.revision = self.revision.checked_add(1).ok_or(Error::TooLarge)?;
             self.working = Arc::from(plan.output());
             self.model = Arc::new(model);
         }
-        Ok(plan)
+        Ok(())
     }
 
     /// Final application changes the same draft through one minimal plan; a no-op is byte-exact.
@@ -233,6 +309,9 @@ impl Constructor {
     /// # Errors
     /// Rejects an invalid internal text boundary without granting any source-write authority.
     pub fn finish(&self) -> Result<EditPlan, Error> {
+        if self.original != self.working && !self.model.union_mismatches(&self.working).is_empty() {
+            return Err(Error::InvalidExpression);
+        }
         super::minimal_text_plan(&self.original, &self.working)
             .map_err(|_| Error::InvalidExpression)
     }
@@ -241,7 +320,10 @@ impl Constructor {
 /// Token edits cannot accidentally merge or hide a neighboring clause while still forming a superficially valid SELECT.
 fn check_shape(before: &Model, after: &Model, action: &Action) -> Result<(), Error> {
     let statement = match action {
-        Action::Append { statement, .. }
+        Action::AddUnion { statement, .. }
+        | Action::SetUnion { statement, .. }
+        | Action::RemoveUnion { statement, .. }
+        | Action::Append { statement, .. }
         | Action::Compose { statement, .. }
         | Action::AppendFields { statement, .. } => *statement,
         Action::Replace { selection, .. }
@@ -256,7 +338,20 @@ fn check_shape(before: &Model, after: &Model, action: &Action) -> Result<(), Err
         .statements
         .get(statement)
         .ok_or(Error::InvalidExpression)?;
-    if before.statements.len() != after.statements.len() || new.unavailable.is_some() {
+    if before
+        .scopes
+        .iter()
+        .filter(|scope| scope.parent.is_none())
+        .count()
+        != after
+            .scopes
+            .iter()
+            .filter(|scope| scope.parent.is_none())
+            .count()
+        || old.scope != new.scope
+        || old.branch != new.branch
+        || new.unavailable.is_some()
+    {
         return Err(Error::InvalidExpression);
     }
     let mut expected: Vec<_> = old.clauses.iter().map(|clause| clause.kind).collect();

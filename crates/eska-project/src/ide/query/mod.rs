@@ -90,7 +90,7 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
         return 0;
     }
     if method == "query/constructorCatalog" {
-        return if args["query"]["virtualTables"] == true {
+        return if args["query"]["virtualTables"] == true || !args["query"]["source"].is_null() {
             23
         } else {
             22
@@ -98,8 +98,14 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
     }
     if method == "query/constructorAction" {
         if matches!(
+            args["action"]["kind"].as_str(),
+            Some("addUnion" | "setUnion" | "removeUnion")
+        ) {
+            return 23;
+        }
+        if matches!(
             args["action"]["expression"]["kind"].as_str(),
-            Some("virtualSource" | "virtualJoin")
+            Some("virtualSource" | "virtualJoin" | "subquerySource" | "subqueryJoin")
         ) {
             return 23;
         }

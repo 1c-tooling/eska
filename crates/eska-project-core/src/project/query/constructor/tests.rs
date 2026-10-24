@@ -1,5 +1,7 @@
 use super::*;
 
+mod nested;
+mod unions;
 mod virtuals;
 
 /// Implicit source names retain complete qualification; nested property names are not aliases to another source.

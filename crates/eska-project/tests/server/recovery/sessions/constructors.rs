@@ -2,6 +2,69 @@ use super::*;
 
 const DRAFT: &str = "SELECT A, // keep 😀\n B FROM T;\nDESTROY Temp";
 
+/// Every scope and source selector belongs to one revision; nested and UNION editing remain private until explicit finish.
+#[test]
+fn nested_and_union_rpc_share_revision_bound_sources_and_aligned_columns() {
+    for locale in ["en-US", "ru-RU"] {
+        let (_directory, root, private) = source_fixture();
+        let mut client = Client::new(&root, locale);
+        let binding = source_connect_version(&mut client, &root, &private, locale, 23);
+        let state = open_source(&mut client, &binding, XML, false);
+        let opened = client.request(
+            "query/constructorOpen",
+            &source_args(
+                &binding,
+                json!({"querySessionId":state["querySessionId"],"revision":state["revision"]}),
+            ),
+        );
+        let nested = client.request("query/constructorAction", &constructor_args(&binding, &opened,
+            json!({"action":{"kind":"compose","statement":0,"selection":null,"expression":{"kind":"subquerySource","alias":"Q"}}})));
+        assert_eq!(nested["constructor"]["scopes"].as_array().unwrap().len(), 2);
+        let fields = client.request(
+            "query/constructorCatalog",
+            &constructor_args(
+                &binding,
+                &nested,
+                json!({"query":{"source":{"statement":0,"clause":1,"item":0},"qualifier":"Q"}}),
+            ),
+        );
+        assert_eq!(fields["catalog"]["fields"][0]["english"], "Q.Value");
+        let selected = client.request("query/constructorAction", &constructor_args(&binding, &nested,
+            json!({"action":{"kind":"compose","statement":0,"selection":null,"expression":{"kind":"field","expression":"Q.Value","alias":"Bound","aggregate":null}}})));
+        let renamed = client.request("query/constructorAction", &constructor_args(&binding, &selected,
+            json!({"action":{"kind":"replace","selection":{"statement":1,"clause":0,"item":0},"text":"1 AS Updated"}})));
+        assert!(
+            renamed["constructor"]["text"]
+                .as_str()
+                .unwrap()
+                .contains("Q.Updated AS Bound")
+        );
+        let union = client.request(
+            "query/constructorAction",
+            &constructor_args(
+                &binding,
+                &renamed,
+                json!({"action":{"kind":"addUnion","statement":1,"all":true}}),
+            ),
+        );
+        assert_eq!(union["constructor"]["scopes"][1]["branches"], json!([1, 2]));
+        let changed = client.request("query/constructorAction", &constructor_args(&binding, &union,
+            json!({"action":{"kind":"compose","statement":2,"selection":null,"expression":{"kind":"field","expression":"9","alias":"Extra","aggregate":null}}})));
+        assert!(
+            changed["constructor"]["text"]
+                .as_str()
+                .unwrap()
+                .contains("NULL AS Extra")
+        );
+        assert_eq!(changed["constructor"]["issues"], json!([]));
+        assert_eq!(source_parts(&mut client, &binding, &changed)[3], "SELECT 1");
+        assert_eq!(
+            fs::read_to_string(root.join("src").join(SOURCE)).unwrap(),
+            XML
+        );
+    }
+}
+
 /// Virtual-table calls are portable structured actions; older clients retain their previous bounded contract.
 #[test]
 fn virtual_table_rpc_is_negotiated_and_never_mutates_the_canonical_draft() {

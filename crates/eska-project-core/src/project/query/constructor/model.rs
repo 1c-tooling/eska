@@ -100,13 +100,19 @@ pub struct Statement {
     pub russian: bool,
     pub unavailable: Option<Unavailable>,
     pub clauses: Vec<Clause>,
+    pub scope: usize,
+    pub branch: usize,
+    pub nested: bool,
+    pub result: bool,
 }
 
 impl Statement {
     /// Inserting a JOIN requires a main source; opaque syntax never grants permission for a partial rewrite.
     #[must_use]
     pub fn append_unavailable(&self, kind: ClauseKind) -> Option<Error> {
-        if self.unavailable.is_some() {
+        if self.unavailable.is_some()
+            || (kind == ClauseKind::Order && (self.nested || !self.result))
+        {
             Some(Error::Unsupported)
         } else if kind == ClauseKind::Joins
             && !self
@@ -125,9 +131,73 @@ impl Statement {
 #[derive(Clone, Debug)]
 pub struct Model {
     pub statements: Vec<Statement>,
+    pub scopes: Vec<super::QueryScope>,
 }
 
 impl Model {
+    /// Composite definitions need a scope-aware adapter; an older conservative view remains opaque.
+    #[must_use]
+    pub fn requires_scopes(&self, index: usize) -> bool {
+        self.statements.get(index).is_some_and(|statement| {
+            statement.nested
+                || self.scopes[statement.scope].branches.len() > 1
+                || self.scopes.iter().any(|scope| scope.parent == Some(index))
+        })
+    }
+
+    /// Known explicit projection counts must agree before a changed UNION can be published.
+    #[must_use]
+    pub fn union_mismatches(&self, input: &str) -> Vec<usize> {
+        self.scopes
+            .iter()
+            .enumerate()
+            .filter_map(|(index, scope)| {
+                if scope.branches.len() < 2 {
+                    return None;
+                }
+                let counts: Option<Vec<_>> = scope
+                    .branches
+                    .iter()
+                    .map(|&branch| {
+                        let fields = self.statements[branch]
+                            .clauses
+                            .iter()
+                            .find(|clause| clause.kind == ClauseKind::Fields)?;
+                        if fields
+                            .items
+                            .iter()
+                            .any(|item| item.wildcard_source(input, fields).is_some())
+                        {
+                            None
+                        } else {
+                            Some(fields.items.len())
+                        }
+                    })
+                    .collect();
+                counts
+                    .filter(|counts| counts.windows(2).any(|pair| pair[0] != pair[1]))
+                    .map(|_| index)
+            })
+            .collect()
+    }
+
+    /// Resolve a derived source only through the selected revision's item range and direct parent relationship.
+    #[must_use]
+    pub fn source_scope(&self, selection: super::Selection) -> Option<usize> {
+        let item = self
+            .statements
+            .get(selection.statement)?
+            .clauses
+            .get(selection.clause)?
+            .items
+            .get(selection.item)?;
+        self.scopes.iter().position(|scope| {
+            scope.parent == Some(selection.statement)
+                && scope.range.start >= item.range.start
+                && scope.range.end <= item.range.end
+        })
+    }
+
     /// Malformed or unknown statements remain readable; resource exhaustion is an explicit bounded error.
     pub(super) fn parse(input: &str) -> Result<Self, Error> {
         let tokens = match lex::tokens(input) {
@@ -135,37 +205,33 @@ impl Model {
             Err(Error::InvalidSyntax) => {
                 return Ok(Self {
                     statements: vec![opaque(0..input.len(), Unavailable::InvalidSyntax)],
+                    scopes: vec![super::QueryScope {
+                        range: 0..input.len(),
+                        parent: None,
+                        branches: vec![0],
+                        unions: Vec::new(),
+                        tail: input.len(),
+                    }],
                 });
             }
             Err(error) => return Err(error),
         };
-        let mut statements = Vec::new();
-        let mut start = 0;
-        let mut token_start = 0;
-        for (index, end) in tokens
-            .iter()
-            .enumerate()
-            .filter(|(_, token)| token.depth == 0 && token.kind == Kind::Symbol(';'))
-            .map(|(index, token)| (index, token.range.start))
-            .chain([(tokens.len(), input.len())])
-        {
-            let content: Vec<_> = tokens[token_start..index].iter().collect();
-            if content.iter().any(|token| token.kind != Kind::Comment) {
-                if statements.len() == 256 {
-                    return Err(Error::TooLarge);
-                }
-                statements.push(parse_statement(input, start..end, &content));
-            }
-            token_start = index.saturating_add(1);
-            start = end.saturating_add(1);
-        }
-        Ok(Self { statements })
+        super::scopes::parse(input, &tokens)
     }
 
     /// Include nested allocations in the shared query budget, without duplicating source strings.
     #[must_use]
     pub fn retained_bytes(&self) -> usize {
         std::mem::size_of_val(self.statements.as_slice())
+            + std::mem::size_of_val(self.scopes.as_slice())
+            + self
+                .scopes
+                .iter()
+                .map(|scope| {
+                    std::mem::size_of_val(scope.branches.as_slice())
+                        + std::mem::size_of_val(scope.unions.as_slice())
+                })
+                .sum::<usize>()
             + self
                 .statements
                 .iter()
@@ -190,21 +256,30 @@ impl Model {
 }
 
 /// An opaque node is still available for exact no-op round trips and text-mode editing after cancellation.
-const fn opaque(range: Range<usize>, reason: Unavailable) -> Statement {
+pub(super) const fn opaque(range: Range<usize>, reason: Unavailable) -> Statement {
     Statement {
         range,
         russian: false,
         unavailable: Some(reason),
         clauses: Vec::new(),
+        scope: 0,
+        branch: 0,
+        nested: false,
+        result: true,
     }
 }
 
 /// Reject package operators and extensions before exposing editable clause boundaries.
-fn parse_statement(input: &str, range: Range<usize>, tokens: &[&Token]) -> Statement {
+pub(super) fn parse_statement(
+    input: &str,
+    range: Range<usize>,
+    tokens: &[&Token],
+    depth: u16,
+) -> Statement {
     let top: Vec<_> = tokens
         .iter()
         .copied()
-        .filter(|token| token.depth == 0 && token.kind != Kind::Comment)
+        .filter(|token| token.depth == depth && token.kind != Kind::Comment)
         .collect();
     let Some(first) = top.first() else {
         return opaque(range, Unavailable::UnsupportedStatement);
@@ -246,7 +321,7 @@ fn parse_statement(input: &str, range: Range<usize>, tokens: &[&Token]) -> State
     let mut clauses = Vec::new();
     for (index, &(kind, start, body)) in headers.iter().enumerate() {
         let end = headers.get(index + 1).map_or(range.end, |header| header.1);
-        let clause = clause(input, kind, start..end, body..end, tokens);
+        let clause = clause(input, kind, start..end, body..end, tokens, depth);
         if clause.items.is_empty() {
             return opaque(range, Unavailable::InvalidSyntax);
         }
@@ -257,6 +332,10 @@ fn parse_statement(input: &str, range: Range<usize>, tokens: &[&Token]) -> State
         russian,
         unavailable: None,
         clauses,
+        scope: 0,
+        branch: 0,
+        nested: false,
+        result: true,
     }
 }
 
@@ -396,6 +475,7 @@ fn clause(
     range: Range<usize>,
     body: Range<usize>,
     tokens: &[&Token],
+    depth: u16,
 ) -> Clause {
     let comments: Vec<_> = tokens
         .iter()
@@ -413,7 +493,7 @@ fn clause(
         .filter(|token| {
             token.range.start >= body.start
                 && token.range.end <= body.end
-                && token.depth == 0
+                && token.depth == depth
                 && ((!matches!(kind, ClauseKind::Conditions | ClauseKind::Joins)
                     && token.kind == Kind::Symbol(','))
                     || (kind == ClauseKind::Conditions && token.keyword(input, &["AND", "И"])))

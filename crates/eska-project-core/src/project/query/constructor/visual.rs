@@ -1,7 +1,7 @@
 //! Structured controls share one formatter and conservative projection across IDEs.
 
 mod edits;
-pub(super) use edits::augment;
+pub(super) use edits::{augment, path_references, source_prefixes};
 
 use super::{
     Action, Clause, ClauseKind, Error, Item, JoinKind, Model, Selection,
@@ -38,6 +38,16 @@ pub enum Comparison {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Expression {
+    SubquerySource {
+        alias: String,
+    },
+    SubqueryJoin {
+        alias: String,
+        join: JoinKind,
+        left: String,
+        comparison: Comparison,
+        right: String,
+    },
     VirtualSource {
         table: String,
         alias: String,
@@ -90,15 +100,22 @@ pub struct SourceBinding {
     pub alias: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parameters: Option<Vec<String>>,
+    pub clause: usize,
+    pub item: usize,
+    pub derived: bool,
 }
 
 impl Expression {
     /// The expression type determines its destination clause.
     const fn clause(&self) -> ClauseKind {
         match self {
-            Self::Source { .. } | Self::VirtualSource { .. } => ClauseKind::Sources,
+            Self::Source { .. } | Self::VirtualSource { .. } | Self::SubquerySource { .. } => {
+                ClauseKind::Sources
+            }
             Self::Field { .. } => ClauseKind::Fields,
-            Self::Join { .. } | Self::VirtualJoin { .. } => ClauseKind::Joins,
+            Self::Join { .. } | Self::VirtualJoin { .. } | Self::SubqueryJoin { .. } => {
+                ClauseKind::Joins
+            }
             Self::Condition { .. } => ClauseKind::Conditions,
             Self::Group { .. } => ClauseKind::Group,
             Self::Order { .. } => ClauseKind::Order,
@@ -106,9 +123,12 @@ impl Expression {
     }
 
     /// Generate only the requested fragment; the lossless editor still validates boundaries and owns comments.
-    fn text(&self, russian: bool) -> Result<String, Error> {
+    pub(super) fn text(&self, russian: bool) -> Result<String, Error> {
         let complete = match self {
-            Self::VirtualSource { .. } | Self::VirtualJoin { .. } => {
+            Self::VirtualSource { .. }
+            | Self::VirtualJoin { .. }
+            | Self::SubquerySource { .. }
+            | Self::SubqueryJoin { .. } => {
                 return Err(Error::InvalidExpression);
             }
             Self::Source { table, .. } => !table.trim().is_empty(),
@@ -136,7 +156,10 @@ impl Expression {
             ))
         };
         Ok(match self {
-            Self::VirtualSource { .. } | Self::VirtualJoin { .. } => {
+            Self::VirtualSource { .. }
+            | Self::VirtualJoin { .. }
+            | Self::SubquerySource { .. }
+            | Self::SubqueryJoin { .. } => {
                 return Err(Error::InvalidExpression);
             }
             Self::Source { table, alias } => with_alias(table, alias)?,
@@ -195,7 +218,7 @@ impl Expression {
 
 impl Aggregate {
     /// Function spelling follows the selected statement rather than the editor locale.
-    const fn keyword(self, russian: bool) -> &'static str {
+    pub(super) const fn keyword(self, russian: bool) -> &'static str {
         match (self, russian) {
             (Self::Sum, true) => "СУММА",
             (Self::Sum, false) => "SUM",
@@ -247,8 +270,31 @@ impl Comparison {
 }
 
 /// Parameter inputs become one checked source fragment before the ordinary lossless operation is planned.
-fn normalize_virtual(expression: &Expression) -> Result<Option<Expression>, Error> {
+fn normalize_virtual(expression: &Expression, russian: bool) -> Result<Option<Expression>, Error> {
+    let nested = if russian {
+        "(ВЫБРАТЬ 1 КАК Значение)"
+    } else {
+        "(SELECT 1 AS Value)"
+    };
     Ok(match expression {
+        Expression::SubquerySource { alias } => Some(Expression::Source {
+            table: nested.into(),
+            alias: alias.clone(),
+        }),
+        Expression::SubqueryJoin {
+            alias,
+            join,
+            left,
+            comparison,
+            right,
+        } => Some(Expression::Join {
+            table: nested.into(),
+            alias: alias.clone(),
+            join: *join,
+            left: left.clone(),
+            comparison: *comparison,
+            right: right.clone(),
+        }),
         Expression::VirtualSource {
             table,
             alias,
@@ -286,25 +332,33 @@ pub(super) fn compose(
     expression: &Expression,
 ) -> Result<Action, Error> {
     let requested = expression;
-    let normalized = normalize_virtual(expression)?;
-    let expression = normalized.as_ref().unwrap_or(expression);
     let owner = model
         .statements
         .get(statement)
         .ok_or(Error::InvalidSelection)?;
+    let normalized = normalize_virtual(expression, owner.russian)?;
+    let expression = normalized.as_ref().unwrap_or(expression);
     let automatic;
     let expression = if let Expression::Source { table, alias }
     | Expression::Join { table, alias, .. } = expression
         && alias.is_empty()
         && selection.is_none()
     {
-        let name = table
-            .split('(')
-            .next()
-            .unwrap_or(table)
-            .rsplit('.')
-            .next()
-            .ok_or(Error::InvalidExpression)?;
+        let name = if table.starts_with('(') {
+            if owner.russian {
+                "ВложенныйЗапрос"
+            } else {
+                "NestedQuery"
+            }
+        } else {
+            table
+                .split('(')
+                .next()
+                .unwrap_or(table)
+                .rsplit('.')
+                .next()
+                .ok_or(Error::InvalidExpression)?
+        };
         identifier(name)?;
         let bindings = owner.source_bindings(input);
         let mut alias = name.to_owned();
@@ -380,6 +434,78 @@ pub(super) fn compose(
 }
 
 impl Item {
+    /// A result-column name is proven only by an explicit alias or a qualified identifier.
+    #[must_use]
+    pub fn output_name(&self, input: &str, clause: &Clause) -> Option<String> {
+        let Expression::Field {
+            expression, alias, ..
+        } = self.visual(input, clause)?
+        else {
+            return None;
+        };
+        if !alias.is_empty() {
+            return Some(alias);
+        }
+        let tokens = lex::tokens(&expression).ok()?;
+        if tokens.is_empty()
+            || tokens.len() % 2 == 0
+            || tokens.iter().enumerate().any(|(index, token)| {
+                token.kind
+                    != if index % 2 == 0 {
+                        Kind::Word
+                    } else {
+                        Kind::Symbol('.')
+                    }
+            })
+        {
+            return None;
+        }
+        Some(expression[tokens.last()?.range.clone()].to_owned())
+    }
+
+    /// Wildcard expansion belongs to ESKA metadata resolution, including qualified source wildcards.
+    #[must_use]
+    pub fn wildcard_source(&self, input: &str, clause: &Clause) -> Option<Option<String>> {
+        let Expression::Field {
+            expression,
+            alias,
+            aggregate: None,
+        } = self.visual(input, clause)?
+        else {
+            return None;
+        };
+        if !alias.is_empty() {
+            return None;
+        }
+        let tokens = lex::tokens(&expression).ok()?;
+        if tokens.last()?.kind != Kind::Symbol('*') {
+            return None;
+        }
+        if tokens.len() == 1 {
+            return Some(None);
+        }
+        if tokens.len() % 2 == 0
+            || tokens[..tokens.len() - 1]
+                .iter()
+                .enumerate()
+                .any(|(index, token)| {
+                    token.kind
+                        != if index % 2 == 0 {
+                            Kind::Word
+                        } else {
+                            Kind::Symbol('.')
+                        }
+                })
+        {
+            return None;
+        }
+        Some(Some(
+            expression[..tokens[tokens.len() - 2].range.start]
+                .trim()
+                .to_owned(),
+        ))
+    }
+
     /// Only recognized row components populate structured controls; unknown syntax stays in expression mode.
     #[must_use]
     pub fn visual(&self, input: &str, clause: &Clause) -> Option<Expression> {
@@ -395,6 +521,11 @@ impl Item {
                 })
             }
             ClauseKind::Sources => {
+                if let Some(source) = super::nested::source(&text) {
+                    return Some(Expression::SubquerySource {
+                        alias: source.alias,
+                    });
+                }
                 let (table, alias) = split_alias(&text)?;
                 Some(
                     if let Some((name, parameters)) =
@@ -434,54 +565,67 @@ impl Item {
                 })
             }
             ClauseKind::Joins => {
-                let tokens = lex::tokens(&text).ok()?;
-                let on = tokens
-                    .iter()
-                    .find(|token| token.depth == 0 && token.keyword(&text, &["ON", "ПО"]))?;
-                let (table, alias) = split_alias(text[..on.range.start].trim())?;
-                let (left, comparison, right) = comparison(text[on.range.end..].trim())?;
-                let header = &input[clause.range.start..clause.body.start];
-                let tokens = lex::tokens(header).ok()?;
-                let join = if tokens
-                    .iter()
-                    .any(|token| token.keyword(header, &["LEFT", "ЛЕВОЕ"]))
-                {
-                    JoinKind::Left
-                } else if tokens
-                    .iter()
-                    .any(|token| token.keyword(header, &["RIGHT", "ПРАВОЕ"]))
-                {
-                    JoinKind::Right
-                } else if tokens
-                    .iter()
-                    .any(|token| token.keyword(header, &["FULL", "ПОЛНОЕ"]))
-                {
-                    JoinKind::Full
-                } else {
-                    JoinKind::Inner
-                };
-                if let Some((name, parameters)) = super::super::virtual_tables::split_call(&table) {
-                    return Some(Expression::VirtualJoin {
-                        table: name.to_owned(),
-                        alias,
-                        parameters,
-                        join,
-                        left,
-                        comparison,
-                        right,
-                    });
-                }
-                Some(Expression::Join {
-                    table,
-                    alias,
-                    join,
-                    left,
-                    comparison,
-                    right,
-                })
+                join_projection(&text, &input[clause.range.start..clause.body.start])
             }
         }
     }
+}
+
+/// JOIN projections share the same header and source parsing for physical, virtual and nested tables.
+fn join_projection(text: &str, header: &str) -> Option<Expression> {
+    let tokens = lex::tokens(text).ok()?;
+    let on = tokens
+        .iter()
+        .find(|token| token.depth == 0 && token.keyword(text, &["ON", "ПО"]))?;
+    let (table, alias) = split_alias(text[..on.range.start].trim())?;
+    let (left, comparison, right) = comparison(text[on.range.end..].trim())?;
+    let tokens = lex::tokens(header).ok()?;
+    let join = if tokens
+        .iter()
+        .any(|token| token.keyword(header, &["LEFT", "ЛЕВОЕ"]))
+    {
+        JoinKind::Left
+    } else if tokens
+        .iter()
+        .any(|token| token.keyword(header, &["RIGHT", "ПРАВОЕ"]))
+    {
+        JoinKind::Right
+    } else if tokens
+        .iter()
+        .any(|token| token.keyword(header, &["FULL", "ПОЛНОЕ"]))
+    {
+        JoinKind::Full
+    } else {
+        JoinKind::Inner
+    };
+    if let Some(source) = super::nested::source(text) {
+        return Some(Expression::SubqueryJoin {
+            alias: source.alias,
+            join,
+            left,
+            comparison,
+            right,
+        });
+    }
+    if let Some((name, parameters)) = super::super::virtual_tables::split_call(&table) {
+        return Some(Expression::VirtualJoin {
+            table: name.to_owned(),
+            alias,
+            parameters,
+            join,
+            left,
+            comparison,
+            right,
+        });
+    }
+    Some(Expression::Join {
+        table,
+        alias,
+        join,
+        left,
+        comparison,
+        right,
+    })
 }
 
 impl super::Statement {
@@ -490,10 +634,27 @@ impl super::Statement {
     pub fn source_bindings(&self, input: &str) -> Vec<SourceBinding> {
         self.clauses
             .iter()
-            .filter(|clause| matches!(clause.kind, ClauseKind::Sources | ClauseKind::Joins))
-            .flat_map(|clause| &clause.items)
-            .filter_map(|item| {
+            .enumerate()
+            .filter(|(_, clause)| matches!(clause.kind, ClauseKind::Sources | ClauseKind::Joins))
+            .flat_map(|(clause, value)| {
+                value
+                    .items
+                    .iter()
+                    .enumerate()
+                    .map(move |(item, value)| (clause, item, value))
+            })
+            .filter_map(|(clause, index, item)| {
                 let expression = item.expression(input);
+                if let Some(source) = super::nested::source(&expression) {
+                    return Some(SourceBinding {
+                        table: source.alias.clone(),
+                        alias: source.alias,
+                        parameters: None,
+                        clause,
+                        item: index,
+                        derived: true,
+                    });
+                }
                 if expression.len() > 16_384 {
                     return None;
                 }
@@ -517,6 +678,9 @@ impl super::Statement {
                     table,
                     alias,
                     parameters,
+                    clause,
+                    item: index,
+                    derived: false,
                 })
             })
             .collect()
@@ -524,7 +688,7 @@ impl super::Statement {
 }
 
 /// Alias inputs cannot introduce another expression, qualification or whitespace.
-fn identifier(value: &str) -> Result<(), Error> {
+pub(super) fn identifier(value: &str) -> Result<(), Error> {
     let mut chars = value.chars();
     if !chars
         .next()

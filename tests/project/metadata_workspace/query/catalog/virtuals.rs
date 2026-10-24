@@ -1,5 +1,31 @@
 use super::*;
 
+/// A derived table exposes its own first projection and expands qualified wildcards using the same application metadata.
+#[test]
+fn nested_catalog_projects_aliases_and_wildcards_without_client_parsing() {
+    use crate::backend::project::query::constructor::{Constructor, Selection};
+    let (_directory, workspace, _, _) = setup();
+    let constructor = Constructor::new("SELECT Q.Ref FROM (SELECT I.*, I.ИНН AS Tax FROM Catalog.Контрагенты AS I UNION ALL SELECT X.*, X.ИНН AS Other FROM Catalog.Контрагенты AS X) AS Q".into()).unwrap();
+    let page = workspace.projects()[0]
+        .query_constructor_catalog(
+            &constructor,
+            None,
+            &QueryCatalogRequest {
+                source: Some(Selection {
+                    statement: 0,
+                    clause: 1,
+                    item: 0,
+                }),
+                qualifier: Some("Q".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert!(page.fields.iter().any(|field| field.english == "Q.Ref"));
+    assert!(page.fields.iter().any(|field| field.english == "Q.Tax"));
+    assert!(!page.fields.iter().any(|field| field.english == "Q.Other"));
+}
+
 /// Virtual choices depend on the register type and period setting rather than a universal client inventory.
 #[test]
 fn virtual_catalog_uses_real_register_availability_resources_and_parameter_positions() {

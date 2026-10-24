@@ -59,6 +59,10 @@ pub(super) fn capability(visual: bool, advanced: bool) -> Value {
     }
     if advanced {
         result["virtualTables"] = json!(true);
+        result["nestedQueries"] = json!(true);
+        result["unions"] = json!(true);
+        result["maxScopes"] = json!(256);
+        result["maxNesting"] = json!(32);
     }
     result
 }
@@ -93,7 +97,7 @@ impl State {
             return Err(failure("stale_draft"));
         }
         let catalog = project
-            .query_catalog(entry.core.application(), &input.query)
+            .query_constructor_catalog(constructor, entry.core.application(), &input.query)
             .map_err(session_error)?;
         if catalog.context_fingerprint != entry.core.context_fingerprint() {
             return Err(failure("context_changed"));
@@ -173,7 +177,7 @@ impl State {
             return Ok(output);
         }
         let mut core = entry.core.clone();
-        let (id, plan, released) = transition(&mut core, method, args)?;
+        let (id, plan, released) = transition(&mut core, method, args, advanced)?;
         self.admit_change(entry.core.retained_bytes(), core.retained_bytes())?;
         let view = id
             .as_deref()
@@ -249,6 +253,7 @@ fn transition(
     core: &mut eska_project_core::project::metadata_workspace::QuerySession,
     method: &str,
     args: &Value,
+    advanced: bool,
 ) -> Result<Transition, Value> {
     #[derive(Deserialize)]
     struct Revision {
@@ -279,6 +284,15 @@ fn transition(
     match method {
         "query/constructorAction" => {
             let input: Operation = params::decode(args)?;
+            if !advanced
+                && core
+                    .constructor(id)
+                    .map_err(session_error)?
+                    .model()
+                    .requires_scopes(input.action.statement())
+            {
+                return Err(failure("constructor_unsupported"));
+            }
             let text = match &input.action {
                 Action::Append { text, .. } | Action::Replace { text, .. } => Some(text),
                 _ => None,
@@ -331,7 +345,7 @@ fn model(value: &Constructor, id: &str, writable: bool, advanced: bool) -> Resul
             let items: Vec<_> = clause.items.iter().enumerate().map(|(index, item)| {
                 let expression = item.expression(input);
                 let too_large = expression.len() > MAX_EXPRESSION;
-                let visual = item.visual(input, clause).filter(|value| advanced || !matches!(value, eska_project_core::project::query::constructor::Expression::VirtualSource { .. } | eska_project_core::project::query::constructor::Expression::VirtualJoin { .. }));
+                let visual = item.visual(input, clause).filter(|value| advanced || !matches!(value, eska_project_core::project::query::constructor::Expression::VirtualSource { .. } | eska_project_core::project::query::constructor::Expression::VirtualJoin { .. } | eska_project_core::project::query::constructor::Expression::SubquerySource { .. } | eska_project_core::project::query::constructor::Expression::SubqueryJoin { .. }));
                 json!({"index":index,"range":dto::bytes(&item.range),"preview":preview(&input[item.range.clone()]),"visual":if too_large {None} else {visual},
                     "expression":if too_large {None} else {Some(expression)},"comments":item.comments.len(),
                     "removable":writable && (clause.items.len()>1 || !matches!(clause.kind,ClauseKind::Fields|ClauseKind::Sources)),
@@ -346,9 +360,22 @@ fn model(value: &Constructor, id: &str, writable: bool, advanced: bool) -> Resul
         }).collect();
         let append: Vec<_> = [ClauseKind::Fields, ClauseKind::Sources, ClauseKind::Joins, ClauseKind::Conditions, ClauseKind::Group, ClauseKind::Order]
             .into_iter().map(|kind| json!({"kind":kind,"unavailable":if writable {json!(statement.append_unavailable(kind))} else {json!("read_only")}})).collect();
-        json!({"index":index,"range":dto::bytes(&statement.range),"russian":statement.russian,"sources":statement.source_bindings(input),"unavailable":statement.unavailable,"preview":preview(&input[statement.range.clone()]),"clauses":clauses,"append":append})
+        let legacy_opaque = !advanced && value.model().requires_scopes(index);
+        json!({"index":index,"range":dto::bytes(&statement.range),"russian":statement.russian,"sources":statement.source_bindings(input),"scope":statement.scope,"branch":statement.branch,"result":statement.result,"nested":statement.nested,
+            "unavailable":if legacy_opaque {json!("unsupported_construct")} else {json!(statement.unavailable)},"preview":preview(&input[statement.range.clone()]),"clauses":if legacy_opaque {Vec::new()} else {clauses},"append":append})
     }).collect();
-    let output = json!({"id":id,"revision":value.revision().to_string(),"snapshot":snapshot(input),"text":input,"bytes":input.len(),"writable":writable,"statements":statements});
+    let mut output = json!({"id":id,"revision":value.revision().to_string(),"snapshot":snapshot(input),"text":input,"bytes":input.len(),"writable":writable,"statements":statements});
+    if advanced {
+        output["issues"] = json!(
+            value
+                .model()
+                .union_mismatches(input)
+                .into_iter()
+                .map(|scope| json!({"code":"union_field_count","scope":scope}))
+                .collect::<Vec<_>>()
+        );
+        output["scopes"] = json!(value.model().scopes.iter().enumerate().map(|(index, scope)| json!({"index":index,"range":dto::bytes(&scope.range),"parent":scope.parent,"branches":scope.branches,"unions":scope.unions.iter().map(|union|json!({"all":union.all.is_some()})).collect::<Vec<_>>()})).collect::<Vec<_>>());
+    }
     if serde_json::to_vec(&output)
         .map_err(|_| error(-32603))?
         .len()

@@ -2,6 +2,7 @@
 
 use std::collections::BTreeMap;
 
+mod constructor;
 mod fields;
 mod virtuals;
 
@@ -16,7 +17,7 @@ use crate::project::{
 };
 
 /// Catalog pages never require a complete descriptor walk or a language index.
-#[derive(Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct QueryCatalogRequest {
     #[serde(default)]
@@ -28,6 +29,7 @@ pub struct QueryCatalogRequest {
     pub qualifier: Option<String>,
     #[serde(default)]
     pub virtual_tables: bool,
+    pub source: Option<crate::project::query::constructor::Selection>,
 }
 
 /// Both spellings are query names, not locale-dependent identities or client-generated SQL.
@@ -63,25 +65,15 @@ pub struct QueryCatalogPage {
     pub parameters: Vec<crate::project::query::virtual_tables::Parameter>,
 }
 
-impl ProjectSession {
-    /// Resolve only selected application roots and, for field requests, the requested owner descriptor.
-    ///
-    /// # Errors
-    /// Rejects invalid selection, unavailable context and unreadable metadata instead of claiming an empty catalog.
-    pub fn query_catalog(
-        &self,
-        application: Option<&str>,
-        request: &QueryCatalogRequest,
-    ) -> Result<QueryCatalogPage, QuerySessionError> {
-        let limit = request.limit.unwrap_or(200);
+impl QueryCatalogRequest {
+    /// Apply the same bounded shape contract to physical and derived-source inspection.
+    fn validate(&self) -> Result<(), QuerySessionError> {
+        let limit = self.limit.unwrap_or(200);
         if limit == 0
             || limit > 500
-            || request.search.len() > 1024
-            || request
-                .table
-                .as_ref()
-                .is_some_and(|value| value.len() > 4096)
-            || request.qualifier.as_ref().is_some_and(|value| {
+            || self.search.len() > 1024
+            || self.table.as_ref().is_some_and(|value| value.len() > 4096)
+            || self.qualifier.as_ref().is_some_and(|value| {
                 value.len() > 1024
                     || !value.split('.').all(|part| {
                         let mut chars = part.chars();
@@ -94,6 +86,25 @@ impl ProjectSession {
         {
             return Err(QueryError::InvalidPosition.into());
         }
+        Ok(())
+    }
+}
+
+impl ProjectSession {
+    /// Resolve only selected application roots and, for field requests, the requested owner descriptor.
+    ///
+    /// # Errors
+    /// Rejects invalid selection, unavailable context and unreadable metadata instead of claiming an empty catalog.
+    pub fn query_catalog(
+        &self,
+        application: Option<&str>,
+        request: &QueryCatalogRequest,
+    ) -> Result<QueryCatalogPage, QuerySessionError> {
+        request.validate()?;
+        if request.source.is_some() {
+            return Err(QueryError::InvalidPosition.into());
+        }
+        let limit = request.limit.unwrap_or(200);
         let context = self.query_context(application)?;
         let mut choices = CatalogContents::default();
         for source in context.context.sources() {
