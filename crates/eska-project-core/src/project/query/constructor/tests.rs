@@ -1,5 +1,272 @@
 use super::*;
 
+/// Implicit source names retain complete qualification; nested property names are not aliases to another source.
+#[test]
+fn implicit_source_qualification_and_nested_properties_survive_alias_changes() {
+    let mut value =
+        constructor("SELECT Catalog.Items.Ref FROM Catalog.Items WHERE Catalog.Items.Code = &Code");
+    assert_eq!(
+        value.model().statements[0].source_bindings(value.text())[0].alias,
+        "Catalog.Items"
+    );
+    apply(
+        &mut value,
+        &Action::Compose {
+            statement: 0,
+            selection: Some(selection(1, 0)),
+            expression: Expression::Source {
+                table: "Catalog.Items".into(),
+                alias: "I".into(),
+            },
+        },
+    );
+    assert!(
+        value
+            .text()
+            .contains("SELECT I.Ref FROM Catalog.Items AS I WHERE I.Code")
+    );
+    let mut value =
+        constructor("SELECT T.Ref, P.T.Ref FROM Catalog.Items AS T, Catalog.Other AS P");
+    apply(
+        &mut value,
+        &Action::Compose {
+            statement: 0,
+            selection: Some(selection(1, 0)),
+            expression: Expression::Source {
+                table: "Catalog.Items".into(),
+                alias: "I".into(),
+            },
+        },
+    );
+    assert!(value.text().contains("SELECT I.Ref, P.T.Ref"));
+}
+
+/// Every structured page formats in the query language while retaining the same lossless source model.
+#[test]
+fn structured_pages_format_operands_aliases_aggregates_and_direction_in_both_languages() {
+    for (original, sum, condition, group, order) in [
+        (
+            "SELECT T.Amount FROM Document.Sales AS T",
+            "SUM(T.Amount) AS Total",
+            "WHERE T.Amount >= &Limit",
+            "GROUP BY T.Code",
+            "ORDER BY T.Code DESC",
+        ),
+        (
+            "ВЫБРАТЬ Т.Сумма ИЗ Документ.Продажа КАК Т",
+            "СУММА(T.Amount) КАК Total",
+            "ГДЕ T.Amount >= &Limit",
+            "СГРУППИРОВАТЬ ПО T.Code",
+            "УПОРЯДОЧИТЬ ПО T.Code УБЫВ",
+        ),
+    ] {
+        let mut value = constructor(original);
+        for expression in [
+            Expression::Field {
+                expression: "T.Amount".into(),
+                alias: "Total".into(),
+                aggregate: Some(Aggregate::Sum),
+            },
+            Expression::Condition {
+                left: "T.Amount".into(),
+                comparison: Comparison::GreaterOrEqual,
+                right: "&Limit".into(),
+            },
+            Expression::Group {
+                expression: "T.Code".into(),
+            },
+            Expression::Order {
+                expression: "T.Code".into(),
+                descending: true,
+            },
+        ] {
+            apply(
+                &mut value,
+                &Action::Compose {
+                    statement: 0,
+                    selection: None,
+                    expression,
+                },
+            );
+        }
+        for fragment in [sum, condition, group, order] {
+            assert!(
+                value.text().contains(fragment),
+                "{fragment}: {}",
+                value.text()
+            );
+        }
+    }
+}
+
+/// Failed Add All is atomic and successful Add All does not duplicate selected field expressions.
+#[test]
+fn selecting_all_fields_is_atomic_deduplicated_and_revision_checked() {
+    let mut value = constructor("SELECT T.Ref FROM Catalog.Items AS T");
+    let before = value.text().to_owned();
+    let revision = value.revision();
+    assert!(
+        value
+            .apply(
+                revision,
+                &Action::AppendFields {
+                    statement: 0,
+                    fields: vec!["T.Code".into(), "FROM Bad".into()]
+                }
+            )
+            .is_err()
+    );
+    assert_eq!(value.text(), before);
+    assert_eq!(value.revision(), revision);
+    apply(
+        &mut value,
+        &Action::AppendFields {
+            statement: 0,
+            fields: vec!["t.ref".into(), "T.Code".into(), "T.Code".into()],
+        },
+    );
+    assert_eq!(value.text().matches("T.Code").count(), 1);
+    assert_eq!(value.text().matches("T.Ref").count(), 1);
+    assert!(matches!(
+        value.apply(
+            revision,
+            &Action::AppendFields {
+                statement: 0,
+                fields: vec![]
+            }
+        ),
+        Err(Error::StaleRevision)
+    ));
+}
+
+/// Structured source renaming changes qualified references, preserving metadata paths, strings and comments.
+#[test]
+fn source_alias_renaming_preserves_comments_and_updates_only_proven_references() {
+    let mut value = constructor(
+        "SELECT T.Ref, \"T.Ref\" AS Text FROM Catalog.T AS T WHERE T.Code = &Code // T.Ref\nORDER BY T.Ref",
+    );
+    apply(
+        &mut value,
+        &Action::Compose {
+            statement: 0,
+            selection: Some(selection(1, 0)),
+            expression: Expression::Source {
+                table: "Catalog.T".into(),
+                alias: "Items".into(),
+            },
+        },
+    );
+    assert!(value.text().contains("SELECT Items.Ref, \"T.Ref\" AS Text"));
+    assert!(value.text().contains("FROM Catalog.T AS Items"));
+    assert!(value.text().contains("WHERE Items.Code"));
+    assert!(value.text().contains("// T.Ref"));
+    assert!(value.text().contains("ORDER BY Items.Ref"));
+}
+
+/// JOIN type edits retain header comments and structured metadata aliases are unique within a statement.
+#[test]
+fn structured_joins_preserve_header_comments_and_automatically_qualify_the_new_table_field() {
+    let mut value = constructor(
+        "SELECT T.Ref FROM Catalog.Items AS T LEFT /* header 😀 */ JOIN Catalog.Other AS O ON T.Ref = O.Ref",
+    );
+    apply(
+        &mut value,
+        &Action::Compose {
+            statement: 0,
+            selection: Some(selection(2, 0)),
+            expression: Expression::Join {
+                table: "Catalog.Other".into(),
+                alias: "Other".into(),
+                join: JoinKind::Right,
+                left: "T.Ref".into(),
+                comparison: Comparison::Equal,
+                right: "Ref".into(),
+            },
+        },
+    );
+    assert!(value.text().contains("RIGHT /* header 😀 */ JOIN"));
+    assert!(value.text().contains("ON T.Ref = Other.Ref"));
+    apply(
+        &mut value,
+        &Action::Compose {
+            statement: 0,
+            selection: None,
+            expression: Expression::Join {
+                table: "Catalog.Other".into(),
+                alias: String::new(),
+                join: JoinKind::Left,
+                left: "T.Ref".into(),
+                comparison: Comparison::Equal,
+                right: "Ref".into(),
+            },
+        },
+    );
+    assert!(value.text().contains("AS Other2 ON T.Ref = Other2.Ref"));
+}
+
+/// Accepting unchanged structured forms is byte-exact, even with original keyword casing and aggregate spelling.
+#[test]
+fn unchanged_structured_forms_and_compound_aggregate_expressions_remain_exact() {
+    let mut value =
+        constructor("select sum(T.Amount) as Total from Catalog.Items as T order by T.Code desc");
+    let before = value.text().to_owned();
+    for clause in 0..3 {
+        let owner = &value.model().statements[0].clauses[clause];
+        let expression = owner.items[0].visual(value.text(), owner).unwrap();
+        apply(
+            &mut value,
+            &Action::Compose {
+                statement: 0,
+                selection: Some(selection(clause, 0)),
+                expression,
+            },
+        );
+        assert_eq!(value.text(), before);
+    }
+    let value = constructor("SELECT SUM(A) + MAX(B) AS Total FROM T");
+    let clause = &value.model().statements[0].clauses[0];
+    assert!(matches!(
+        clause.items[0].visual(value.text(), clause),
+        Some(Expression::Field {
+            aggregate: None,
+            ..
+        })
+    ));
+}
+
+/// Missing operands and alias payloads cannot escape a structured control into another clause.
+#[test]
+fn structured_controls_reject_empty_operands_and_alias_injection() {
+    let mut value = constructor("SELECT T.Ref FROM Catalog.Items AS T");
+    let before = value.text().to_owned();
+    for expression in [
+        Expression::Condition {
+            left: "T.Ref".into(),
+            comparison: Comparison::Equal,
+            right: String::new(),
+        },
+        Expression::Field {
+            expression: "T.Ref".into(),
+            alias: "X FROM Bad".into(),
+            aggregate: None,
+        },
+    ] {
+        assert!(
+            value
+                .apply(
+                    value.revision(),
+                    &Action::Compose {
+                        statement: 0,
+                        selection: None,
+                        expression
+                    }
+                )
+                .is_err()
+        );
+        assert_eq!(value.text(), before);
+    }
+}
+
 /// A fresh pure-core model has no project, analyzer, editor or filesystem dependency.
 fn constructor(input: &str) -> Constructor {
     Constructor::new(Arc::from(input)).expect("bounded query model")

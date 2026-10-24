@@ -11,6 +11,9 @@ use super::{
 /// Resolve indices only against the supplied immutable model revision.
 pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<EditPlan, Error> {
     let edits = match action {
+        Action::Compose { .. } | Action::AppendFields { .. } => {
+            return Err(Error::InvalidExpression);
+        }
         Action::Append {
             statement,
             clause,
@@ -276,7 +279,7 @@ fn newline(input: &str) -> &'static str {
 }
 
 /// JOIN type is a domain choice; an adapter never constructs localized query keywords.
-const fn join_keyword(kind: JoinKind, russian: bool) -> &'static str {
+pub(super) const fn join_keyword(kind: JoinKind, russian: bool) -> &'static str {
     match (kind, russian) {
         (JoinKind::Inner, false) => "INNER JOIN",
         (JoinKind::Left, false) => "LEFT JOIN",

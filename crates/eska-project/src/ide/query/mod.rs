@@ -85,8 +85,8 @@ pub(super) fn is_constructor_method(method: &str) -> bool {
 }
 
 /// The constructor never writes the owner; only explicit finish updates its existing private draft.
-pub(super) fn constructor_capability() -> Value {
-    constructors::capability()
+pub(super) fn constructor_capability(visual: bool) -> Value {
+    constructors::capability(visual)
 }
 
 /// Shared protected-source inspection is an additive contract negotiated independently from query lifecycle.
@@ -338,6 +338,7 @@ impl Server {
                 .map_err(|failure| errors::workspace(&failure))?;
         }
         let result = match method {
+            "query/constructorCatalog" => self.queries.constructor_catalog(project, &key, args),
             "query/bufferBegin" => self.queries.begin_buffer(&key, args),
             "query/bufferAppend" => self.queries.append_buffer(&key, args),
             "query/open" => self.queries.open_document(project, &key, args),

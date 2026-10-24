@@ -1500,3 +1500,67 @@ constructor_invalid_syntax, constructor_unsupported, constructor_invalid_selecti
 constructor_invalid_expression, constructor_required_item, constructor_source_required,
 constructor_unsafe_move, constructor_comments_require_decision, stale_constructor;
 действуют прежние stale/recovery/read-only errors. UI и URI IDE в ядро не входят.
+
+
+### API 1.22: выбор метаданных и структурированные операции конструктора
+
+В `queryConstructor` для клиента 1.22 добавлены `visualExpressions=true` и
+`metadataCatalog=true`. Методы/действия 1.22 не доступны клиентам с меньшим minor;
+прежние операции 1.21 сохраняются. Формат checkpoint не меняется.
+
+`query/constructorCatalog` получает metadata context, `querySessionId`,
+`constructorId`, `constructorRevision` и `query`:
+`{search?:string,offset?:number,limit?:number,table?:string,qualifier?:string}`.
+Он проверяет текущий generation, владельца конструктора и fingerprint его
+выбранного приложения. Ответ — прежний session header и `catalog`:
+`{tables,fields,nextOffset,found,contextFingerprint,limitedContext}`.
+Действие не меняет конструктор, canonical draft, checkpoint и исходник; SDK
+не перечитывает части черновика ради выбора метаданных.
+
+Без `table` перечисляются физические таблицы объявленных источников приложения;
+`search` ищет по русскому и английскому имени без учёта регистра. Порядок
+определяется полным английским именем. `offset` по умолчанию 0, `limit` — 200,
+максимум 500; `nextOffset=null` означает конец. Элемент таблицы:
+`{name,category,russian,english,alias}`. Category — существующее имя типа
+метаданных (`Catalog`, `Document`, `InformationRegister` и т. п.), а не подпись UI.
+Одинаковые таблицы базы и включённых расширений объединяются; чужие приложения
+не участвуют. Search ограничен 1024 байтами, table — 4096.
+
+С `table` ESKA читает только соответствующий дескриптор каждого входящего
+источника. `fields` содержит `{russian,english}`; `tables` — доступные табличные
+части. Имена полей при `qualifier` уже квалифицированы backend. Qualifier — имя
+псевдонима либо полное имя источника из идентификаторов через точку, до 1024 байт.
+`found=false` отличается от ошибки чтения дескриптора. Список не объявляет
+полноту всех платформенных и виртуальных колонок: возвращаются поддержанные
+стандартные поля и реальные реквизиты, измерения и ресурсы. Корреспонденция
+бухгалтерского регистра учитывает раздельные счета и небалансовые поля Dr/Cr.
+Обычной таблице регистра нумерованные субконто не приписываются.
+
+В statement модели добавлены `russian:bool` и `sources:[{table,alias}]`. При
+неявном псевдониме alias содержит полное имя источника. В item добавлено
+`visual:null|Expression`: непризнанная либо слишком длинная строка остаётся
+доступной в прежнем expression/preview без выдуманного структурированного разбора.
+
+Новые действия `query/constructorAction`:
+
+- `compose`: `{kind:"compose",statement,selection:null|{statement,clause,item},
+  expression}`. Null добавляет элемент, selection меняет элемент того же типа.
+  Expression — tagged object с `kind`: `source` (`table,alias`), `field`
+  (`expression,alias,aggregate:null|sum|count|minimum|maximum|average`), `join`
+  (`table,alias,join,left,comparison,right`), `condition` (`left,comparison,right`),
+  `group` (`expression`) или `order` (`expression,descending:bool`). Comparison:
+  `equal,notEqual,less,lessOrEqual,greater,greaterOrEqual,like,in,inHierarchy`.
+  Ключевые слова, AS/КАК, агрегатные вызовы и направление строит ESKA в языке
+  оператора. Пустой alias нового источника получает уникальное имя. Простое имя
+  правого поля нового JOIN квалифицируется выбранным alias. Переименование
+  источника меняет доказуемые ссылки; строки, комментарии и пути метаданных
+  сохраняются. Смена типа JOIN меняет только нужные слова заголовка.
+- `appendFields`: `{kind:"appendFields",statement,fields:[string]}` — до 512
+  выражений. Добавление всего списка атомарно, выбранные неагрегатные выражения
+  повторно не добавляются. При отказе любой строки прежние текст и revision
+  остаются неизменными.
+
+Действуют прежние лимиты выражения/модели, CAS, read-only и правила комментариев.
+Ни каталог, ни визуальные операции не выполняют запрос в ИБ. Виртуальные
+параметры, UNION/INTO/TOTALS/HAVING, вложенные источники и расширения СКД не
+объявлены новым визуальным подмножеством; неизвестный текст сохраняется.

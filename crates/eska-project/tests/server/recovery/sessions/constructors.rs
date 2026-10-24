@@ -2,6 +2,76 @@ use super::*;
 
 const DRAFT: &str = "SELECT A, // keep 😀\n B FROM T;\nDESTROY Temp";
 
+/// Catalog reads and typed operations use one constructor identity and cannot advance the canonical draft before Finish.
+#[test]
+fn visual_constructor_rpc_binds_catalog_and_operations_to_the_same_revision_and_application() {
+    for locale in ["en-US", "ru-RU"] {
+        let (_directory, root, private) = source_fixture();
+        let config = root.join("src/Configuration.xml");
+        fs::write(
+            &config,
+            fs::read_to_string(&config).unwrap().replace(
+                "<CommonForm>Queries</CommonForm>",
+                "<CommonForm>Queries</CommonForm><Catalog>Items</Catalog>",
+            ),
+        )
+        .unwrap();
+        fs::create_dir(root.join("src/Catalogs")).unwrap();
+        fs::write(root.join("src/Catalogs/Items.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Catalog uuid='33333333-3333-3333-3333-333333333333'><Properties><Name>Items</Name></Properties><ChildObjects><Attribute uuid='44444444-4444-4444-4444-444444444444'><Properties><Name>Article</Name></Properties></Attribute></ChildObjects></Catalog></MetaDataObject>").unwrap();
+        let mut client = Client::new(&root, locale);
+        let binding = source_connect_version(&mut client, &root, &private, locale, 22);
+        let state = open_source(&mut client, &binding, XML, false);
+        let opened = client.request(
+            "query/constructorOpen",
+            &source_args(
+                &binding,
+                json!({"querySessionId":state["querySessionId"],"revision":state["revision"]}),
+            ),
+        );
+        let catalog = client.request(
+            "query/constructorCatalog",
+            &constructor_args(&binding, &opened, json!({"query":{"search":"Items"}})),
+        );
+        assert_eq!(catalog["catalog"]["tables"][0]["english"], "Catalog.Items");
+        let fields = client.request(
+            "query/constructorCatalog",
+            &constructor_args(
+                &binding,
+                &opened,
+                json!({"query":{"table":"Catalog.Items","qualifier":"I"}}),
+            ),
+        );
+        assert!(
+            fields["catalog"]["fields"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|field| field["english"] == "I.Article")
+        );
+        let changed = client.request("query/constructorAction", &constructor_args(&binding, &opened,
+            json!({"action":{"kind":"compose","statement":0,"selection":null,"expression":{"kind":"source","table":"Catalog.Items","alias":"I"}}})));
+        assert!(
+            changed["constructor"]["text"]
+                .as_str()
+                .unwrap()
+                .contains("FROM Catalog.Items AS I")
+        );
+        assert_eq!(source_parts(&mut client, &binding, &changed)[3], "SELECT 1");
+        let rejected = client.response(
+            "query/constructorCatalog",
+            &constructor_args(&binding, &opened, json!({"query":{}})),
+        );
+        assert_eq!(
+            rejected["error"]["data"]["details"]["reason"],
+            "stale_draft"
+        );
+        assert_eq!(
+            fs::read_to_string(root.join("src").join(SOURCE)).unwrap(),
+            XML
+        );
+    }
+}
+
 /// Constructor identities are copied from replies; the client never implements parsing or source generation.
 fn constructor_args(binding: &Value, state: &Value, extra: Value) -> Value {
     let mut value = source_args(

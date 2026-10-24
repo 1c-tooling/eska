@@ -9,6 +9,7 @@ mod editing_references;
 mod editing_values;
 mod property_reference;
 mod query;
+mod query_catalog;
 mod refresh;
 mod renaming;
 pub mod search;
@@ -47,6 +48,9 @@ use super::{
     metadata_parser::LoadError,
 };
 
+pub use query_catalog::{
+    QueryCatalogPage, QueryCatalogRequest, QueryFieldChoice, QueryTableChoice,
+};
 pub use session::{ObjectSummary, ProjectSession};
 
 /// One discovery context; identical object IDs in different members remain isolated.

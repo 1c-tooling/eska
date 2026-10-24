@@ -3,12 +3,14 @@
 mod editing;
 mod lex;
 mod model;
+mod visual;
 
 use std::sync::Arc;
 
 use crate::project::metadata_edit::{EditPlan, snapshot};
 
 pub use model::{Clause, ClauseKind, Item, Model, Statement, Unavailable};
+pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
 
 /// A selection is valid only with the exact constructor revision that supplied its indices.
 #[derive(Clone, Copy, Debug, serde::Deserialize)]
@@ -28,7 +30,7 @@ pub enum CommentDecision {
 }
 
 /// New JOIN syntax is generated only for this limited, explicit set of operations.
-#[derive(Clone, Copy, Debug, Default, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum JoinKind {
     #[default]
@@ -42,6 +44,15 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    AppendFields {
+        statement: usize,
+        fields: Vec<String>,
+    },
+    Compose {
+        statement: usize,
+        selection: Option<Selection>,
+        expression: Expression,
+    },
     Append {
         statement: usize,
         clause: ClauseKind,
@@ -149,7 +160,61 @@ impl Constructor {
         if expected != self.revision {
             return Err(Error::StaleRevision);
         }
+        if let Action::AppendFields { statement, fields } = action {
+            if fields.len() > 512 {
+                return Err(Error::TooLarge);
+            }
+            let mut staged = self.clone();
+            for expression in fields {
+                let owner = staged
+                    .model
+                    .statements
+                    .get(*statement)
+                    .ok_or(Error::InvalidSelection)?;
+                let present = owner.clauses.iter().filter(|clause| clause.kind == ClauseKind::Fields)
+                    .flat_map(|clause| clause.items.iter().filter_map(|item| item.visual(&staged.working, clause)))
+                    .any(|field| matches!(field, Expression::Field { expression: existing, aggregate: None, .. } if existing.to_lowercase() == expression.to_lowercase()));
+                if !present {
+                    staged.apply(
+                        staged.revision,
+                        &Action::Compose {
+                            statement: *statement,
+                            selection: None,
+                            expression: Expression::Field {
+                                expression: expression.clone(),
+                                alias: String::new(),
+                                aggregate: None,
+                            },
+                        },
+                    )?;
+                }
+            }
+            let plan = super::minimal_text_plan(&self.working, &staged.working)
+                .map_err(|_| Error::InvalidExpression)?;
+            *self = staged;
+            return Ok(plan);
+        }
+        let original_action = action;
+        let composed;
+        let action = if let Action::Compose {
+            statement,
+            selection,
+            expression,
+        } = action
+        {
+            composed = visual::compose(
+                &self.working,
+                &self.model,
+                *statement,
+                *selection,
+                expression,
+            )?;
+            &composed
+        } else {
+            action
+        };
         let plan = editing::plan(&self.working, &self.model, action)?;
+        let plan = visual::augment(&self.working, &self.model, original_action, plan)?;
         if plan.output().len() > super::MAX_SNAPSHOT_BYTES {
             return Err(Error::TooLarge);
         }
@@ -176,7 +241,9 @@ impl Constructor {
 /// Token edits cannot accidentally merge or hide a neighboring clause while still forming a superficially valid SELECT.
 fn check_shape(before: &Model, after: &Model, action: &Action) -> Result<(), Error> {
     let statement = match action {
-        Action::Append { statement, .. } => *statement,
+        Action::Append { statement, .. }
+        | Action::Compose { statement, .. }
+        | Action::AppendFields { statement, .. } => *statement,
         Action::Replace { selection, .. }
         | Action::Remove { selection, .. }
         | Action::Move { selection, .. } => selection.statement,

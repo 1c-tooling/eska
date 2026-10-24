@@ -28,7 +28,7 @@ pub(super) fn supported(kind: &str) -> bool {
 }
 
 /// Source fields may exist without a `StandardAttributes` XML block; disabled fields remain excluded.
-pub(super) fn fields(owner: Node<'_, '_>, compatibility: &str) -> Vec<&'static str> {
+pub fn fields(owner: Node<'_, '_>, compatibility: &str) -> Vec<&'static str> {
     let Some(properties) = child(owner, "Properties") else {
         return Vec::new();
     };

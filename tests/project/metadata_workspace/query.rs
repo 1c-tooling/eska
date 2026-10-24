@@ -5,6 +5,7 @@ use crate::backend::project::{
     query::{QueryError, QueryIdentity},
 };
 
+mod catalog;
 mod recovery;
 mod session;
 mod source_view;

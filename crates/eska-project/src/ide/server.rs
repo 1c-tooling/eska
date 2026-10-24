@@ -175,6 +175,16 @@ impl Server {
             method if super::query::is_session_method(method) && self.client_minor < 15 => {
                 Err(error(-32601))
             }
+            "query/constructorCatalog" if self.client_minor < 22 => Err(error(-32601)),
+            "query/constructorAction"
+                if self.client_minor < 22
+                    && matches!(
+                        args["action"]["kind"].as_str(),
+                        Some("compose" | "appendFields")
+                    ) =>
+            {
+                Err(error(-32601))
+            }
             method if super::query::is_constructor_method(method) && self.client_minor < 21 => {
                 Err(error(-32601))
             }
@@ -254,7 +264,8 @@ impl Server {
             result["capabilities"]["queryProjections"] = super::query::projection_capability();
         }
         if self.client_minor >= 21 {
-            result["capabilities"]["queryConstructor"] = super::query::constructor_capability();
+            result["capabilities"]["queryConstructor"] =
+                super::query::constructor_capability(self.client_minor >= 22);
         }
         Ok(result)
     }

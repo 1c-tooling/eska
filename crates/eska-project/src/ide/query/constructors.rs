@@ -33,6 +33,7 @@ pub(super) fn is_method(method: &str) -> bool {
             | "query/constructorAction"
             | "query/constructorFinish"
             | "query/constructorCancel"
+            | "query/constructorCatalog"
     )
 }
 
@@ -48,13 +49,57 @@ pub(super) fn is_cleanup(method: &str) -> bool {
 }
 
 /// Visual editing is explicit, lossless, bounded and fenced at the same canonical draft used by XML/BSL sessions.
-pub(super) fn capability() -> Value {
-    json!({"schemaVersion":1,"writesOwner":false,"writesDraft":true,"explicitFinish":true,"exclusiveDraft":true,
+pub(super) fn capability(visual: bool) -> Value {
+    let mut result = json!({"schemaVersion":1,"writesOwner":false,"writesDraft":true,"explicitFinish":true,"exclusiveDraft":true,
         "maxTokens":65536,"maxStatements":256,"maxStatementClauses":128,"maxStatementSeparators":2048,"lossless":true,"nativeDraftPlan":true,"sourceCommentPositions":true,"maxExpressionBytes":MAX_EXPRESSION,"maxModelBytes":MAX_MODEL_BYTES,"sharedQueryBudget":true,
-        "clauses":["fields","sources","joins","conditions","group","order"]})
+        "clauses":["fields","sources","joins","conditions","group","order"]});
+    if visual {
+        result["visualExpressions"] = json!(true);
+        result["metadataCatalog"] = json!(true);
+    }
+    result
 }
 
 impl State {
+    /// Choices are bound to this exact constructor, application and metadata generation; inspection never changes a checkpoint.
+    pub(super) fn constructor_catalog(
+        &self,
+        project: &eska_project_core::project::metadata_workspace::ProjectSession,
+        key: &Key,
+        args: &Value,
+    ) -> Result<Value, Value> {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Input {
+            query_session_id: String,
+            constructor_id: String,
+            constructor_revision: String,
+            query: eska_project_core::project::metadata_workspace::QueryCatalogRequest,
+        }
+        let input: Input = params::decode(args)?;
+        let entry = self
+            .sessions
+            .get(&input.query_session_id)
+            .filter(|entry| entry.key == *key)
+            .ok_or_else(|| failure("unknown_query_session"))?;
+        let constructor = entry
+            .core
+            .constructor(params::counter(&input.constructor_id)?)
+            .map_err(session_error)?;
+        if constructor.revision() != params::counter(&input.constructor_revision)? {
+            return Err(failure("stale_draft"));
+        }
+        let catalog = project
+            .query_catalog(entry.core.application(), &input.query)
+            .map_err(session_error)?;
+        if catalog.context_fingerprint != entry.core.context_fingerprint() {
+            return Err(failure("context_changed"));
+        }
+        let mut output = sessions::header(&input.query_session_id, entry)?;
+        output["catalog"] = json!(catalog);
+        Ok(output)
+    }
+
     /// Stage every visual transition on a cheap immutable-text clone; failed quota or disk CAS never advances live state.
     pub(super) fn constructor_request(
         &mut self,
@@ -273,7 +318,7 @@ fn model(value: &Constructor, id: &str, writable: bool) -> Result<Value, Value> 
             let items: Vec<_> = clause.items.iter().enumerate().map(|(index, item)| {
                 let expression = item.expression(input);
                 let too_large = expression.len() > MAX_EXPRESSION;
-                json!({"index":index,"range":dto::bytes(&item.range),"preview":preview(&input[item.range.clone()]),
+                json!({"index":index,"range":dto::bytes(&item.range),"preview":preview(&input[item.range.clone()]),"visual":if too_large {None} else {item.visual(input, clause)},
                     "expression":if too_large {None} else {Some(expression)},"comments":item.comments.len(),
                     "removable":writable && (clause.items.len()>1 || !matches!(clause.kind,ClauseKind::Fields|ClauseKind::Sources)),
                     "movable":writable && clause.kind!=ClauseKind::Joins && clause.items.len()>1,
@@ -287,7 +332,7 @@ fn model(value: &Constructor, id: &str, writable: bool) -> Result<Value, Value> 
         }).collect();
         let append: Vec<_> = [ClauseKind::Fields, ClauseKind::Sources, ClauseKind::Joins, ClauseKind::Conditions, ClauseKind::Group, ClauseKind::Order]
             .into_iter().map(|kind| json!({"kind":kind,"unavailable":if writable {json!(statement.append_unavailable(kind))} else {json!("read_only")}})).collect();
-        json!({"index":index,"range":dto::bytes(&statement.range),"unavailable":statement.unavailable,"preview":preview(&input[statement.range.clone()]),"clauses":clauses,"append":append})
+        json!({"index":index,"range":dto::bytes(&statement.range),"russian":statement.russian,"sources":statement.source_bindings(input),"unavailable":statement.unavailable,"preview":preview(&input[statement.range.clone()]),"clauses":clauses,"append":append})
     }).collect();
     let output = json!({"id":id,"revision":value.revision().to_string(),"snapshot":snapshot(input),"text":input,"bytes":input.len(),"writable":writable,"statements":statements});
     if serde_json::to_vec(&output)
