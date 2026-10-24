@@ -31,6 +31,7 @@ pub(super) fn model(
     let mut output = json!({"id":id,"revision":value.revision().to_string(),"snapshot":snapshot(input),"text":input,
         "bytes":input.len(),"writable":writable,"statements":statements});
     if advanced {
+        output["focus"] = json!(value.focus());
         output["issues"] = json!(
             value
                 .model()

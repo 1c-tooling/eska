@@ -219,3 +219,39 @@ fn nested(input: &str, tokens: &[&Token], scope: usize, result: &mut Model) -> R
     }
     Ok(())
 }
+
+/// Scope anchors follow the accepted edit plan; removing a branch selects its surviving ordinal neighbour.
+pub(super) fn focus(
+    before: &Model,
+    after: &Model,
+    plan: &crate::project::metadata_edit::EditPlan,
+    action: &super::Action,
+) -> Option<usize> {
+    let owner = before.statements.get(action.statement())?;
+    let anchor = before.scopes.get(owner.scope)?.range.start;
+    let mut offset = 0isize;
+    let mut mapped = None;
+    for edit in plan.replacements() {
+        if edit.range.start > anchor {
+            break;
+        }
+        if edit.range.end > anchor {
+            mapped = edit.range.start.checked_add_signed(offset);
+            break;
+        }
+        offset = offset.checked_add(
+            isize::try_from(edit.text.len())
+                .ok()?
+                .checked_sub(isize::try_from(edit.range.len()).ok()?)?,
+        )?;
+    }
+    let anchor = mapped.or_else(|| anchor.checked_add_signed(offset))?;
+    let scope = after
+        .scopes
+        .iter()
+        .find(|scope| scope.range.start == anchor)?;
+    scope
+        .branches
+        .get(owner.branch.min(scope.branches.len().checked_sub(1)?))
+        .copied()
+}

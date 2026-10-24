@@ -133,6 +133,7 @@ pub struct Constructor {
     working: Arc<str>,
     model: Arc<Model>,
     revision: u64,
+    focus: Option<usize>,
 }
 
 impl Constructor {
@@ -145,11 +146,13 @@ impl Constructor {
             return Err(Error::TooLarge);
         }
         let model = Arc::new(Model::parse(&input)?);
+        let focus = (!model.statements.is_empty()).then_some(0);
         Ok(Self {
             original: Arc::clone(&input),
             working: input,
             model,
             revision: 1,
+            focus,
         })
     }
 
@@ -169,6 +172,12 @@ impl Constructor {
     #[must_use]
     pub const fn revision(&self) -> u64 {
         self.revision
+    }
+
+    /// Structural operations return the surviving statement in the same scope, even when flat indices change.
+    #[must_use]
+    pub const fn focus(&self) -> Option<usize> {
+        self.focus
     }
 
     /// A stable hash binds streamed preview bodies and final native text plans.
@@ -199,7 +208,7 @@ impl Constructor {
         if let Some(plan) = unions::plan(&self.working, &self.model, action)? {
             let model = Model::parse(plan.output())?;
             unions::check_shape(&self.model, &model, action)?;
-            self.accept(&plan, model)?;
+            self.accept(&plan, model, action)?;
             return Ok(plan);
         }
         if let Action::AppendFields { statement, fields } = action {
@@ -252,13 +261,13 @@ impl Constructor {
                 .map_err(|_| Error::InvalidExpression)?;
             let model = Model::parse(plan.output())?;
             check_shape(&self.model, &model, action)?;
-            self.accept(&plan, model)?;
+            self.accept(&plan, model, action)?;
             return Ok(plan);
         }
         let (plan, lowered) = self.plan_action(action)?;
         let model = Model::parse(plan.output())?;
         check_shape(&self.model, &model, &lowered)?;
-        self.accept(&plan, model)?;
+        self.accept(&plan, model, action)?;
         Ok(plan)
     }
 
@@ -296,15 +305,17 @@ impl Constructor {
     }
 
     /// All multi-part operations share one checked publication and one revision increment.
-    fn accept(&mut self, plan: &EditPlan, model: Model) -> Result<(), Error> {
+    fn accept(&mut self, plan: &EditPlan, model: Model, action: &Action) -> Result<(), Error> {
         if plan.output().len() > super::MAX_SNAPSHOT_BYTES {
             return Err(Error::TooLarge);
         }
+        let focus = scopes::focus(&self.model, &model, plan, action);
         if !plan.is_empty() {
             self.revision = self.revision.checked_add(1).ok_or(Error::TooLarge)?;
             self.working = Arc::from(plan.output());
             self.model = Arc::new(model);
         }
+        self.focus = focus;
         Ok(())
     }
 

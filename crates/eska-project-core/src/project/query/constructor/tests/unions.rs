@@ -1,5 +1,39 @@
 use super::*;
 
+/// Flat statement indices can become children after removal; ESKA explicitly returns the surviving original scope.
+#[test]
+fn union_removal_focus_never_jumps_into_a_nested_source() {
+    let mut value = constructor(
+        "SELECT Q.Value FROM (SELECT 1 AS Value UNION ALL SELECT 2 AS Value) AS Q UNION ALL SELECT R.Value FROM (SELECT 3 AS Value) AS R",
+    );
+    apply(
+        &mut value,
+        &Action::RemoveUnion {
+            statement: 1,
+            comments: None,
+        },
+    );
+    assert_eq!(value.focus(), Some(0));
+    assert_eq!(value.model().scopes[1].branches, [1, 2]);
+    apply(
+        &mut value,
+        &Action::RemoveUnion {
+            statement: 2,
+            comments: None,
+        },
+    );
+    assert_eq!(value.focus(), Some(1));
+    assert_eq!(value.model().statements[1].scope, 1);
+    apply(
+        &mut value,
+        &Action::AddUnion {
+            statement: 1,
+            all: true,
+        },
+    );
+    assert_eq!(value.focus(), Some(1));
+}
+
 /// Cloning a branch inserts it before result ordering and preserves the selected source language.
 #[test]
 fn union_branch_operations_preserve_the_result_tail_and_separator_comments() {
