@@ -6,7 +6,7 @@ const OWNER: &str = "// 😀\r\nQ = \"SELECT 1\";\r\nTail = 42;\r\n";
 const DRAFT: &str = "SELECT Т.Ар\nFROM Catalog.Товары AS Т";
 
 /// A projection starts from the common BSL session; its module file is intentionally different from the dirty owner.
-fn open(client: &mut Client, binding: &Value) -> Value {
+pub(super) fn open(client: &mut Client, binding: &Value) -> Value {
     let root = client.request("metadata/root", &source_args(binding, json!({})));
     let node = json!({"kind":"module","owner":root["node"]["id"]["objectId"],"role":"managed-application"});
     let doc = client.request(

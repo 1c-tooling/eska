@@ -1,6 +1,7 @@
 //! Snapshot-bound query RPCs plan editor changes and never publish source files.
 
 mod buffers;
+mod constructors;
 mod documents;
 mod dto;
 mod params;
@@ -48,6 +49,7 @@ pub(super) fn is_method(method: &str) -> bool {
         || sessions::is_method(method)
         || source::is_method(method)
         || projections::is_method(method)
+        || constructors::is_method(method)
         || matches!(
             method,
             "query/bufferBegin"
@@ -75,6 +77,16 @@ pub(super) fn is_projection_method(method: &str) -> bool {
 /// Only immutable BSL projections are available; XML language context is deliberately not advertised.
 pub(super) fn projection_capability() -> Value {
     projections::capability()
+}
+
+/// Exclusive visual draft ownership is negotiated separately from read-only language projections.
+pub(super) fn is_constructor_method(method: &str) -> bool {
+    constructors::is_method(method)
+}
+
+/// The constructor never writes the owner; only explicit finish updates its existing private draft.
+pub(super) fn constructor_capability() -> Value {
+    constructors::capability()
 }
 
 /// Shared protected-source inspection is an additive contract negotiated independently from query lifecycle.
@@ -294,6 +306,15 @@ impl Server {
         if projections::is_method(method) && method != "query/projectionOpen" {
             return self.queries.projection_read(&key, method, args);
         }
+        if constructors::is_cleanup(method) {
+            return self.queries.constructor_request(
+                &key,
+                method,
+                args,
+                &mut self.recovery,
+                &forbidden,
+            );
+        }
         if matches!(method, "query/sessionClose" | "query/sessionGet") {
             return self.queries.session_cleanup(method, &key, args);
         }
@@ -326,6 +347,10 @@ impl Server {
             }
             method if source::is_method(method) => {
                 self.queries.source_request(project, &key, method, args)
+            }
+            method if constructors::is_method(method) => {
+                self.queries
+                    .constructor_request(&key, method, args, &mut self.recovery, &forbidden)
             }
             method if sessions::is_method(method) => self.queries.session_request(
                 project,
@@ -397,6 +422,9 @@ fn session_error(error: QuerySessionError) -> Value {
         QuerySessionError::InvalidReceipt => failure("invalid_receipt"),
         QuerySessionError::Closed => failure("closed_session"),
         QuerySessionError::RevisionExhausted => failure("session_limit"),
+        QuerySessionError::ConstructorBusy => failure("constructor_busy"),
+        QuerySessionError::UnknownConstructor => failure("unknown_constructor"),
+        QuerySessionError::Constructor(error) => constructor_error(error),
     }
 }
 
@@ -413,5 +441,22 @@ fn codec_error(error: QueryError) -> Value {
         QueryError::InvalidValue => "invalid_value",
         QueryError::Conflict => "conflict",
         QueryError::CommentsRequireDecision => "comments_require_decision",
+    })
+}
+
+/// Keep visual editing failures portable and independent of any IDE presentation.
+fn constructor_error(error: eska_project_core::project::query::constructor::Error) -> Value {
+    use eska_project_core::project::query::constructor::Error;
+    failure(match error {
+        Error::TooLarge => "constructor_limit",
+        Error::InvalidSyntax => "constructor_invalid_syntax",
+        Error::Unsupported => "constructor_unsupported",
+        Error::InvalidSelection => "constructor_invalid_selection",
+        Error::InvalidExpression => "constructor_invalid_expression",
+        Error::RequiredItem => "constructor_required_item",
+        Error::SourceRequired => "constructor_source_required",
+        Error::UnsafeMove => "constructor_unsafe_move",
+        Error::CommentsRequireDecision => "constructor_comments_require_decision",
+        Error::StaleRevision => "stale_constructor",
     })
 }

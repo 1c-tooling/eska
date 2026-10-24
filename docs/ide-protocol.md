@@ -1371,7 +1371,7 @@ ESKA проверяет объявленную ancestry сохранённого
 
 ### API 1.20: неизменяемая языковая проекция BSL
 
-Опциональная capability `queryProjections` объявляется только клиенту 1.20:
+Опциональная capability `queryProjections` объявляется клиенту 1.20 и новее:
 `{schemaVersion:1,writesOwner:false,writesDraft:false,sourceKinds:["bsl"],
 maxProjections:16,maxSnapshotBytes:8388608,maxChunkBytes:131072,maxPositions:64,
 maxEdits:64,sharedQueryBudget:true}`. Старые клиенты не получают capability;
@@ -1422,3 +1422,81 @@ query 32 MiB/64 entries. Карта ограничена 65536 spans. Сохра
 доступна после закрытия source session, не сохраняя её временное ограничение.
 Reasons: `unknown_projection`, `projection_limit`, `projection_snapshot_mismatch`;
 действуют прежние stale/context/codec/resource errors. JSON не зависит от locale.
+
+
+### API 1.21: конструктор и позиции исходных комментариев
+
+Capability `queryConstructor` объявляется с 1.21: schemaVersion=1,
+writesOwner=false, writesDraft=true, explicitFinish=true, exclusiveDraft=true,
+lossless=true, nativeDraftPlan=true, sourceCommentPositions=true, sharedQueryBudget=true,
+maxExpressionBytes=16384, maxModelBytes=33554432. Clauses:
+`fields,sources,joins,conditions,group,order`. Старые клиенты получают -32601.
+Хранилище checkpoint остаётся прежнего формата; незавершённая рабочая модель
+конструктора хранится в памяти и не применяется после перезапуска.
+
+Все методы получают metadata context и querySessionId. Open/Action/Finish
+требуют текущего generation и свежего CAS checkpoint. Model/Plan/Cancel/sessionComments
+разрешены прежнему session/member после metadata refresh, без metadata envelope.
+Чужой member или process не может использовать source handle.
+
+- `query/constructorOpen`: `{querySessionId,revision}`. Нужна Ready-сессия без
+  ожидаемого source Apply и другого конструктора. Возвращает session header и
+  `constructor`. В header добавлен `constructorActive`; `draftWritable=false`
+  на время конструктора. Не изменяет canonical draft, source lease и файл.
+- `query/constructorModel`: `{querySessionId,constructorId}` читает текущую модель.
+- `query/constructorAction`: `{querySessionId,constructorId,constructorRevision,
+  action}` меняет только рабочую модель. Action: `append` с statement, clause,
+  text, необязательным join (`inner|left|right|full`); `replace` с selection/text;
+  `remove` с selection и comments (`keep|discard`); `move` с selection/to.
+  Selection: `{statement,clause,item}` — индексы строго этой ревизии.
+- `query/constructorPlan`: `{querySessionId,constructorId,constructorRevision,
+  nativeSnapshot}` выдаёт `draftPlan` без изменения canonical draft, checkpoint
+  или владения. Рекомендуемый порядок IDE: Plan, проверка Native версии и одна
+  правка SDBL, затем Finish с исходным nativeSnapshot и фактическим resultSnapshot.
+  При сбое между Native-правкой и подтверждением текст остаётся в модели IDE;
+  исходник XML/BSL по-прежнему не меняется.
+- `query/constructorFinish`: `{querySessionId,constructorId,constructorRevision,
+  nativeSnapshot,resultSnapshot?}` сверяет SHA-256 исходного canonical SDBL, публикует изменённый
+  draft через общий CAS и освобождает только его владение. Ответ содержит
+  session header и `draftPlan` в том же byte/UTF-16/hash формате, что projectionEdits.
+  IDE проверяет Native версию и применяет его одной отменяемой правкой к той же
+  вкладке SDBL. Finish никогда не выдаёт source apply token и не сохраняет модуль/XML.
+  При отказе Native-правки durable результат остаётся в private checkpoint;
+  адаптер обязан сохранить также более новый Native ввод и показать конфликт.
+- `query/constructorCancel`: `{querySessionId,constructorId}` отбрасывает рабочую
+  модель, сохраняя canonical draft и его ревизию. Не зависит от последней
+  constructorRevision, поэтому может завершить прерванный Action. Повторный cancel
+  после освобождения возвращает released=false; чужой активный token отклоняется.
+
+Модель: `{id,revision,snapshot,text,bytes,writable,statements}`. В statement есть
+range, unavailable, preview, clauses и append options с причинами недоступности.
+Clause содержит index/kind/header/items. Item содержит index, byte range, preview,
+expression (null при превышении 16 KiB), comments count, removable, movable и
+unavailable reasons. Неизвестные операторы пакета, UNION/INTO/TOTALS/HAVING,
+расширения СКД и неоднозначные OR/BETWEEN/CASE остаются opaque. Вложенные выражения
+не регенерируются. Переносы JOIN не разрешаются без проверки зависимостей.
+
+ESKA хранит исходные ranges и комментарии; перемещение строки переносит её
+комментарии. Удаление узла с комментариями требует keep/discard. No-op сохраняет
+все байты. Concurrent recoveryCommit с другим draft, recoveryRemove, resume,
+source Apply и языковая проекция под владением конструктора отклоняются.
+Неизменённый checkpoint допустим. Query/session close и EOF освобождают владение.
+Лексер ограничен 65536 токенами и 256 операторами; более 128 разделов либо
+2048 верхнеуровневых разделителей делают оператор opaque с reason=model_limit.
+Разделение пакета выполняется одним проходом, без повторного сканирования
+всех токенов для каждой строки. Квота рабочей модели входит в прежние 32 MiB query state; новых индексов нет.
+
+`query/sessionComments`: `{querySessionId,revision,positions:[{line,character}]}`
+возвращает revision, snapshot canonical draft, needsDecision, lineStartsOnly,
+исходные comments (`comment,text,originalQueryOffset,originalQueryPosition`) и
+positions (`position,queryOffset|null`). До 64 UTF-16 позиций; surrogate/CRLF
+interiors не округляются. Для BSL допустимы только начала строк после первой.
+Это чтение исходных якорей общим кодеком, без source plan. Полученный byte offset
+передаётся в прежний sessionPrepare.comments; null там означает явное удаление,
+поэтому адаптер не должен подставлять недопустимую позицию вместо решения.
+
+Reasons: constructor_busy, unknown_constructor, constructor_limit,
+constructor_invalid_syntax, constructor_unsupported, constructor_invalid_selection,
+constructor_invalid_expression, constructor_required_item, constructor_source_required,
+constructor_unsafe_move, constructor_comments_require_decision, stale_constructor;
+действуют прежние stale/recovery/read-only errors. UI и URI IDE в ядро не входят.

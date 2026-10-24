@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "task": "T104",
+  "date": "2026-10-24",
+  "status": "core and RPC implemented; native adapter acceptance pending",
+  "apiVersion": "1.21",
+  "architecture": {
+    "parser": "bounded lossless token ranges, no semantic engine or new dependencies",
+    "canonicalDraft": "owned by the common query session",
+    "nativeBinding": "Plan, one native undoable edit, Finish receipt",
+    "ownerWrites": false,
+    "workingModelDurableBeforeFinish": false
+  },
+  "operations": [
+    "fields",
+    "sources",
+    "joins",
+    "conditions",
+    "group",
+    "order",
+    "replace",
+    "remove with explicit comment disposition",
+    "move raw commented nodes",
+    "byte-exact no-op"
+  ],
+  "opaque": [
+    "unknown statements",
+    "SCD extensions",
+    "UNION",
+    "INTO",
+    "TOTALS",
+    "HAVING",
+    "top-level OR/BETWEEN/CASE",
+    "ambiguous modifiers",
+    "visual model resource limits"
+  ],
+  "limits": {
+    "inputBytes": 8388608,
+    "tokens": 65536,
+    "statements": 256,
+    "statementClauses": 128,
+    "statementSeparators": 2048,
+    "rpcExpressionBytes": 16384,
+    "modelResponseBytes": 33554432,
+    "sharedQueryBytes": 33554432
+  },
+  "checks": {
+    "gates": {
+      "fmt-core": 0,
+      "check-core": 0,
+      "clippy-core": 0,
+      "test-core": 0,
+      "rustdoc-core": 0,
+      "build-core": 0
+    },
+    "suites": 35,
+    "passed": 1047,
+    "failed": 0,
+    "ignored": 12
+  },
+  "regressions": [
+    "ordinary checkpoint writes and removal cannot bypass the constructor lock",
+    "source Apply/resume/language projection blocked while owning draft",
+    "comments retained on move/replace; deletion needs keep/discard",
+    "opaque package fragments unchanged",
+    "line comments cannot hide separators or following clauses",
+    "structural shape checked after edits",
+    "empty statement inventory scanned once",
+    "large visual lists become opaque without quadratic item scans",
+    "stale native/model snapshots rejected before publication",
+    "read-only model cannot mutate draft",
+    "source-comment destinations use core UTF-16 conversion and reject surrogate/unsafe BSL positions"
+  ],
+  "artifact": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/bin/eska-project-core",
+    "sha256": "96c11c54f2a756519667de4ed6f26f8b7b1d8f1fd00b45e57e297a9316b3da90"
+  },
+  "logs": [
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/fmt-core.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/check-core.log",
+      "sha256": "9e9c63f67998cf62e107d83c337611bb9953ef893c297e8de2028688164aec0b"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/clippy-core.log",
+      "sha256": "7d947e4adce8f94d68b70677f090279fad4230f1c8dfdbb61ebc9629888db82a"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/test-core.log",
+      "sha256": "9c56cfdfc8562cc27365145bcaadde046948e2c174e3fdbff9cb475f44150642"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/rustdoc-core.log",
+      "sha256": "9dd8b65eeb459f93f19855af91c027b53271fc045ea0e0f591b49d315b89ca6f"
+    },
+    {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/build-core.log",
+      "sha256": "65a280368e22c5357bf00d70a52a8b2a45f5c9a3771c2decd11aa8c6ee070079"
+    }
+  ]
+}

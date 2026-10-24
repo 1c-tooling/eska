@@ -83,6 +83,11 @@ impl State {
                 .1;
             check_location(directory, forbidden)?;
         }
+        if method == "query/recoveryRemove"
+            && let Some(id) = args["id"].as_str()
+        {
+            queries.constructor_record_guard(id)?;
+        }
         let mut result = match method {
             "query/recoveryRead" => self.read(args),
             "query/recoveryPreparedRead" => self.read_prepared(args),

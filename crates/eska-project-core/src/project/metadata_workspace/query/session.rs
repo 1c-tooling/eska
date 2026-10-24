@@ -1,5 +1,7 @@
 //! A query session owns its draft, resume decision and one native-application receipt, independently of an IDE.
 
+mod constructor;
+
 use std::{path::PathBuf, sync::Arc};
 
 use crate::{
@@ -77,6 +79,9 @@ pub enum QuerySessionError {
     InvalidReceipt,
     Closed,
     RevisionExhausted,
+    ConstructorBusy,
+    UnknownConstructor,
+    Constructor(query::constructor::Error),
 }
 
 impl From<QueryDocumentError> for QuerySessionError {
@@ -127,6 +132,7 @@ pub struct QuerySession {
     phase: Phase,
     revision: u64,
     plan_serial: u64,
+    constructor: Option<(u64, query::constructor::Constructor)>,
 }
 
 impl QuerySession {
@@ -164,6 +170,7 @@ impl QuerySession {
             phase: Phase::Ready,
             revision: 1,
             plan_serial: 0,
+            constructor: None,
         };
         session.check_context(project, session.application.as_deref())?;
         Ok(session)
@@ -229,6 +236,7 @@ impl QuerySession {
             phase: pending.map_or(Phase::Paused, Phase::Recovering),
             revision: 1,
             plan_serial,
+            constructor: None,
         })
     }
 
@@ -305,6 +313,7 @@ impl QuerySession {
         !matches!(self.phase, Phase::Closed)
             && self.document.writable
             && !self.restrictions.user_read_only
+            && self.constructor.is_none()
     }
 
     /// A selected application never silently follows a later client preference.
@@ -371,6 +380,10 @@ impl QuerySession {
         self.document.input.len()
             + self.base.len()
             + self.draft.len()
+            + self
+                .constructor
+                .as_ref()
+                .map_or(0, |(_, value)| value.retained_bytes())
             + match &self.phase {
                 Phase::Applying(pending) | Phase::Recovering(pending) => {
                     let retained_draft = if Arc::ptr_eq(&pending.applied_draft, &self.draft)
@@ -397,6 +410,9 @@ impl QuerySession {
     /// Rejects stale revisions, oversized drafts and callbacks for closed sessions.
     pub fn set_draft(&mut self, expected: u64, draft: Arc<str>) -> Result<(), QuerySessionError> {
         self.check_revision(expected)?;
+        if self.constructor.is_some() && self.draft != draft {
+            return Err(QuerySessionError::ConstructorBusy);
+        }
         if draft.len() > query::MAX_SNAPSHOT_BYTES {
             return Err(QueryError::TooLarge.into());
         }
@@ -418,6 +434,7 @@ impl QuerySession {
         current: QueryEditorState<'_>,
     ) -> Result<super::QueryProjection, QuerySessionError> {
         self.check_revision(expected)?;
+        self.check_constructor_idle()?;
         if self.document.kind != QueryDocumentKind::Bsl {
             return Err(QueryError::UnsupportedStructure.into());
         }
@@ -452,6 +469,7 @@ impl QuerySession {
         restrictions: QueryOwnerRestrictions,
     ) -> Result<(), QuerySessionError> {
         self.not_closed()?;
+        self.check_constructor_idle()?;
         if matches!(self.phase, Phase::Applying(_)) {
             return Err(QuerySessionError::ApplyBusy);
         }
@@ -500,6 +518,7 @@ impl QuerySession {
         line_ending: Option<query::LineEnding>,
     ) -> Result<QueryApplyPlan, QuerySessionError> {
         self.check_revision(expected)?;
+        self.check_constructor_idle()?;
         match self.phase {
             Phase::Paused | Phase::Recovering(_) => return Err(QuerySessionError::ResumeRequired),
             Phase::Applying(_) => return Err(QuerySessionError::ApplyBusy),
@@ -653,6 +672,7 @@ impl QuerySession {
             return None;
         }
         self.phase = Phase::Closed;
+        self.constructor = None;
         self.source_restriction
             .take()
             .map(|restriction| restriction.id())

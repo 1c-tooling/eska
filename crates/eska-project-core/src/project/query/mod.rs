@@ -1,6 +1,7 @@
 //! Query views retain exact owner coordinates; they never become another source file.
 
 mod bsl;
+pub mod constructor;
 mod editing;
 mod mapping;
 pub mod recovery;
@@ -75,6 +76,27 @@ const fn check_size(input: &str) -> Result<(), QueryError> {
         return Err(QueryError::TooLarge);
     }
     Ok(())
+}
+
+/// Keep final draft/projection edits local to their differing UTF-8 scalar range.
+pub(crate) fn minimal_text_plan(
+    before: &str,
+    after: &str,
+) -> Result<crate::project::metadata_edit::EditPlan, QueryError> {
+    use crate::project::metadata_edit::{EditPlan, Replacement};
+    if before == after {
+        return EditPlan::from_replacements(before, Vec::new())
+            .map_err(|_| QueryError::InvalidValue);
+    }
+    let (old, new) = editing::difference(before, after);
+    EditPlan::from_replacements(
+        before,
+        vec![Replacement {
+            range: old,
+            text: after[new].to_owned(),
+        }],
+    )
+    .map_err(|_| QueryError::InvalidValue)
 }
 
 #[cfg(test)]

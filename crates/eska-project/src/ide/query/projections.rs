@@ -246,12 +246,7 @@ fn edits(view: &QueryProjection, args: &Value) -> Result<Value, Value> {
     let plan = view
         .translate_edits(replacements)
         .map_err(super::codec_error)?;
-    Ok(
-        json!({"noOp":plan.is_empty(),"inputSnapshot":snapshot(plan.original()),"outputSnapshot":snapshot(plan.output()),
-        "replacements":plan.replacements().iter().map(|edit| json!({"range":dto::bytes(&edit.range),
-            "rangeUtf16":{"start":dto::point(plan.original(),edit.range.start),"end":dto::point(plan.original(),edit.range.end)},
-            "text":edit.text})).collect::<Vec<_>>()}),
-    )
+    Ok(dto::text_plan(&plan))
 }
 
 /// Position schema matches existing query positions and stays independent of editor libraries and locale.

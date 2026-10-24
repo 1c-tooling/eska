@@ -37,3 +37,12 @@ pub(super) fn query(input: &str, query: &Query) -> Value {
         "anchors":{"startBefore":query.map.query_to_source(&query.text,0,Affinity::Before),"startAfter":query.map.query_to_source(&query.text,0,Affinity::After),"endBefore":query.map.query_to_source(&query.text,query.text.len(),Affinity::Before),"endAfter":query.map.query_to_source(&query.text,query.text.len(),Affinity::After)}},
         "comments":query.comments.iter().enumerate().map(|(index,comment)|json!({"comment":index,"source":bytes(&comment.source),"queryOffset":comment.query_offset,"text":comment.text})).collect::<Vec<_>>()})
 }
+
+/// Every draft-edit consumer receives the same byte/UTF-16/hash contract without a fabricated query identity.
+pub(super) fn text_plan(plan: &eska_project_core::project::metadata_edit::EditPlan) -> Value {
+    use eska_project_core::project::metadata_edit::snapshot;
+    json!({"noOp":plan.is_empty(),"inputSnapshot":snapshot(plan.original()),"outputSnapshot":snapshot(plan.output()),
+        "replacements":plan.replacements().iter().map(|edit| json!({"range":bytes(&edit.range),
+            "rangeUtf16":{"start":point(plan.original(),edit.range.start),"end":point(plan.original(),edit.range.end)},
+            "text":edit.text})).collect::<Vec<_>>()})
+}

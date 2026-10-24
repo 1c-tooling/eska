@@ -442,12 +442,12 @@ fn operation(
 }
 
 /// A header describes a remembered snapshot and its current lifecycle, not permission to skip a later preflight.
-fn header(id: &str, entry: &Entry) -> Result<Value, Value> {
+pub(super) fn header(id: &str, entry: &Entry) -> Result<Value, Value> {
     let restrictions = entry.core.restrictions();
     Ok(
         json!({"querySessionId":id,"storeId":entry.store_id,"id":entry.stored.record.id(),
         "revision":entry.core.revision().to_string(),"resumed":entry.core.resumed(),"applyPending":entry.core.applying(),
-        "draftWritable":entry.core.draft_writable(),"format":match entry.core.owner_format(){QueryOwnerFormat::Editor=>"editor",QueryOwnerFormat::Source=>"source"},
+        "draftWritable":entry.core.draft_writable(),"constructorActive":entry.core.constructor_active(),"format":match entry.core.owner_format(){QueryOwnerFormat::Editor=>"editor",QueryOwnerFormat::Source=>"source"},
         "protection":{"capturedSourceWritable":entry.core.document().writable(),"userReadOnly":restrictions.user_read_only,
             "ownerLock":null,"ownerProtection":if entry.core.document().kind()==QueryDocumentKind::Bsl {Some("protectedViewWithConflicts")} else {None},
             "sourceRestriction":entry.core.source_restriction_id().map(|id|id.to_string())},"record":recovery::header(&entry.stored)?}),
@@ -455,7 +455,7 @@ fn header(id: &str, entry: &Entry) -> Result<Value, Value> {
 }
 
 /// Private-format fields are projected from the core; the adapter does not choose owner/baseline updates.
-fn record(core: &QuerySession, id: &str, project_key: &str) -> Result<Record, Value> {
+pub(super) fn record(core: &QuerySession, id: &str, project_key: &str) -> Result<Record, Value> {
     let document = core.document();
     let (descriptor, descriptor_snapshot) = document.descriptor();
     let metadata = json!({"schemaVersion":1,"id":id,"projectKey":project_key,"node":metadata_dto::node_id(document.node()),

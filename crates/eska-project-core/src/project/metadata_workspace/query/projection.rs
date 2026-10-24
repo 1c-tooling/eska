@@ -168,33 +168,6 @@ impl QueryProjection {
         {
             return Err(QueryError::UnsupportedExpression);
         }
-        let edits = minimal_edit(&self.query.text, &result.text)
-            .into_iter()
-            .collect();
-        EditPlan::from_replacements(&self.query.text, edits).map_err(|_| QueryError::InvalidValue)
+        query::minimal_text_plan(&self.query.text, &result.text)
     }
-}
-
-/// Keep a completion replacement local to its changed word instead of replacing the entire SDBL editor model.
-fn minimal_edit(before: &str, after: &str) -> Option<Replacement> {
-    if before == after {
-        return None;
-    }
-    let start = before
-        .chars()
-        .zip(after.chars())
-        .take_while(|(left, right)| left == right)
-        .map(|(character, _)| character.len_utf8())
-        .sum();
-    let suffix: usize = before[start..]
-        .chars()
-        .rev()
-        .zip(after[start..].chars().rev())
-        .take_while(|(left, right)| left == right)
-        .map(|(character, _)| character.len_utf8())
-        .sum();
-    Some(Replacement {
-        range: start..before.len() - suffix,
-        text: after[start..after.len() - suffix].to_owned(),
-    })
 }

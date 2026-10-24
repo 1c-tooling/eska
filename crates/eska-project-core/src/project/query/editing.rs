@@ -131,7 +131,7 @@ fn resolve(input: &str, identity: &QueryIdentity) -> Result<Query, QueryError> {
 }
 
 /// Only the differing middle is replaced; matching Unicode scalars retain their original bytes.
-fn difference(before: &str, after: &str) -> (Range<usize>, Range<usize>) {
+pub(super) fn difference(before: &str, after: &str) -> (Range<usize>, Range<usize>) {
     let prefix: usize = before
         .chars()
         .zip(after.chars())
