@@ -1,5 +1,20 @@
 use super::*;
 
+/// Calculation base suffixes follow the same case-insensitive query spelling as ordinary virtual tables.
+#[test]
+fn calculation_base_names_are_case_insensitive() {
+    use crate::project::query::virtual_tables::VirtualTable;
+    for name in [
+        "calculationregister.Main.baseWages",
+        "РЕГИСТРРАСЧЕТА.Main.БАЗАWages",
+    ] {
+        assert!(matches!(
+            VirtualTable::resolve(name),
+            Some((_, VirtualTable::Base))
+        ));
+    }
+}
+
 /// Optional empty calls may omit parentheses in existing queries; unchanged forms keep those exact bytes.
 #[test]
 fn virtual_sources_without_parentheses_retain_parameter_controls_and_exact_text() {

@@ -92,7 +92,8 @@ impl VirtualTable {
                 suffix.eq_ignore_ascii_case(english)
                     || suffix.to_lowercase() == russian.to_lowercase()
                     || (*value == Self::Base
-                        && (suffix.starts_with(russian) || suffix.starts_with(english)))
+                        && (suffix.to_lowercase().starts_with(&russian.to_lowercase())
+                            || suffix.to_lowercase().starts_with(&english.to_lowercase())))
             })
             .map(|value| (category, value))
     }
