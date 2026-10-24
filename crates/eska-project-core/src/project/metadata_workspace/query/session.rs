@@ -190,6 +190,7 @@ impl QuerySession {
         if saved.owner_snapshot != snapshot(&saved.owner_text) {
             return Err(QueryError::Conflict.into());
         }
+        reveal_owner(project, &saved.node)?;
         let mut document = project.query_document_shared(
             &saved.node,
             &saved.path,
@@ -762,6 +763,30 @@ impl QuerySession {
             .ok_or(QuerySessionError::RevisionExhausted)?;
         Ok(())
     }
+}
+
+/// A private checkpoint is untrusted: rediscover only its declared ancestry and verify the actual module role.
+fn reveal_owner(project: &mut ProjectSession, node: &NodeId) -> Result<(), QuerySessionError> {
+    if project.node(node).is_ok() {
+        return Ok(());
+    }
+    let owner = match node {
+        NodeId::Object(owner) | NodeId::Module { owner, .. } => owner,
+        NodeId::Collection { .. } => return Err(QueryDocumentError::OwnerChanged.into()),
+    };
+    project
+        .reveal_declared_object(owner)
+        .map_err(QueryDocumentError::from)?;
+    if matches!(node, NodeId::Module { .. }) {
+        project
+            .children(
+                &NodeId::Object(owner.clone()),
+                crate::project::configurator::TreeOptions::default(),
+            )
+            .map_err(QueryDocumentError::from)?;
+    }
+    project.node(node).map_err(QueryDocumentError::from)?;
+    Ok(())
 }
 
 impl ProjectSession {

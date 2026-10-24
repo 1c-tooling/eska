@@ -7,6 +7,67 @@ use std::sync::Arc;
 
 mod protection;
 
+/// Recovery discovers only the declared owner branch; another IDE need not rebuild an expanded metadata tree first.
+#[test]
+fn query_session_restores_an_unexpanded_module_after_reopening_project() {
+    let (directory, mut workspace, owner, _) = xml_fixture();
+    let path = PathBuf::from("CommonForms/Queries/Ext/Form/Module.bsl");
+    fs::create_dir_all(directory.0.join("src/CommonForms/Queries/Ext/Form")).unwrap();
+    fs::write(directory.0.join("src").join(&path), INPUT).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    project.children(&owner, TreeOptions::default()).unwrap();
+    let NodeId::Object(id) = owner else {
+        panic!("form owner")
+    };
+    let node = NodeId::Module {
+        owner: id,
+        role: ModuleRole::Module,
+    };
+    let input = INPUT.replace("// keep", "// dirty captured owner");
+    let document = project
+        .query_document(&node, &path, 7, Some(&input))
+        .unwrap();
+    let selected = identity(&document);
+    let mut session = QuerySession::open(
+        project,
+        document,
+        selected,
+        None,
+        QueryOwnerFormat::Source,
+        QueryOwnerRestrictions::default(),
+    )
+    .unwrap();
+    session
+        .set_draft(session.revision(), Arc::from("SELECT recovered"))
+        .unwrap();
+    let checkpoint = saved(project, &session);
+    session.close();
+    drop(workspace);
+    let mut fresh = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let project = fresh.project_mut(&ProjectScope::Standalone).unwrap();
+    assert!(
+        project.node(&node).is_err(),
+        "no UI has expanded the module owner"
+    );
+    let mut restored =
+        QuerySession::restore(project, checkpoint, QueryOwnerFormat::Source).unwrap();
+    assert!(!restored.resumed());
+    assert_eq!(restored.document().input(), input);
+    assert_eq!(restored.draft(), "SELECT recovered");
+    restored
+        .resume(
+            project,
+            editor(1, &snapshot(&input), true),
+            QueryOwnerRestrictions::default(),
+        )
+        .unwrap();
+    assert!(restored.resumed());
+    assert_eq!(
+        fs::read_to_string(directory.0.join("src").join(&path)).unwrap(),
+        INPUT
+    );
+}
+
 const XML: &str = "\u{feff}<Form xmlns='http://v8.1c.ru/8.3/xcf/logform' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>\r\n<Attributes><Attribute name='List' id='1'><Settings xsi:type='DynamicList'><ManualQuery>true</ManualQuery><QueryText>SELECT 1;\n// пакет 😀\nSELECT 2</QueryText></Settings></Attribute></Attributes><other>keep</other>\r\n</Form>";
 
 /// Native-editor fixtures share the real declared metadata and support setup, with an independent XML payload.
