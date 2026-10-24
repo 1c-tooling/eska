@@ -1367,3 +1367,58 @@ ESKA проверяет объявленную ancestry сохранённого
 соответствующую ветку модуля. Необъявленные IDs и несовпадающие source/descriptor
 по-прежнему отклоняются; восстановленная сессия остаётся paused до явного resume.
 [Проверка восстановления после открытия проекта](measurements/t102-bsl-recovery.json).
+
+
+### API 1.20: неизменяемая языковая проекция BSL
+
+Опциональная capability `queryProjections` объявляется только клиенту 1.20:
+`{schemaVersion:1,writesOwner:false,writesDraft:false,sourceKinds:["bsl"],
+maxProjections:16,maxSnapshotBytes:8388608,maxChunkBytes:131072,maxPositions:64,
+maxEdits:64,sharedQueryBudget:true}`. Старые клиенты не получают capability;
+попытки вызвать методы проекции отвечают -32601. XML-контекст не объявляется.
+
+`query/projectionOpen` принимает metadata context, querySessionId, revision
+и прежний owner facts. Нужны текущая явно продолженная BSL-сессия, совпадающие
+Native версия/SHA-256, диск, descriptor и application context; pending apply
+не допускается. Поддержка и пользовательский read-only не запрещают анализ.
+ESKA подставляет подтверждённый черновик в полный снимок настоящего модуля через
+кодек T100. Файлы, private checkpoint, draft revision и apply intent не меняются.
+Сервер не отправляет LSP: транспорт и привязка к своему клиенту принадлежат IDE.
+
+Ответ: metadata envelope и `{projectionId,source,sourceKind:"bsl",revision,
+snapshot,bytes,draftSnapshot,draftBytes,readOnly:true,nativeVersion,nativeSnapshot}`.
+`source` — проверенный относительный путь владельца; `snapshot` — SHA-256 полного
+проектируемого текста UTF-8, `draftSnapshot` — SHA-256 декодированного SDBL с LF.
+`projectionId` обозначает неизменяемый снимок, не право записи владельца.
+
+Последующие методы получают metadata context и projectionId; кроме Close также
+обязателен snapshot. Их ответ не содержит metadata envelope. После смены generation
+чтение и cleanup разрешены прежнему session/member; другой member/process не может
+использовать handle. Workspace close, EOF и shutdown освобождают проекции.
+
+- `query/projectionRead`: `{projectionId,snapshot,offset,bytes}` возвращает
+  `{projectionId,snapshot,offset,nextOffset,eof,data}`. data — canonical base64;
+  offset/bytes измеряются в байтах, допускается граница внутри UTF-8 scalar.
+- `query/projectionMap`: `{projectionId,snapshot,direction,positions,affinity?}`.
+  direction: `draftToOwner`, `ownerToDraft` или `ownerTarget`; positions — UTF-16
+  `{line,character}`. affinity `before|after` разрешён только draftToOwner,
+  по умолчанию after. Ответ `{positions:[null|{target:"draft"|"owner",position}]}`.
+  ownerTarget переводит позиции внутри запроса в черновик, а позиции неизменённого
+  кода — в исходный Native-буфер с учётом сдвига литерала. Quotes, `|`, отступы
+  и внутренности escapes не округляются к соседнему символу.
+- `query/projectionEdits`: `{projectionId,snapshot,edits:[{range:{start,end},newText}]}`
+  принимает UTF-16 правки языка в проектируемом BSL. Весь набор проверяется:
+  границы должны принадлежать запросу, пересечения и выход за литерал запрещены.
+  После повторного декодирования ESKA выдаёт план только для SDBL:
+  `{noOp,inputSnapshot,outputSnapshot,replacements:[{range,rangeUtf16,text}]}`.
+  Это не изменение сессии или Native-модуля. IDE проверяет актуальную ревизию
+  черновика и применяет результат через его Undo/Redo.
+- `query/projectionClose`: `{projectionId}` → `{released:bool}`; повторный close
+  допустим. Проекция не удерживает source lease и не мешает завершению сессии.
+
+Всего до 16 проекций, до 64 позиций/правок за запрос; тело ограничено 8 MiB.
+Оригинал, проекция, декодированный текст и карта учитываются в общей квоте
+query 32 MiB/64 entries. Карта ограничена 65536 spans. Сохранённая проекция
+доступна после закрытия source session, не сохраняя её временное ограничение.
+Reasons: `unknown_projection`, `projection_limit`, `projection_snapshot_mismatch`;
+действуют прежние stale/context/codec/resource errors. JSON не зависит от locale.

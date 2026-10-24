@@ -561,7 +561,7 @@ impl Format {
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Owner {
+pub(super) struct Owner {
     version: String,
     snapshot: String,
     is_dirty: bool,
@@ -570,7 +570,7 @@ struct Owner {
 }
 impl Owner {
     /// Native buffer facts remain explicit and never include a VS Code URI or session-readonly command.
-    fn core(&self) -> Result<QueryEditorState<'_>, Value> {
+    pub(super) fn core(&self) -> Result<QueryEditorState<'_>, Value> {
         let application = if self.application.is_null() {
             None
         } else {

@@ -1,6 +1,9 @@
 //! Unsaved query owners use the same checked Designer paths and current support rules as other edits.
 
+mod projection;
 mod session;
+
+pub use projection::{QueryProjection, QueryProjectionTarget};
 
 pub use session::{
     QueryApplyPlan, QueryEditorState, QueryOwnerFormat, QueryOwnerRestrictions, QuerySession,

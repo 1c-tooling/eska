@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "task": "T103",
+  "date": "2026-10-24",
+  "scope": "Immutable BSL language projection; native LSP binding is pending",
+  "apiVersion": "1.20",
+  "coreOwns": [
+    "projected full module",
+    "UTF-16 position translation",
+    "navigation targets",
+    "safe language edit to SDBL plan"
+  ],
+  "mutations": {
+    "owner": false,
+    "draft": false,
+    "applyToken": false,
+    "retainsSourceLease": false
+  },
+  "limits": {
+    "projections": 16,
+    "sharedBytes": 33554432,
+    "snapshotBytes": 8388608,
+    "positions": 64,
+    "edits": 64
+  },
+  "verification": {
+    "gates": {
+      "fmt": 0,
+      "check": 0,
+      "clippy": 0,
+      "test": 0,
+      "rustdoc": 0
+    },
+    "suites": 35,
+    "passed": 1026,
+    "failed": 0,
+    "ignored": 12
+  },
+  "regressions": [
+    "dirty owner and Unicode/BOM/CRLF maps",
+    "escaping and overlaps rejected",
+    "no native/source/recovery write",
+    "read-only analysis allowed",
+    "stale revision and owner rejected",
+    "paused restore requires explicit resume",
+    "projection survives source close without retaining its lease",
+    "API 1.19 cannot access 1.20 projection methods",
+    "bounded allocation and streamed snapshots"
+  ]
+}

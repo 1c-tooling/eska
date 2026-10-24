@@ -26,8 +26,8 @@ pub use editing_references::PropertyReferenceChoice;
 pub use editing_values::PropertyValueChoice;
 pub use query::{
     QueryApplyPlan, QueryDocument, QueryDocumentError, QueryDocumentKind, QueryEditorState,
-    QueryOwnerFormat, QueryOwnerRestrictions, QueryRevision, QuerySession, QuerySessionError,
-    QuerySessionRestore,
+    QueryOwnerFormat, QueryOwnerRestrictions, QueryProjection, QueryProjectionTarget,
+    QueryRevision, QuerySession, QuerySessionError, QuerySessionRestore,
 };
 pub use refresh::RefreshReport;
 pub use renaming::RenameError;

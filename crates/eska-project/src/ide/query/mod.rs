@@ -4,6 +4,7 @@ mod buffers;
 mod documents;
 mod dto;
 mod params;
+mod projections;
 mod recovery;
 mod sessions;
 mod source;
@@ -35,6 +36,7 @@ pub(super) struct State {
     documents: BTreeMap<String, documents::Entry>,
     sessions: BTreeMap<String, sessions::Entry>,
     source_snapshots: BTreeMap<String, source::Entry>,
+    projections: BTreeMap<String, projections::Entry>,
     serial: u64,
     durable_sessions: bool,
     bsl_sessions: bool,
@@ -45,6 +47,7 @@ pub(super) fn is_method(method: &str) -> bool {
     recovery::is_method(method)
         || sessions::is_method(method)
         || source::is_method(method)
+        || projections::is_method(method)
         || matches!(
             method,
             "query/bufferBegin"
@@ -62,6 +65,16 @@ pub(super) fn is_method(method: &str) -> bool {
 /// Stateful session methods require their separately negotiated contract.
 pub(super) fn is_session_method(method: &str) -> bool {
     sessions::is_method(method)
+}
+
+/// Language projection is additive and requires its own negotiated minor version.
+pub(super) fn is_projection_method(method: &str) -> bool {
+    projections::is_method(method)
+}
+
+/// Only immutable BSL projections are available; XML language context is deliberately not advertised.
+pub(super) fn projection_capability() -> Value {
+    projections::capability()
 }
 
 /// Shared protected-source inspection is an additive contract negotiated independently from query lifecycle.
@@ -128,6 +141,7 @@ impl State {
             + self.documents.len()
             + self.sessions.len()
             + self.source_snapshots.len()
+            + self.projections.len()
             >= 64
             || self.retained_bytes().saturating_add(bytes) > RETAINED_BYTES
         {
@@ -159,6 +173,11 @@ impl State {
                 .documents
                 .values()
                 .map(|entry| entry.document.input().len())
+                .sum::<usize>()
+            + self
+                .projections
+                .values()
+                .map(projections::Entry::bytes)
                 .sum::<usize>()
             + self
                 .sessions
@@ -272,6 +291,9 @@ impl Server {
         if matches!(method, "source/snapshotRead" | "source/snapshotClose") {
             return self.queries.source_cleanup(Some(&key), method, args);
         }
+        if projections::is_method(method) && method != "query/projectionOpen" {
+            return self.queries.projection_read(&key, method, args);
+        }
         if matches!(method, "query/sessionClose" | "query/sessionGet") {
             return self.queries.session_cleanup(method, &key, args);
         }
@@ -298,6 +320,10 @@ impl Server {
             "query/bufferBegin" => self.queries.begin_buffer(&key, args),
             "query/bufferAppend" => self.queries.append_buffer(&key, args),
             "query/open" => self.queries.open_document(project, &key, args),
+            "query/projectionOpen" => {
+                self.queries
+                    .open_projection(project, &key, args, &self.recovery)
+            }
             method if source::is_method(method) => {
                 self.queries.source_request(project, &key, method, args)
             }

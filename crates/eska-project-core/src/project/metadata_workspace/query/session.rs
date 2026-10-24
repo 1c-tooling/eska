@@ -407,6 +407,40 @@ impl QuerySession {
         Ok(())
     }
 
+    /// Project a checked BSL draft for analysis; no apply token, checkpoint mutation or source-write permission is issued.
+    ///
+    /// # Errors
+    /// Rejects XML owners, unresumed/applying sessions, stale drafts and changed native/source/context inputs.
+    pub fn language_projection(
+        &self,
+        project: &mut ProjectSession,
+        expected: u64,
+        current: QueryEditorState<'_>,
+    ) -> Result<super::QueryProjection, QuerySessionError> {
+        self.check_revision(expected)?;
+        if self.document.kind != QueryDocumentKind::Bsl {
+            return Err(QueryError::UnsupportedStructure.into());
+        }
+        match self.phase {
+            Phase::Ready => (),
+            Phase::Applying(_) | Phase::Recovering(_) => return Err(QuerySessionError::ApplyBusy),
+            _ => return Err(QuerySessionError::ResumeRequired),
+        }
+        let document = self.checked_document(project, current, false)?;
+        project.check_query_read(&document, revision(&document))?;
+        let plan = document.plan(&self.identity, &self.draft, &[], None)?;
+        let QueryIdentity::BslLiteral(range) = &self.identity else {
+            return Err(QueryError::UnsupportedStructure.into());
+        };
+        super::QueryProjection::new(
+            Arc::clone(&self.document.input),
+            range.clone(),
+            Arc::from(plan.output()),
+            self.revision,
+        )
+        .map_err(Into::into)
+    }
+
     /// Rebind a remembered buffer only by explicit user intent, including a separately saved matching XML owner.
     ///
     /// # Errors

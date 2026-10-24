@@ -5,6 +5,7 @@ use crate::backend::project::metadata_workspace::{
 };
 use std::sync::Arc;
 
+mod projection;
 mod protection;
 
 /// Recovery discovers only the declared owner branch; another IDE need not rebuild an expanded metadata tree first.

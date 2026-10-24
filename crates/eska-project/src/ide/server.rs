@@ -175,6 +175,9 @@ impl Server {
             method if super::query::is_session_method(method) && self.client_minor < 15 => {
                 Err(error(-32601))
             }
+            method if super::query::is_projection_method(method) && self.client_minor < 20 => {
+                Err(error(-32601))
+            }
             method if super::query::is_method(method) && self.client_minor >= 13 => {
                 self.query(method, args)
             }
@@ -243,6 +246,9 @@ impl Server {
         if self.client_minor >= 17 {
             result["capabilities"]["sourceProtection"] =
                 super::query::source_capability(self.client_minor >= 18);
+        }
+        if self.client_minor >= 20 {
+            result["capabilities"]["queryProjections"] = super::query::projection_capability();
         }
         Ok(result)
     }
