@@ -70,6 +70,13 @@ T98–T99 в эту цель не входят. `DONE` фиксируется т
 Приняты API 1.23, установленный VSIX ru/en, buhmfo и совместимость с API 1.22
 на Linux/VSCodium; другие среды не объявляются проверенными.
 
+По запросу от 2026-10-24 разрешена очередь
+**T109 → T110 → T111 → T112 → T113 → T114**:
+связанные метаданные базы/расширений, временные таблицы и пакеты, HAVING,
+последовательные итоги, конструкции СКД и приёмка реальной платформой.
+T109 выполняется первой; [scope и критерии](20-query-constructor-completion.md).
+Вся доменная логика принадлежит ESKA; расширение предоставляет интерфейс.
+
 Ревью от 2026-10-24 перенесло обратную навигацию по исходникам из Explorer
 в общее ядро: Metadata API 1.24 возвращает владельца и цепочку предков одним
 запросом. Проверены workspace, Node, установленный VSIX и сравнительные
@@ -434,6 +441,12 @@ BSL LSP и визуальный редактор форм в это направ
 | T106 | DONE | 12 исходных performance gates пройдены на Linux/VSCodium; прежние failed-серии сохранены | [17-language-performance.md](17-language-performance.md) |
 | T107 | DONE | Пять вкладок, таблицы/поля приложения и общий backend; установленный VSIX ru/en и buhmfo приняты на Linux/VSCodium | [18-query-constructor.md](18-query-constructor.md) |
 | T108 | DONE | Виртуальные таблицы с параметрами, вложенные запросы, объединения и итоги в ESKA; установленный VSIX ru/en, buhmfo и API 1.22 приняты на Linux/VSCodium | [19-query-advanced.md](19-query-advanced.md) |
+| T109 | IN-PROGRESS | Связанные и наследуемые метаданные базы и расширений в каталоге ESKA | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
+| T110 | PLANNED | Временные таблицы, INTO, порядок операторов и зависимости пакета | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
+| T111 | PLANNED | Отбор по агрегатам ИМЕЮЩИЕ/HAVING в ESKA и интерфейсе | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
+| T112 | PLANNED | Несколько последовательных секций итогов | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
+| T113 | PLANNED | Типизированные конструкции языка СКД по грамматике платформы | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
+| T114 | PLANNED | Приёмка сформированных запросов на тестовой ИБ buhmfo и fixtures платформы 1С | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в
