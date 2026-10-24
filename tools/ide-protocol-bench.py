@@ -19,9 +19,9 @@ PLAYGROUND = (REPO.parent / "eska-playground").resolve()
 class Client:
     """Independent bounded-time pipe client with a continuously drained stdout."""
 
-    def __init__(self, binary):
+    def __init__(self, binary, backend="project"):
         """Start one fresh process and parse frames without production framing helpers."""
-        self.process = subprocess.Popen([str(binary), "ide", "--stdio"], stdin=subprocess.PIPE,
+        self.process = subprocess.Popen([str(binary), "serve" if backend == "project" else "ide", "--stdio"], stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.messages = queue.Queue()
         self.serial = 0
@@ -76,9 +76,9 @@ def timed(operation):
     return value, (time.perf_counter() - start) * 1000
 
 
-def sample(binary, root, cached):
+def sample(binary, root, cached, backend="project"):
     """Measure lazy navigation, interactive indexing, queries and one-object refresh."""
-    client = Client(binary)
+    client = Client(binary, backend)
     try:
         client.request("initialize", dict(apiVersion=dict(major=1, minor=0),
                                          client=dict(name="benchmark", version="1")))
@@ -141,18 +141,25 @@ def main():
     """Print one raw JSON record per fresh process, preserving existing big-project caches."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("dataset", choices=["small", "synthetic", "big"])
-    parser.add_argument("--binary", type=pathlib.Path, default=REPO / "target/dist/eska")
+    parser.add_argument("--binary", type=pathlib.Path)
+    parser.add_argument("--backend", choices=["project", "legacy"], default="project")
+    parser.add_argument("--root", type=pathlib.Path, help="Existing read-only project for the big dataset")
     parser.add_argument("--runs", type=int, default=5)
     parser.add_argument("--cached", action="store_true")
     args = parser.parse_args()
+    if args.root and (args.dataset != "big" or args.cached):
+        parser.error("--root requires big without --cached, preserving existing projects")
+    if args.runs < 1:
+        parser.error("--runs must be positive")
+    binary = args.binary or REPO / "target/dist" / ("eska-project" if args.backend == "project" else "eska")
     with tempfile.TemporaryDirectory(prefix="eska-ide-bench-", dir=PLAYGROUND) as temporary:
-        root = PLAYGROUND / "big_configuration_temp" if args.dataset == "big" else pathlib.Path(temporary)
+        root = (args.root or PLAYGROUND / "big_configuration_temp").resolve() if args.dataset == "big" else pathlib.Path(temporary)
         if args.dataset != "big":
             prepare(root, args.dataset == "synthetic")
         digest = hashlib.sha256((root / "src/Configuration.xml").read_bytes()).hexdigest()
         for run in range(args.runs):
             result = dict(dataset=args.dataset, cached=args.cached, run=run, root_sha256=digest,
-                          sample=sample(args.binary.resolve(), root, args.cached))
+                          sample=sample(binary.resolve(), root, args.cached, args.backend))
             print(json.dumps(result, ensure_ascii=False), flush=True)
         assert hashlib.sha256((root / "src/Configuration.xml").read_bytes()).hexdigest() == digest
 

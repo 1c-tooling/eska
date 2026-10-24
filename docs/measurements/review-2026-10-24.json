@@ -1,0 +1,1191 @@
+{
+  "date": "2026-10-24",
+  "scope": "Rust workspace and VS Code adapter architecture review; source-navigation and stdio performance",
+  "environment": {
+    "system": "Linux-7.2.11-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13420H",
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+    "node": "v22.23.1",
+    "native_editor": "VSCodium 1.109.5",
+    "backend_profile": "dist",
+    "workspace_packages": [
+      "eska",
+      "eska-analyzer",
+      "eska-build",
+      "eska-build-runtime",
+      "eska-check",
+      "eska-presentation",
+      "eska-project",
+      "eska-project-core",
+      "eska-terminal",
+      "eska-tool-runtime",
+      "eska-vcs"
+    ]
+  },
+  "revisions": {
+    "branch": "codex/design-xml-analyzer",
+    "before": {
+      "eska": "bea77472fb73e007d171c814fb3d60038bee7436",
+      "explorer": "29dd397574fa23457b6a68ff5571a7fd58a72789"
+    },
+    "after": {
+      "eska": "72eaa0e172e49053974e9afb06cc41c6a30734a7",
+      "explorer": "25d91e0a037c73027b1240e50bbd770e14bba264"
+    }
+  },
+  "artifacts": {
+    "before_backend_sha256": "93c4650559c0520b13abafded20dd729a2b8324e754004254965b21500d53244",
+    "after_backend_sha256": "76c0f597c17eb4910782e79212e55000785ebd741c2476637c59dd673a4ebf1b",
+    "tested_vsix_sha256": "0fcd2548b48168e7615fbe87609c2ad0890d1f285858c7082c8f1d0e198f9a9e",
+    "tested_vsix_version": "0.0.12",
+    "baseline_query_vsix_sha256": "fe33eb203c92a0c967a2450eb06c3b0f5ce75f5ec932a079c0e1d45410bd64ea"
+  },
+  "methodology": {
+    "source_navigation": "5 fresh connections per size; workspace/open is completed before timing. 31 reverse lookups per connection: first cold adapter tree, then 30 warm calls. Sparse synthetic declarations; only fixture target XML/modules exist. Measures adapter plus real stdio/backend, excludes VS Code rendering. No Cargo builds during sampling.",
+    "stdio": "3 fresh processes for each dataset and revision; diskCache=false, OS page cache retained. Time includes framing, pipes and JSON. Index requested explicitly; 40 searches per process, nearest-rank p95. Memory is Linux backend VmHWM, excludes Node, Python and UI. No builds during sampling.",
+    "big_project": "../eska-playground/big_configuration_temp/src/buhmfo; read only. Root Configuration.xml SHA-256 checked before and after each series, not a whole-source hash. No 1C platform invocation.",
+    "native": "Private profiles and owned synthetic projects. Native elapsedMs values are single functional acceptance timings, not comparative performance samples. Language-pack registration is not Russian UI acceptance."
+  },
+  "source_navigation": {
+    "summary": {
+      "before": {
+        "100": {
+          "cold_median_ms": 9.442676999999946,
+          "warm_median_ms": 0.47959900000000744,
+          "cold_requests": [
+            37
+          ],
+          "retained_nodes": [
+            155
+          ]
+        },
+        "2000": {
+          "cold_median_ms": 32.96410000000003,
+          "warm_median_ms": 0.7147750000000315,
+          "cold_requests": [
+            37
+          ],
+          "retained_nodes": [
+            2055
+          ]
+        },
+        "10000": {
+          "cold_median_ms": 132.10247099999992,
+          "warm_median_ms": 1.6467539999998735,
+          "cold_requests": [
+            37
+          ],
+          "retained_nodes": [
+            10055
+          ]
+        }
+      },
+      "after": {
+        "100": {
+          "cold_median_ms": 0.7074890000000096,
+          "warm_median_ms": 0.37383299999999053,
+          "cold_requests": [
+            1
+          ],
+          "retained_nodes": [
+            5
+          ]
+        },
+        "2000": {
+          "cold_median_ms": 0.6833799999999997,
+          "warm_median_ms": 0.3376079999999888,
+          "cold_requests": [
+            1
+          ],
+          "retained_nodes": [
+            5
+          ]
+        },
+        "10000": {
+          "cold_median_ms": 0.8314050000000179,
+          "warm_median_ms": 0.31116099999997004,
+          "cold_requests": [
+            1
+          ],
+          "retained_nodes": [
+            5
+          ]
+        }
+      }
+    },
+    "raw": {
+      "before": [
+        {
+          "count": 100,
+          "run": 0,
+          "cold": {
+            "ms": 12.498214000000019,
+            "requests": 37,
+            "retainedNodes": 155
+          },
+          "warmMedianMs": 0.299837000000025,
+          "warmP95Ms": 1.3046420000000012,
+          "warmRequests": 2
+        },
+        {
+          "count": 100,
+          "run": 1,
+          "cold": {
+            "ms": 9.973704999999995,
+            "requests": 37,
+            "retainedNodes": 155
+          },
+          "warmMedianMs": 0.561665000000005,
+          "warmP95Ms": 0.8373429999999757,
+          "warmRequests": 2
+        },
+        {
+          "count": 100,
+          "run": 2,
+          "cold": {
+            "ms": 9.007677999999999,
+            "requests": 37,
+            "retainedNodes": 155
+          },
+          "warmMedianMs": 0.539685999999989,
+          "warmP95Ms": 0.7620820000000208,
+          "warmRequests": 2
+        },
+        {
+          "count": 100,
+          "run": 3,
+          "cold": {
+            "ms": 8.582765999999992,
+            "requests": 37,
+            "retainedNodes": 155
+          },
+          "warmMedianMs": 0.47959900000000744,
+          "warmP95Ms": 0.6907779999999661,
+          "warmRequests": 2
+        },
+        {
+          "count": 100,
+          "run": 4,
+          "cold": {
+            "ms": 9.442676999999946,
+            "requests": 37,
+            "retainedNodes": 155
+          },
+          "warmMedianMs": 0.41583200000002307,
+          "warmP95Ms": 0.6734739999999988,
+          "warmRequests": 2
+        },
+        {
+          "count": 2000,
+          "run": 0,
+          "cold": {
+            "ms": 32.88504800000004,
+            "requests": 37,
+            "retainedNodes": 2055
+          },
+          "warmMedianMs": 0.7147750000000315,
+          "warmP95Ms": 0.9606200000000058,
+          "warmRequests": 2
+        },
+        {
+          "count": 2000,
+          "run": 1,
+          "cold": {
+            "ms": 34.966972999999996,
+            "requests": 37,
+            "retainedNodes": 2055
+          },
+          "warmMedianMs": 0.9670859999999948,
+          "warmP95Ms": 1.6037469999999985,
+          "warmRequests": 2
+        },
+        {
+          "count": 2000,
+          "run": 2,
+          "cold": {
+            "ms": 33.29222600000003,
+            "requests": 37,
+            "retainedNodes": 2055
+          },
+          "warmMedianMs": 0.3795220000000654,
+          "warmP95Ms": 0.6546600000000353,
+          "warmRequests": 2
+        },
+        {
+          "count": 2000,
+          "run": 3,
+          "cold": {
+            "ms": 32.52110600000003,
+            "requests": 37,
+            "retainedNodes": 2055
+          },
+          "warmMedianMs": 0.4491849999999431,
+          "warmP95Ms": 1.0955260000000635,
+          "warmRequests": 2
+        },
+        {
+          "count": 2000,
+          "run": 4,
+          "cold": {
+            "ms": 32.96410000000003,
+            "requests": 37,
+            "retainedNodes": 2055
+          },
+          "warmMedianMs": 0.7698760000000675,
+          "warmP95Ms": 0.9480290000000196,
+          "warmRequests": 2
+        },
+        {
+          "count": 10000,
+          "run": 0,
+          "cold": {
+            "ms": 134.6515770000001,
+            "requests": 37,
+            "retainedNodes": 10055
+          },
+          "warmMedianMs": 1.4825610000000324,
+          "warmP95Ms": 2.406084999999962,
+          "warmRequests": 2
+        },
+        {
+          "count": 10000,
+          "run": 1,
+          "cold": {
+            "ms": 132.10247099999992,
+            "requests": 37,
+            "retainedNodes": 10055
+          },
+          "warmMedianMs": 1.9406550000001062,
+          "warmP95Ms": 3.759612999999945,
+          "warmRequests": 2
+        },
+        {
+          "count": 10000,
+          "run": 2,
+          "cold": {
+            "ms": 142.70183199999997,
+            "requests": 37,
+            "retainedNodes": 10055
+          },
+          "warmMedianMs": 1.6350719999998091,
+          "warmP95Ms": 2.1143429999999626,
+          "warmRequests": 2
+        },
+        {
+          "count": 10000,
+          "run": 3,
+          "cold": {
+            "ms": 126.0994290000001,
+            "requests": 37,
+            "retainedNodes": 10055
+          },
+          "warmMedianMs": 1.6467539999998735,
+          "warmP95Ms": 2.2238009999998667,
+          "warmRequests": 2
+        },
+        {
+          "count": 10000,
+          "run": 4,
+          "cold": {
+            "ms": 123.18947700000012,
+            "requests": 37,
+            "retainedNodes": 10055
+          },
+          "warmMedianMs": 1.7576559999999972,
+          "warmP95Ms": 2.540087000000085,
+          "warmRequests": 2
+        }
+      ],
+      "after": [
+        {
+          "count": 100,
+          "run": 0,
+          "cold": {
+            "ms": 3.1573769999999968,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.4452399999999841,
+          "warmP95Ms": 1.1796080000000018,
+          "warmRequests": 1
+        },
+        {
+          "count": 100,
+          "run": 1,
+          "cold": {
+            "ms": 0.7074890000000096,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.40492499999999154,
+          "warmP95Ms": 0.5794360000000154,
+          "warmRequests": 1
+        },
+        {
+          "count": 100,
+          "run": 2,
+          "cold": {
+            "ms": 0.8109620000000177,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.31912500000001387,
+          "warmP95Ms": 0.48479299999999625,
+          "warmRequests": 1
+        },
+        {
+          "count": 100,
+          "run": 3,
+          "cold": {
+            "ms": 0.602248000000003,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.37383299999999053,
+          "warmP95Ms": 0.5151139999999828,
+          "warmRequests": 1
+        },
+        {
+          "count": 100,
+          "run": 4,
+          "cold": {
+            "ms": 0.5568979999999897,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.36949099999998225,
+          "warmP95Ms": 0.5643460000000005,
+          "warmRequests": 1
+        },
+        {
+          "count": 2000,
+          "run": 0,
+          "cold": {
+            "ms": 0.7671399999999835,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.3376079999999888,
+          "warmP95Ms": 0.38520500000004176,
+          "warmRequests": 1
+        },
+        {
+          "count": 2000,
+          "run": 1,
+          "cold": {
+            "ms": 0.6047240000000329,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.3819080000000099,
+          "warmP95Ms": 0.4982610000000136,
+          "warmRequests": 1
+        },
+        {
+          "count": 2000,
+          "run": 2,
+          "cold": {
+            "ms": 0.6833799999999997,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.3155130000000099,
+          "warmP95Ms": 0.42279300000001285,
+          "warmRequests": 1
+        },
+        {
+          "count": 2000,
+          "run": 3,
+          "cold": {
+            "ms": 0.6539360000000443,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.34951699999999164,
+          "warmP95Ms": 0.38877500000000964,
+          "warmRequests": 1
+        },
+        {
+          "count": 2000,
+          "run": 4,
+          "cold": {
+            "ms": 0.7707509999999616,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.27977899999996225,
+          "warmP95Ms": 0.37428799999997864,
+          "warmRequests": 1
+        },
+        {
+          "count": 10000,
+          "run": 0,
+          "cold": {
+            "ms": 0.9568760000000225,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.3853059999999573,
+          "warmP95Ms": 0.5290749999999775,
+          "warmRequests": 1
+        },
+        {
+          "count": 10000,
+          "run": 1,
+          "cold": {
+            "ms": 0.7518799999999715,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.31695700000000215,
+          "warmP95Ms": 0.5667760000000044,
+          "warmRequests": 1
+        },
+        {
+          "count": 10000,
+          "run": 2,
+          "cold": {
+            "ms": 0.8314050000000179,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.23330700000008164,
+          "warmP95Ms": 0.5134110000000192,
+          "warmRequests": 1
+        },
+        {
+          "count": 10000,
+          "run": 3,
+          "cold": {
+            "ms": 0.8829889999999523,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.31116099999997004,
+          "warmP95Ms": 0.5392339999999649,
+          "warmRequests": 1
+        },
+        {
+          "count": 10000,
+          "run": 4,
+          "cold": {
+            "ms": 0.7696799999999939,
+            "requests": 1,
+            "retainedNodes": 5
+          },
+          "warmMedianMs": 0.2973460000000614,
+          "warmP95Ms": 0.4678959999999961,
+          "warmRequests": 1
+        }
+      ]
+    }
+  },
+  "stdio": {
+    "summary_medians": {
+      "before": {
+        "small": {
+          "open_ms": 0.9769320022314787,
+          "expand_ms": 0.39435400685761124,
+          "properties_ms": 0.17443299293518066,
+          "warm_properties_p95_ms": 0.10453601134940982,
+          "index_ms": 12.635140010388568,
+          "interactive_index_max_ms": 0.2223170013166964,
+          "search_p95_ms": 0.8721619960851967,
+          "filter_ms": 0.23373699514195323,
+          "refresh_ms": 2.258419990539551,
+          "peak_rss_mib": 15.40234375,
+          "objects": 40,
+          "failures": 1
+        },
+        "synthetic": {
+          "open_ms": 8.126417000312358,
+          "expand_ms": 0.6967660010559484,
+          "properties_ms": 0.19807899661827832,
+          "warm_properties_p95_ms": 0.0977689924184233,
+          "index_ms": 260.120189996087,
+          "interactive_index_max_ms": 6.641638989094645,
+          "search_p95_ms": 4.507623991230503,
+          "filter_ms": 0.14425699191633612,
+          "refresh_ms": 7.085887002176605,
+          "peak_rss_mib": 41.21484375,
+          "objects": 42001,
+          "failures": 0
+        },
+        "big": {
+          "open_ms": 207.06195700040553,
+          "expand_ms": 4.407321001053788,
+          "properties_ms": 17.651075992034748,
+          "warm_properties_p95_ms": 6.778059003408998,
+          "index_ms": 6207.8812870022375,
+          "interactive_index_max_ms": 111.52196700277273,
+          "search_p95_ms": 29.920467000920326,
+          "filter_ms": 0.863739987835288,
+          "refresh_ms": 20.248253000318073,
+          "peak_rss_mib": 202.08984375,
+          "objects": 138373,
+          "failures": 0
+        }
+      },
+      "after": {
+        "small": {
+          "open_ms": 0.9055309928953648,
+          "expand_ms": 0.5229770031291991,
+          "properties_ms": 0.20045999553985894,
+          "warm_properties_p95_ms": 0.13788900105282664,
+          "index_ms": 12.708861991995946,
+          "interactive_index_max_ms": 0.24260999634861946,
+          "search_p95_ms": 0.8128769986797124,
+          "filter_ms": 0.21208199905231595,
+          "refresh_ms": 2.3044199915602803,
+          "peak_rss_mib": 15.2890625,
+          "objects": 40,
+          "failures": 1
+        },
+        "synthetic": {
+          "open_ms": 8.690654998645186,
+          "expand_ms": 0.7145779964048415,
+          "properties_ms": 0.2639279991853982,
+          "warm_properties_p95_ms": 0.13438599125947803,
+          "index_ms": 282.3924080003053,
+          "interactive_index_max_ms": 6.763494995539077,
+          "search_p95_ms": 4.662826991989277,
+          "filter_ms": 0.18598500173538923,
+          "refresh_ms": 5.4060560069046915,
+          "peak_rss_mib": 41.35546875,
+          "objects": 42001,
+          "failures": 0
+        },
+        "big": {
+          "open_ms": 200.9835900098551,
+          "expand_ms": 4.399729004944675,
+          "properties_ms": 17.052842988050543,
+          "warm_properties_p95_ms": 6.393622010364197,
+          "index_ms": 6186.5818520018365,
+          "interactive_index_max_ms": 108.25156899227295,
+          "search_p95_ms": 32.403412988060154,
+          "filter_ms": 0.7385359931504354,
+          "refresh_ms": 20.734612990054302,
+          "peak_rss_mib": 202.125,
+          "objects": 138373,
+          "failures": 0
+        }
+      }
+    },
+    "raw": {
+      "before": {
+        "small": [
+          {
+            "dataset": "small",
+            "cached": false,
+            "run": 0,
+            "root_sha256": "f2b740909fd2f08985ea01468c7e99e37d643cb79f0f621f5f7b4f1b60892886",
+            "sample": {
+              "open_ms": 1.0506450053071603,
+              "expand_ms": 0.5751930002588779,
+              "properties_ms": 0.2961860009236261,
+              "warm_properties_p95_ms": 0.10453601134940982,
+              "index_ms": 12.646446994040161,
+              "interactive_index_max_ms": 0.2248899982078001,
+              "search_p95_ms": 0.8721619960851967,
+              "filter_ms": 0.16837099974509329,
+              "refresh_ms": 4.350942006567493,
+              "peak_rss_mib": 15.48046875,
+              "objects": 40,
+              "failures": 1
+            }
+          },
+          {
+            "dataset": "small",
+            "cached": false,
+            "run": 1,
+            "root_sha256": "f2b740909fd2f08985ea01468c7e99e37d643cb79f0f621f5f7b4f1b60892886",
+            "sample": {
+              "open_ms": 0.9769320022314787,
+              "expand_ms": 0.39435400685761124,
+              "properties_ms": 0.17443299293518066,
+              "warm_properties_p95_ms": 0.08559299749322236,
+              "index_ms": 12.542673997813836,
+              "interactive_index_max_ms": 0.2223170013166964,
+              "search_p95_ms": 0.7997399952728301,
+              "filter_ms": 0.2522610011510551,
+              "refresh_ms": 2.258419990539551,
+              "peak_rss_mib": 15.19140625,
+              "objects": 40,
+              "failures": 1
+            }
+          },
+          {
+            "dataset": "small",
+            "cached": false,
+            "run": 2,
+            "root_sha256": "f2b740909fd2f08985ea01468c7e99e37d643cb79f0f621f5f7b4f1b60892886",
+            "sample": {
+              "open_ms": 0.7422790076816455,
+              "expand_ms": 0.3610549902077764,
+              "properties_ms": 0.1735379919409752,
+              "warm_properties_p95_ms": 0.18489900685381144,
+              "index_ms": 12.635140010388568,
+              "interactive_index_max_ms": 0.19232700287830085,
+              "search_p95_ms": 1.0040909983217716,
+              "filter_ms": 0.23373699514195323,
+              "refresh_ms": 2.238141998532228,
+              "peak_rss_mib": 15.40234375,
+              "objects": 40,
+              "failures": 1
+            }
+          }
+        ],
+        "synthetic": [
+          {
+            "dataset": "synthetic",
+            "cached": false,
+            "run": 0,
+            "root_sha256": "5f58e03f4c40ef3baddc709a0010968bc9416a4dd2df670bf0c4afc33f2c521d",
+            "sample": {
+              "open_ms": 8.126417000312358,
+              "expand_ms": 0.8640979940537363,
+              "properties_ms": 0.5163840105524287,
+              "warm_properties_p95_ms": 0.09735100320540369,
+              "index_ms": 261.6195529990364,
+              "interactive_index_max_ms": 6.240058995899744,
+              "search_p95_ms": 4.394367992063053,
+              "filter_ms": 0.1257109979633242,
+              "refresh_ms": 7.077421003486961,
+              "peak_rss_mib": 41.25390625,
+              "objects": 42001,
+              "failures": 0
+            }
+          },
+          {
+            "dataset": "synthetic",
+            "cached": false,
+            "run": 1,
+            "root_sha256": "5f58e03f4c40ef3baddc709a0010968bc9416a4dd2df670bf0c4afc33f2c521d",
+            "sample": {
+              "open_ms": 7.8091380128171295,
+              "expand_ms": 0.6967660010559484,
+              "properties_ms": 0.19807899661827832,
+              "warm_properties_p95_ms": 0.0977689924184233,
+              "index_ms": 260.120189996087,
+              "interactive_index_max_ms": 6.6650079970713705,
+              "search_p95_ms": 5.405832009273581,
+              "filter_ms": 0.14425699191633612,
+              "refresh_ms": 7.085887002176605,
+              "peak_rss_mib": 41.21484375,
+              "objects": 42001,
+              "failures": 0
+            }
+          },
+          {
+            "dataset": "synthetic",
+            "cached": false,
+            "run": 2,
+            "root_sha256": "5f58e03f4c40ef3baddc709a0010968bc9416a4dd2df670bf0c4afc33f2c521d",
+            "sample": {
+              "open_ms": 8.816311994451098,
+              "expand_ms": 0.6372490024659783,
+              "properties_ms": 0.160726995090954,
+              "warm_properties_p95_ms": 0.1671070058364421,
+              "index_ms": 259.4686569937039,
+              "interactive_index_max_ms": 6.641638989094645,
+              "search_p95_ms": 4.507623991230503,
+              "filter_ms": 0.5981220019748434,
+              "refresh_ms": 7.128233002731577,
+              "peak_rss_mib": 41.16796875,
+              "objects": 42001,
+              "failures": 0
+            }
+          }
+        ],
+        "big": [
+          {
+            "dataset": "big",
+            "cached": false,
+            "run": 0,
+            "root_sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+            "sample": {
+              "open_ms": 397.06203500099946,
+              "expand_ms": 6.757611001376063,
+              "properties_ms": 23.74356299696956,
+              "warm_properties_p95_ms": 6.778059003408998,
+              "index_ms": 8529.64000600332,
+              "interactive_index_max_ms": 102.02029799984302,
+              "search_p95_ms": 29.920467000920326,
+              "filter_ms": 0.863739987835288,
+              "refresh_ms": 20.787595989531837,
+              "peak_rss_mib": 202.12890625,
+              "objects": 138373,
+              "failures": 0
+            }
+          },
+          {
+            "dataset": "big",
+            "cached": false,
+            "run": 1,
+            "root_sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+            "sample": {
+              "open_ms": 204.40437099023256,
+              "expand_ms": 4.2083850130438805,
+              "properties_ms": 17.06879900302738,
+              "warm_properties_p95_ms": 6.5786049963207915,
+              "index_ms": 6207.8812870022375,
+              "interactive_index_max_ms": 114.46036100096535,
+              "search_p95_ms": 32.37885600537993,
+              "filter_ms": 0.8772720029810444,
+              "refresh_ms": 18.380948007688858,
+              "peak_rss_mib": 202.08984375,
+              "objects": 138373,
+              "failures": 0
+            }
+          },
+          {
+            "dataset": "big",
+            "cached": false,
+            "run": 2,
+            "root_sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+            "sample": {
+              "open_ms": 207.06195700040553,
+              "expand_ms": 4.407321001053788,
+              "properties_ms": 17.651075992034748,
+              "warm_properties_p95_ms": 6.812792009441182,
+              "index_ms": 6188.400981991435,
+              "interactive_index_max_ms": 111.52196700277273,
+              "search_p95_ms": 29.541336989495903,
+              "filter_ms": 0.7201309927040711,
+              "refresh_ms": 20.248253000318073,
+              "peak_rss_mib": 202.0546875,
+              "objects": 138373,
+              "failures": 0
+            }
+          }
+        ]
+      },
+      "after": {
+        "small": [
+          {
+            "dataset": "small",
+            "cached": false,
+            "run": 0,
+            "root_sha256": "f2b740909fd2f08985ea01468c7e99e37d643cb79f0f621f5f7b4f1b60892886",
+            "sample": {
+              "open_ms": 1.3424229982774705,
+              "expand_ms": 1.0372559918323532,
+              "properties_ms": 0.5499819963006303,
+              "warm_properties_p95_ms": 0.15057300333864987,
+              "index_ms": 12.59372298954986,
+              "interactive_index_max_ms": 0.20448298892006278,
+              "search_p95_ms": 0.8128769986797124,
+              "filter_ms": 0.21208199905231595,
+              "refresh_ms": 2.250324992928654,
+              "peak_rss_mib": 15.3671875,
+              "objects": 40,
+              "failures": 1
+            }
+          },
+          {
+            "dataset": "small",
+            "cached": false,
+            "run": 1,
+            "root_sha256": "f2b740909fd2f08985ea01468c7e99e37d643cb79f0f621f5f7b4f1b60892886",
+            "sample": {
+              "open_ms": 0.6608109979424626,
+              "expand_ms": 0.35733099502976984,
+              "properties_ms": 0.19598098879214376,
+              "warm_properties_p95_ms": 0.13788900105282664,
+              "index_ms": 12.74619300966151,
+              "interactive_index_max_ms": 0.24260999634861946,
+              "search_p95_ms": 0.7417690067086369,
+              "filter_ms": 0.19212000188417733,
+              "refresh_ms": 4.346325993537903,
+              "peak_rss_mib": 15.234375,
+              "objects": 40,
+              "failures": 1
+            }
+          },
+          {
+            "dataset": "small",
+            "cached": false,
+            "run": 2,
+            "root_sha256": "f2b740909fd2f08985ea01468c7e99e37d643cb79f0f621f5f7b4f1b60892886",
+            "sample": {
+              "open_ms": 0.9055309928953648,
+              "expand_ms": 0.5229770031291991,
+              "properties_ms": 0.20045999553985894,
+              "warm_properties_p95_ms": 0.08769499254412949,
+              "index_ms": 12.708861991995946,
+              "interactive_index_max_ms": 0.29476999770849943,
+              "search_p95_ms": 0.8965500019257888,
+              "filter_ms": 0.22496999008581042,
+              "refresh_ms": 2.3044199915602803,
+              "peak_rss_mib": 15.2890625,
+              "objects": 40,
+              "failures": 1
+            }
+          }
+        ],
+        "synthetic": [
+          {
+            "dataset": "synthetic",
+            "cached": false,
+            "run": 0,
+            "root_sha256": "5f58e03f4c40ef3baddc709a0010968bc9416a4dd2df670bf0c4afc33f2c521d",
+            "sample": {
+              "open_ms": 8.690654998645186,
+              "expand_ms": 0.6613520090468228,
+              "properties_ms": 0.2639279991853982,
+              "warm_properties_p95_ms": 0.04012999124825001,
+              "index_ms": 282.3924080003053,
+              "interactive_index_max_ms": 6.763494995539077,
+              "search_p95_ms": 5.053152010077611,
+              "filter_ms": 0.44214499939698726,
+              "refresh_ms": 4.995105002308264,
+              "peak_rss_mib": 41.35546875,
+              "objects": 42001,
+              "failures": 0
+            }
+          },
+          {
+            "dataset": "synthetic",
+            "cached": false,
+            "run": 1,
+            "root_sha256": "5f58e03f4c40ef3baddc709a0010968bc9416a4dd2df670bf0c4afc33f2c521d",
+            "sample": {
+              "open_ms": 12.221586002851836,
+              "expand_ms": 0.9277229983126745,
+              "properties_ms": 0.3737310034921393,
+              "warm_properties_p95_ms": 0.1749740040395409,
+              "index_ms": 271.9606320024468,
+              "interactive_index_max_ms": 6.2206519942265,
+              "search_p95_ms": 4.662826991989277,
+              "filter_ms": 0.1765729975886643,
+              "refresh_ms": 5.4060560069046915,
+              "peak_rss_mib": 41.1328125,
+              "objects": 42001,
+              "failures": 0
+            }
+          },
+          {
+            "dataset": "synthetic",
+            "cached": false,
+            "run": 2,
+            "root_sha256": "5f58e03f4c40ef3baddc709a0010968bc9416a4dd2df670bf0c4afc33f2c521d",
+            "sample": {
+              "open_ms": 8.10695999825839,
+              "expand_ms": 0.7145779964048415,
+              "properties_ms": 0.22919899492990226,
+              "warm_properties_p95_ms": 0.13438599125947803,
+              "index_ms": 283.0998930003261,
+              "interactive_index_max_ms": 9.118361005675979,
+              "search_p95_ms": 4.230560996802524,
+              "filter_ms": 0.18598500173538923,
+              "refresh_ms": 7.748471005470492,
+              "peak_rss_mib": 41.35546875,
+              "objects": 42001,
+              "failures": 0
+            }
+          }
+        ],
+        "big": [
+          {
+            "dataset": "big",
+            "cached": false,
+            "run": 0,
+            "root_sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+            "sample": {
+              "open_ms": 210.56450800097082,
+              "expand_ms": 4.399729004944675,
+              "properties_ms": 19.639366000774316,
+              "warm_properties_p95_ms": 6.393622010364197,
+              "index_ms": 6186.5818520018365,
+              "interactive_index_max_ms": 107.78560499602463,
+              "search_p95_ms": 32.326688000466675,
+              "filter_ms": 0.8249960083048791,
+              "refresh_ms": 22.85443400614895,
+              "peak_rss_mib": 201.9765625,
+              "objects": 138373,
+              "failures": 0
+            }
+          },
+          {
+            "dataset": "big",
+            "cached": false,
+            "run": 1,
+            "root_sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+            "sample": {
+              "open_ms": 200.04127400170546,
+              "expand_ms": 4.156372000579722,
+              "properties_ms": 17.052842988050543,
+              "warm_properties_p95_ms": 7.565189996967092,
+              "index_ms": 6155.351257999428,
+              "interactive_index_max_ms": 108.83842200564686,
+              "search_p95_ms": 32.43727399967611,
+              "filter_ms": 0.7385359931504354,
+              "refresh_ms": 19.203342002583668,
+              "peak_rss_mib": 202.125,
+              "objects": 138373,
+              "failures": 0
+            }
+          },
+          {
+            "dataset": "big",
+            "cached": false,
+            "run": 2,
+            "root_sha256": "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+            "sample": {
+              "open_ms": 200.9835900098551,
+              "expand_ms": 4.4240779971005395,
+              "properties_ms": 16.869690996827558,
+              "warm_properties_p95_ms": 6.350220995955169,
+              "index_ms": 6255.825719999848,
+              "interactive_index_max_ms": 108.25156899227295,
+              "search_p95_ms": 32.403412988060154,
+              "filter_ms": 0.6443780002882704,
+              "refresh_ms": 20.734612990054302,
+              "peak_rss_mib": 202.12890625,
+              "objects": 138373,
+              "failures": 0
+            }
+          }
+        ]
+      }
+    },
+    "legacy_smoke": [
+      {
+        "dataset": "small",
+        "cached": false,
+        "run": 0,
+        "root_sha256": "f2b740909fd2f08985ea01468c7e99e37d643cb79f0f621f5f7b4f1b60892886",
+        "sample": {
+          "open_ms": 1.694905004114844,
+          "expand_ms": 1.195496995933354,
+          "properties_ms": 0.5898370000068098,
+          "warm_properties_p95_ms": 0.17404901154804975,
+          "index_ms": 11.011769995093346,
+          "interactive_index_max_ms": 0.48660200263839215,
+          "search_p95_ms": 4.064395994646475,
+          "filter_ms": 0.9068039944395423,
+          "refresh_ms": 0.5810389993712306,
+          "peak_rss_mib": 25.71875,
+          "objects": 40,
+          "failures": 1
+        }
+      }
+    ]
+  },
+  "validation": {
+    "rust": {
+      "commands": [
+        "cargo fmt --check",
+        "cargo check --workspace",
+        "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+        "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test --workspace",
+        "RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps"
+      ],
+      "passed": 1089,
+      "failed": 0,
+      "ignored": 12,
+      "ignored_cases": [
+        "test project::configurator::manual_large_configurator_tree ... ignored, manual read-only tree smoke; requires ESKA_DESIGNER_PROJECT",
+        "test project::designer_fixtures::manual_large_designer_open_and_source_lookup ... ignored, manual read-only smoke; requires ESKA_DESIGNER_PROJECT",
+        "test project::metadata_workspace::benchmarks::measure_search_subtree_removal ... ignored, explicit synthetic search-index deletion measurement",
+        "test project::metadata_workspace::benchmarks::measures_metadata_workspace ... ignored, explicit backend performance measurement; reads the large fixture only when requested",
+        "test project::metadata_workspace::ide::analyzer::published_validation_and_multi_client_leases_use_the_shared_generator ... ignored, requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2",
+        "test project::object_model::benchmarks_full_and_affected_descriptor_discovery ... ignored, manual semantic performance protocol",
+        "test published_analyzer_checks_real_designer_modules_for_all_types ... ignored, requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2",
+        "test published_application_uses_exact_members_and_exclusions ... ignored, requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2",
+        "test published_analyzer_accepts_all_project_kinds_and_rejects_unknown_policy ... ignored, requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2",
+        "test published_analyzer_produces_the_same_real_report_for_ru_and_en ... ignored, requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2",
+        "test analyzer_migration_process_uses_real_check_config_and_stable_json ... ignored, requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2",
+        "test project::support::tests::reads_real_support_sample ... ignored, requires ESKA_SUPPORT_SAMPLE pointing to a real Designer dump"
+      ],
+      "normal_dependency_boundary": "cargo tree -p eska-project-core --edges normal: no clap, presentation, terminal, analyzer, build or VCS package in core dependencies"
+    },
+    "node": {
+      "command": "ESKA_TEST_BINARY=<debug/eska-project> ESKA_TEST_ROOT=<sibling playground> node --test test/*.test.mjs",
+      "passed": 280,
+      "failed": 0,
+      "skipped": 3,
+      "skipped_cases": [
+        "ok 40 - real legacy backend requires explicit mode and can reconnect to standalone project # SKIP",
+        "ok 227 - real analyzer inspection verifies both bounded processes against the pinned CLI contract # SKIP",
+        "ok 235 - real upstream app installs independently and verifies all five notices without replacing project # SKIP"
+      ],
+      "typecheck": "npm run check passed",
+      "compile": "npm run compile passed"
+    },
+    "vsix": {
+      "package": "vsce package --no-dependencies --no-rewrite-relative-links passed",
+      "check": "python3 scripts/check-vsix.py passed",
+      "native": {
+        "configuration": [
+          {
+            "passed": true,
+            "suite": "source-navigation",
+            "projectType": "configuration",
+            "vscode": "1.109.5",
+            "locale": "en",
+            "elapsedMs": 153.78767300000004,
+            "methods": [
+              "metadata/revealSource",
+              "metadata/children",
+              "metadata/children",
+              "metadata/children",
+              "metadata/children",
+              "metadata/index"
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "passed": true,
+            "suite": "source-navigation",
+            "projectType": "extension",
+            "vscode": "1.109.5",
+            "locale": "en",
+            "elapsedMs": 171.3958970000001,
+            "methods": [
+              "metadata/revealSource",
+              "metadata/children",
+              "metadata/children",
+              "metadata/children",
+              "metadata/children",
+              "metadata/index"
+            ]
+          }
+        ],
+        "processing": [
+          {
+            "passed": true,
+            "suite": "source-navigation",
+            "projectType": "processing",
+            "vscode": "1.109.5",
+            "locale": "en",
+            "elapsedMs": 508.2515179999996,
+            "methods": [
+              "metadata/revealSource",
+              "metadata/children",
+              "metadata/children",
+              "metadata/index"
+            ]
+          }
+        ],
+        "report": [
+          {
+            "passed": true,
+            "suite": "source-navigation",
+            "projectType": "report",
+            "vscode": "1.109.5",
+            "locale": "en",
+            "elapsedMs": 136.5100050000001,
+            "methods": [
+              "metadata/revealSource",
+              "metadata/children",
+              "metadata/children",
+              "metadata/index"
+            ]
+          }
+        ],
+        "installed_en": [
+          {
+            "passed": true,
+            "suite": "source-navigation",
+            "projectType": "configuration",
+            "vscode": "1.109.5",
+            "locale": "en",
+            "elapsedMs": 248.05086100000017,
+            "methods": [
+              "metadata/revealSource",
+              "metadata/children",
+              "metadata/children",
+              "metadata/children",
+              "metadata/children",
+              "metadata/index"
+            ]
+          }
+        ],
+        "installed_ru": [
+          {
+            "passed": true,
+            "suite": "language-pack-registration",
+            "locale": "en"
+          },
+          {
+            "passed": true,
+            "suite": "source-navigation",
+            "projectType": "configuration",
+            "vscode": "1.109.5",
+            "locale": "ru",
+            "elapsedMs": 110.86451899999997,
+            "methods": [
+              "metadata/revealSource",
+              "metadata/children",
+              "metadata/children",
+              "metadata/children",
+              "metadata/children",
+              "metadata/index"
+            ]
+          }
+        ],
+        "installed_modal_en": [
+          {
+            "passed": true,
+            "suite": "query-modal",
+            "locale": "en",
+            "accepted": [
+              "one_query_replaces_file_protected_and_split_parents",
+              "parent_cannot_receive_interactive_typing",
+              "nested_constructor_blocks_query_parent_and_returns_same_draft",
+              "readonly_comparison_blocks_query_parent_and_preserves_external_owner_change",
+              "apply_returns_unsaved_parent_with_single_undo",
+              "explicit_cancel_returns_unchanged_parent",
+              "unchanged_tab_close_returns_parent",
+              "keep_discard_and_cancelled_close_restore_correct_parent_or_child",
+              "scd_and_dynamic_list_save_return_xml_parent_and_preserve_other_query"
+            ]
+          }
+        ],
+        "installed_modal_normal_en": [
+          {
+            "passed": true,
+            "suite": "query-modal-normal",
+            "locale": "en",
+            "accepted": [
+              "native_cancel_preserves_dirty_parent_without_opening_child",
+              "explicit_native_save_precedes_source_capture_and_return",
+              "only_explicit_native_discard_can_revert_unsaved_parent",
+              "native_readonly_override_survives_modal_roundtrip"
+            ]
+          }
+        ]
+      }
+    },
+    "historical_query_bsl": {
+      "status": "Fails before and after at the dirty-parent snapshot assertion; superseded by the modal contract dated 2026-10-24. No production change made for this obsolete expectation. Current modal and normal-window suites passed. Development documentation now distinguishes this historical script.",
+      "raw": {
+        "before": {
+          "passed": false,
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n  '// owner 😀\\r\\n' +\n    'Q = \"SELECT 1\\r\\n' +\n    '|AS Value\";\\r\\n' +\n+   'Other = 42;\\r\\n' +\n-   'Other = 43;\\r\\n' +\n    'Second = \"SELECT 9\";\\r\\n' +\n    'Computed = \"SELECT \" + \"1\";\\r\\n'\n\n\tat exports.run (/home/akalsin/Documents/Projects/eska-vscode-explorer/test/query-bsl-host.cjs:67:12)\n\tat process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+          "accepted": [
+            "split_query_tabs_share_one_draft"
+          ],
+          "errors": []
+        },
+        "after": {
+          "passed": false,
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n  '// owner 😀\\r\\n' +\n    'Q = \"SELECT 1\\r\\n' +\n    '|AS Value\";\\r\\n' +\n+   'Other = 42;\\r\\n' +\n-   'Other = 43;\\r\\n' +\n    'Second = \"SELECT 9\";\\r\\n' +\n    'Computed = \"SELECT \" + \"1\";\\r\\n'\n\n\tat exports.run (/home/akalsin/Documents/Projects/eska-vscode-explorer/test/query-bsl-host.cjs:67:12)\n\tat process.processTicksAndRejections (node:internal/process/task_queues:105:5)",
+          "accepted": [
+            "split_query_tabs_share_one_draft"
+          ],
+          "errors": []
+        }
+      }
+    }
+  },
+  "limits": [
+    "Source navigation and BSL owner lookup in the updated adapter require negotiated Metadata API 1.24; older backends retain other negotiated features.",
+    "Only Linux/VSCodium was exercised natively. Windows, macOS and Remote were not tested.",
+    "12 explicitly ignored Rust cases and 3 optional Node cases were not executed by the default suites.",
+    "No fresh 1C build/unpack runtime matrix, upstream analyzer LSP performance series, or coverage measurement in this review.",
+    "No evidence of a large general metadata speedup: the non-navigation metrics remain near baseline; small samples do not establish statistical equivalence."
+  ]
+}
