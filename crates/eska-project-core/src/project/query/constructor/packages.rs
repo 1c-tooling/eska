@@ -165,7 +165,7 @@ pub(super) fn identifier(name: &str) -> bool {
                 "УПОРЯДОЧИТЬ",
                 "TOTALS",
                 "ИТОГИ",
-                "DESTROY",
+                "DROP",
                 "УНИЧТОЖИТЬ",
                 "AS",
                 "КАК",
@@ -366,7 +366,7 @@ fn column_issues(
     }
 }
 
-/// Invalid lifetimes remain unavailable until DESTROY; a third creation cannot hide an earlier duplicate.
+/// Invalid lifetimes remain unavailable until DROP; a third creation cannot hide an earlier duplicate.
 #[derive(Default)]
 struct FlowState {
     tables: BTreeMap<String, TemporaryTable>,

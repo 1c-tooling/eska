@@ -26,7 +26,7 @@ fn nested_output_names_propagate_without_touching_literals_or_parameters() {
 /// A child SELECT addresses its own fields while all surrounding bytes remain exact.
 #[test]
 fn nested_scopes_edit_only_the_selected_query_and_preserve_the_package() {
-    let original = "SELECT Q.Ref FROM (\r\n SELECT I.Ref FROM Catalog.Items AS I WHERE I.Code = &Code\r\n) AS Q WHERE Q.Ref IN (SELECT X.Ref FROM Catalog.Other AS X);\r\nDESTROY Temp";
+    let original = "SELECT Q.Ref FROM (\r\n SELECT I.Ref FROM Catalog.Items AS I WHERE I.Code = &Code\r\n) AS Q WHERE Q.Ref IN (SELECT X.Ref FROM Catalog.Other AS X);\r\nDROP Temp";
     let mut value = constructor(original);
     assert_eq!(value.model().scopes.len(), 4);
     assert_eq!(value.model().statements.len(), 4);
@@ -44,9 +44,11 @@ fn nested_scopes_edit_only_the_selected_query_and_preserve_the_package() {
     assert!(value.text().starts_with(
         "SELECT Q.Ref FROM (\r\n SELECT I.Ref,\r\nI.Code AS Code FROM Catalog.Items AS I"
     ));
-    assert!(value.text().ends_with(
-        ") AS Q WHERE Q.Ref IN (SELECT X.Ref FROM Catalog.Other AS X);\r\nDESTROY Temp"
-    ));
+    assert!(
+        value.text().ends_with(
+            ") AS Q WHERE Q.Ref IN (SELECT X.Ref FROM Catalog.Other AS X);\r\nDROP Temp"
+        )
+    );
 }
 
 /// Parent alias edits retain inner comments and cannot rename a shadowed child source.

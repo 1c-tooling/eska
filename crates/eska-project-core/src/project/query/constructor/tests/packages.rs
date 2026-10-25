@@ -4,7 +4,7 @@ use super::*;
 #[test]
 fn temporary_tables_follow_package_order_and_new_lifetimes() {
     for input in [
-        "SELECT 1 AS A INTO Temp; SELECT X.A FROM Temp AS X; DESTROY Temp; SELECT 2 AS B INTO Temp; SELECT X.B FROM Temp AS X",
+        "SELECT 1 AS A INTO Temp; SELECT X.A FROM Temp AS X; DROP Temp; SELECT 2 AS B INTO Temp; SELECT X.B FROM Temp AS X",
         "ВЫБРАТЬ 1 КАК A ПОМЕСТИТЬ Temp; ВЫБРАТЬ X.A ИЗ Temp КАК X; УНИЧТОЖИТЬ Temp; ВЫБРАТЬ 2 КАК B ПОМЕСТИТЬ Temp; ВЫБРАТЬ X.B ИЗ Temp КАК X",
     ] {
         let value = constructor(input);
@@ -36,7 +36,7 @@ fn temporary_tables_follow_package_order_and_new_lifetimes() {
 /// Renaming one creation updates its qualified references and drop, excluding aliases, parameters and the next lifetime.
 #[test]
 fn temporary_rename_is_atomic_scoped_and_comment_preserving() {
-    let original = "SELECT 1 AS A INTO Temp; SELECT Temp.A, \"Temp.A\" AS Text, &Temp.A AS Parameter FROM Temp; SELECT X.A FROM Temp AS X; SELECT Temp.A FROM Temp AS Temp; DESTROY Temp; SELECT 2 AS B INTO Temp; SELECT Temp.B FROM Temp";
+    let original = "SELECT 1 AS A INTO Temp; SELECT Temp.A, \"Temp.A\" AS Text, &Temp.A AS Parameter FROM Temp; SELECT X.A FROM Temp AS X; SELECT Temp.A FROM Temp AS Temp; DROP Temp; SELECT 2 AS B INTO Temp; SELECT Temp.B FROM Temp";
     let mut value = constructor(original);
     apply(
         &mut value,
@@ -52,7 +52,7 @@ fn temporary_rename_is_atomic_scoped_and_comment_preserving() {
             .contains("SELECT Renamed.A, \"Temp.A\" AS Text, &Temp.A AS Parameter FROM Renamed")
     );
     assert!(value.text().contains(
-        "SELECT X.A FROM Renamed AS X; SELECT Temp.A FROM Renamed AS Temp; DESTROY Renamed"
+        "SELECT X.A FROM Renamed AS X; SELECT Temp.A FROM Renamed AS Temp; DROP Renamed"
     ));
     assert!(
         value
@@ -128,7 +128,7 @@ fn package_dependency_failures_leave_text_revision_and_focus_unchanged() {
             name: Some("Temp".into()),
         },
     );
-    assert!(value.text().contains("DESTROY Temp"));
+    assert!(value.text().contains("DROP Temp"));
     assert_eq!(
         value.model().package_operation(value.focus().unwrap()),
         Some(PackageOperation::Destroy)
@@ -187,7 +187,7 @@ fn temporary_union_destination_survives_branch_copy_and_removal() {
 #[test]
 fn package_reports_dependencies_without_inventing_metadata_or_wildcard_columns() {
     let value = constructor(
-        "SELECT Temp.A FROM Temp; SELECT 1 AS A INTO Temp; SELECT X.B FROM Temp AS X; SELECT 2 AS A INTO Temp; DESTROY Unknown",
+        "SELECT Temp.A FROM Temp; SELECT 1 AS A INTO Temp; SELECT X.B FROM Temp AS X; SELECT 2 AS A INTO Temp; DROP Unknown",
     );
     let issues = value.model().package_issues(value.text());
     for kind in [
@@ -283,4 +283,14 @@ fn package_controls_keep_comments_and_reject_unknown_index_shapes() {
         );
         assert!(value.finish().unwrap().is_empty());
     }
+}
+
+/// A mistranslated keyword stays opaque instead of masquerading as an executable native drop.
+#[test]
+fn unsupported_destroy_spelling_is_preserved_without_package_semantics() {
+    let input = "SELECT 1 AS A INTO Temp; DESTROY Temp";
+    let value = constructor(input);
+    assert!(value.model().statements[1].unavailable.is_some());
+    assert_eq!(value.model().package_operation(1), None);
+    assert!(value.finish().unwrap().is_empty());
 }

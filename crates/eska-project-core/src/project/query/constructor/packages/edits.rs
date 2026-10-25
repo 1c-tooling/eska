@@ -197,7 +197,7 @@ fn destination(
     }
 }
 
-/// Only consumers and the matching DESTROY in this creation lifetime are renamed; strings and later recreations stay exact.
+/// Only consumers and the matching DROP in this creation lifetime are renamed; strings and later recreations stay exact.
 fn rename(
     input: &str,
     model: &Model,

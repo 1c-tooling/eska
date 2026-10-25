@@ -9,7 +9,7 @@ mod packages;
 #[path = "constructors/total_sections.rs"]
 mod total_sections;
 
-const DRAFT: &str = "SELECT A, // keep 😀\n B FROM T;\nDESTROY Temp";
+const DRAFT: &str = "SELECT A, // keep 😀\n B FROM T;\nDROP Temp";
 
 /// The same application overlay and related chart reach both localized clients without adapter schema rules.
 #[test]
@@ -434,7 +434,7 @@ fn constructor_rpc_owns_the_canonical_draft_and_publishes_only_on_explicit_finis
             ),
         );
         let text = changed["constructor"]["text"].as_str().unwrap();
-        assert!(text.ends_with(";\nDESTROY Temp"));
+        assert!(text.ends_with(";\nDROP Temp"));
         assert!(text.contains("// keep 😀"));
         assert_eq!(source_parts(&mut client, &binding, &changed)[3], DRAFT);
         assert_eq!(changed["record"]["revision"], state["record"]["revision"]);

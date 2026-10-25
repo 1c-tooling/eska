@@ -305,7 +305,7 @@ fn apply(value: &mut Constructor, action: &Action) {
 fn opening_and_finishing_unknown_packages_is_byte_exact() {
     for text in [
         "\u{feff}ВЫБРАТЬ\r\n\t1 КАК А;\r\n// 😀\r\nВЫБРАТЬ {ВЫБРАТЬ Поле.*} ИЗ Таблица;\r\n",
-        "SELECT A INTO Temp FROM Catalog.Товары;\nDESTROY Temp;\nSELECT B FROM Temp AS T",
+        "SELECT A INTO Temp FROM Catalog.Товары;\nDROP Temp;\nSELECT B FROM Temp AS T",
         "SELECT \"unclosed string",
         "",
     ] {
@@ -448,7 +448,7 @@ fn removing_a_commented_optional_clause_keeps_the_following_clause_visible() {
 
 #[test]
 fn opaque_scd_and_unknown_statements_cannot_be_partially_edited() {
-    let text = "SELECT {T.*} FROM T;\nSELECT A FROM T;\nDESTROY Temp";
+    let text = "SELECT {T.*} FROM T;\nSELECT A FROM T;\nDROP Temp";
     let mut value = constructor(text);
     assert_eq!(
         value
@@ -474,7 +474,7 @@ fn opaque_scd_and_unknown_statements_cannot_be_partially_edited() {
         },
     );
     assert!(value.text().starts_with("SELECT {T.*} FROM T;\n"));
-    assert!(value.text().ends_with(";\nDESTROY Temp"));
+    assert!(value.text().ends_with(";\nDROP Temp"));
 }
 
 #[test]

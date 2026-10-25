@@ -76,7 +76,7 @@ impl ClauseKind {
             (Self::Into, true) => "ПОМЕСТИТЬ",
             (Self::Into, false) => "INTO",
             (Self::Destroy, true) => "УНИЧТОЖИТЬ",
-            (Self::Destroy, false) => "DESTROY",
+            (Self::Destroy, false) => "DROP",
             (Self::Index, true) => "ИНДЕКСИРОВАТЬ ПО",
             (Self::Index, false) => "INDEX BY",
             (Self::Sources, true) => "ИЗ",
@@ -416,7 +416,7 @@ pub(super) fn parse_statement(
     let Some(first) = top.first() else {
         return opaque(range, Unavailable::UnsupportedStatement);
     };
-    if first.keyword(input, &["DESTROY", "УНИЧТОЖИТЬ"]) {
+    if first.keyword(input, &["DROP", "УНИЧТОЖИТЬ"]) {
         return destroy_statement(input, range, tokens, depth, &top);
     }
     if !first.keyword(input, &["SELECT", "ВЫБРАТЬ"]) {
@@ -526,7 +526,7 @@ fn totals_unavailable(input: &str, clauses: &[Clause]) -> Option<Unavailable> {
     None
 }
 
-/// DESTROY has exactly one identifier and cannot be nested or combined with SELECT clauses.
+/// DROP has exactly one identifier and cannot be nested or combined with SELECT clauses.
 fn destroy_statement(
     input: &str,
     range: Range<usize>,

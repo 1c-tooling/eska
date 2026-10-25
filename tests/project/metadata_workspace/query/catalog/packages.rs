@@ -6,7 +6,7 @@ use crate::backend::project::query::constructor::{Constructor, Selection};
 fn constructor_catalog_resolves_temporary_projection_chains_and_recreation() {
     let (directory, workspace, _, _) = setup();
     let before = bytes(&directory.0);
-    let constructor = Constructor::new("SELECT T.* INTO One FROM Catalog.Контрагенты AS T; SELECT O.* INTO Two FROM One AS O; SELECT Q.Ref FROM (SELECT X.* FROM Two AS X) AS Q; DESTROY One; SELECT 1 AS NewValue INTO One; SELECT N.NewValue FROM One AS N".into()).unwrap();
+    let constructor = Constructor::new("SELECT T.* INTO One FROM Catalog.Контрагенты AS T; SELECT O.* INTO Two FROM One AS O; SELECT Q.Ref FROM (SELECT X.* FROM Two AS X) AS Q; DROP One; SELECT 1 AS NewValue INTO One; SELECT N.NewValue FROM One AS N".into()).unwrap();
     let project = &workspace.projects()[0];
     let catalog = |query: QueryCatalogRequest| {
         project
@@ -54,7 +54,7 @@ fn constructor_catalog_resolves_temporary_projection_chains_and_recreation() {
 #[test]
 fn constructor_catalog_does_not_guess_invisible_or_unknown_temporary_tables() {
     let (_directory, workspace, _, _) = setup();
-    let constructor = Constructor::new("SELECT 1 AS A INTO Temp; DESTROY Temp; SELECT X.A FROM Temp AS X; SELECT 2 AS B INTO Temp; SELECT X.B FROM Temp AS X".into()).unwrap();
+    let constructor = Constructor::new("SELECT 1 AS A INTO Temp; DROP Temp; SELECT X.A FROM Temp AS X; SELECT 2 AS B INTO Temp; SELECT X.B FROM Temp AS X".into()).unwrap();
     let project = &workspace.projects()[0];
     for (statement, table) in [(0, "Temp"), (2, "Temp"), (4, "Unknown")] {
         let page = project

@@ -1709,8 +1709,8 @@ add:boolean,remove:boolean,setInto:boolean,moveUp:number|null,moveDown:number|nu
 `removeStatement:{statement,comments?}`, `moveStatement:{statement,to}`.
 Имя — один идентификатор до 1024 UTF-8 байт. `setInto` задаёт/снимает назначение
 первой ветки и переименовывает доказанные ссылки в пределах одной жизни таблицы,
-включая соответствующий DESTROY. Явные псевдонимы, параметры и строки сохраняются.
-`addStatement` добавляет SELECT с одной исходной колонкой либо DESTROY после
+включая соответствующий DROP. Явные псевдонимы, параметры и строки сохраняются.
+`addStatement` добавляет SELECT с одной исходной колонкой либо DROP после
 корневого оператора; `to` у moveStatement — порядковый номер корневого оператора.
 Удаление комментариев требует прежнего `comments:keep|discard`.
 Обычный `INDEX BY` доступен через строки clause `index`; SETS/UNIQUE/APPEND TO
@@ -1722,7 +1722,7 @@ add:boolean,remove:boolean,setInto:boolean,moveUp:number|null,moveDown:number|nu
 видимые перед оператором таблицы, отфильтрованные `search`. Поле отсутствует при
 пустом списке. `table` в этой точке и прежний связанный `source` разрешают проекцию
 производителя, включая UNION и поддержанные wildcard-цепочки. В момент создания
-собственная таблица ещё не видна, DESTROY закрывает жизнь, повторное создание
+собственная таблица ещё не видна, DROP закрывает жизнь, повторное создание
 получает новый scope. Неизвестная/неоднозначная схема не подменяется вымышленной.
 
 В `issues` добавлены `temporary_missing`, `temporary_duplicate`,
