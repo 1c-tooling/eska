@@ -22,9 +22,10 @@ pub(super) fn picture(bytes: &[u8]) -> Result<Picture, PictureError> {
         Err(_) => return Err(PictureError::Invalid),
     };
     // Filename discovery is only for archives without a manifest, never for broken references.
-    let name = declared
-        .or_else(|| fallback_name(&archive))
-        .ok_or(PictureError::Unsupported)?;
+    let name = match declared {
+        Some(name) => name,
+        None => fallback_name(&archive)?.ok_or(PictureError::Unsupported)?,
+    };
     let file = archive.by_name(&name).map_err(|_| PictureError::Invalid)?;
     if file.size() > MAX_IMAGE {
         return Err(PictureError::TooLarge);
@@ -75,19 +76,24 @@ fn dimension(node: roxmltree::Node<'_, '_>, name: &str) -> u32 {
 }
 
 /// Without a manifest, prefer SVG or the largest numeric filename; ties are deterministic.
-fn fallback_name(archive: &zip::ZipArchive<Cursor<&[u8]>>) -> Option<String> {
-    archive
-        .file_names()
-        .filter(|name| safe_name(name) && supported_name(name))
-        .max_by_key(|name| {
-            let density = Path::new(name)
-                .file_stem()
-                .and_then(|stem| stem.to_str())
-                .and_then(|stem| stem.parse::<u32>().ok())
-                .unwrap_or(0);
-            (is_svg(name), density, *name)
-        })
-        .map(str::to_owned)
+fn fallback_name(archive: &zip::ZipArchive<Cursor<&[u8]>>) -> Result<Option<String>, PictureError> {
+    let mut preferred = None;
+    for name in archive.file_names() {
+        let name = name.map_err(|_| PictureError::Invalid)?;
+        if !safe_name(&name) || !supported_name(&name) {
+            continue;
+        }
+        let density = Path::new(name.as_ref())
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .and_then(|stem| stem.parse::<u32>().ok())
+            .unwrap_or(0);
+        let rank = (is_svg(&name), density, name);
+        if preferred.as_ref().is_none_or(|previous| rank > *previous) {
+            preferred = Some(rank);
+        }
+    }
+    Ok(preferred.map(|(_, _, name)| name.into_owned()))
 }
 
 /// Share case-insensitive vector preference between declared and discovered variants.

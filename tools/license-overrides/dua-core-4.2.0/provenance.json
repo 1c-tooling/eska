@@ -1,0 +1,9 @@
+{
+  "upstream_commit": "2eeb1e88e7fbc2423b1b1d363be926731c94f82e",
+  "files": {
+    "LICENSE": {
+      "source": "https://raw.githubusercontent.com/Byron/dua-cli/2eeb1e88e7fbc2423b1b1d363be926731c94f82e/LICENSE",
+      "sha256": "61a0c6474f57e5e67c4c1aa5684d1acf5bd775f98ad3f888791117f9cf62b18c"
+    }
+  }
+}

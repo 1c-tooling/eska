@@ -257,9 +257,10 @@ fn workspace_status_files(
     let files = entries
         .iter()
         .filter(|entry| {
-            let absolute = repository
-                .work_dir()
-                .join(gix::path::from_bstr(entry.path.as_bstr()));
+            let Ok(path) = gix::path::from_bstr(entry.path.as_bstr()) else {
+                return false;
+            };
+            let absolute = repository.work_dir().join(path);
             absolute.starts_with(workspace.root())
                 && !workspace
                     .members()
@@ -460,9 +461,10 @@ fn workspace_revision_files(
     let files = changes
         .iter()
         .filter(|entry| {
-            let absolute = repository
-                .work_dir()
-                .join(gix::path::from_bstr(entry.path.as_bstr()));
+            let Ok(path) = gix::path::from_bstr(entry.path.as_bstr()) else {
+                return false;
+            };
+            let absolute = repository.work_dir().join(path);
             absolute.starts_with(workspace.root())
                 && !workspace
                     .members()
@@ -522,9 +524,11 @@ fn source_relative_path(
     source_root: &Path,
     project_path: &gix::bstr::BStr,
 ) -> Option<BString> {
-    let absolute = project_root.join(gix::path::from_bstr(project_path));
+    let absolute = project_root.join(gix::path::from_bstr(project_path).ok()?);
     let relative = absolute.strip_prefix(source_root).ok()?;
-    Some(gix::path::to_unix_separators_on_windows(gix::path::into_bstr(relative)).into_owned())
+    Some(
+        gix::path::to_unix_separators_on_windows(gix::path::into_bstr(relative).ok()?).into_owned(),
+    )
 }
 
 /// Refine a modified descriptor into changed child identities when both snapshots parse.
@@ -623,9 +627,11 @@ fn project_relative_path(
     project_root: &Path,
     repository_path: &gix::bstr::BStr,
 ) -> Option<BString> {
-    let absolute = work_dir.join(gix::path::from_bstr(repository_path));
+    let absolute = work_dir.join(gix::path::from_bstr(repository_path).ok()?);
     let relative = absolute.strip_prefix(project_root).ok()?;
-    Some(gix::path::to_unix_separators_on_windows(gix::path::into_bstr(relative)).into_owned())
+    Some(
+        gix::path::to_unix_separators_on_windows(gix::path::into_bstr(relative).ok()?).into_owned(),
+    )
 }
 
 #[cfg(test)]

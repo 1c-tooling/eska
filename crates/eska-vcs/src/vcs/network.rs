@@ -24,14 +24,14 @@ pub struct FetchOutcome {
 
 #[derive(Debug)]
 pub enum FetchError {
-    Open(Box<gix::open::Error>),
-    Remote(Box<gix::remote::find::existing::Error>),
+    Open(Box<gix::Error>),
+    Remote(Box<gix::Error>),
     MissingUrl {
         remote: String,
     },
-    Connect(Box<gix::remote::connect::Error>),
-    Prepare(Box<gix::remote::fetch::prepare::Error>),
-    Receive(Box<gix::remote::fetch::Error>),
+    Connect(Box<gix::Error>),
+    Prepare(Box<gix::Error>),
+    Receive(Box<gix::Error>),
     SystemGit {
         reason: CapabilityGap,
         source: command::Error,
@@ -41,14 +41,14 @@ pub enum FetchError {
 impl fmt::Display for FetchError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Open(source) => source.fmt(formatter),
-            Self::Remote(source) => source.fmt(formatter),
+            Self::Open(source)
+            | Self::Remote(source)
+            | Self::Connect(source)
+            | Self::Prepare(source)
+            | Self::Receive(source) => source.fmt(formatter),
             Self::MissingUrl { remote } => {
                 write!(formatter, "remote {remote} has no fetch URL")
             }
-            Self::Connect(source) => source.fmt(formatter),
-            Self::Prepare(source) => source.fmt(formatter),
-            Self::Receive(source) => source.fmt(formatter),
             Self::SystemGit { source, .. } => source.fmt(formatter),
         }
     }
@@ -118,10 +118,10 @@ fn fetch_backend(url: &gix::Url) -> FetchBackend {
 
 #[derive(Debug)]
 pub enum CloneError {
-    Prepare(Box<gix::clone::Error>),
-    RemoteName(gix::remote::name::Error),
-    Fetch(Box<gix::clone::fetch::Error>),
-    Checkout(Box<gix::clone::checkout::main_worktree::Error>),
+    Prepare(Box<gix::Error>),
+    RemoteName(gix::Error),
+    Fetch(Box<gix::Error>),
+    Checkout(Box<gix::Error>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

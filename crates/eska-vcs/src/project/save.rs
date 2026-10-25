@@ -273,10 +273,10 @@ fn save_file(
 ) -> Option<SaveFile> {
     let absolute = repository
         .work_dir()
-        .join(gix::path::from_bstr(entry.path.as_bstr()).as_ref());
+        .join(gix::path::from_bstr(entry.path.as_bstr()).ok()?);
     let relative = absolute.strip_prefix(root).ok()?;
     let path =
-        gix::path::to_unix_separators_on_windows(gix::path::into_bstr(relative)).into_owned();
+        gix::path::to_unix_separators_on_windows(gix::path::into_bstr(relative).ok()?).into_owned();
     Some(SaveFile {
         path,
         index: entry.index,

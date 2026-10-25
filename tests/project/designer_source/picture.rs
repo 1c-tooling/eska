@@ -214,3 +214,21 @@ fn zip_without_manifest_selects_density_then_prefers_vector() {
     );
     assert_eq!(ready(&source, &id).file_name, "Picture.SVG");
 }
+
+/// Legacy CP437 names still resolve after ZIP discovery returns owned decoded strings.
+#[test]
+fn zip_without_manifest_reads_cp437_filenames() {
+    let mut bytes = archive(&[("x.svg", SVG), ("400.png", SVG)]);
+    for (signature, header_length) in [(b"PK\x03\x04", 30), (b"PK\x01\x02", 46)] {
+        let offset = bytes
+            .windows(signature.len())
+            .position(|window| window == signature)
+            .unwrap();
+        assert_eq!(bytes[offset + header_length], b'x');
+        bytes[offset + header_length] = 0x82;
+    }
+    let (_directory, source, id) = picture_fixture("Picture.zip", &bytes);
+    let picture = ready(&source, &id);
+    assert_eq!(picture.file_name, "é.svg");
+    assert_eq!(picture.bytes, SVG);
+}

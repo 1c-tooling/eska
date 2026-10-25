@@ -50,10 +50,13 @@ pub fn inspect(
     }
 
     let mut repository = gix::Url::try_from(repository).map_err(CloneError::RepositoryUrl)?;
+    let repository_path = gix::path::from_bstr(repository.path.as_bstr())
+        .map_err(CloneError::RepositoryUrl)?
+        .into_owned();
     repository
         .canonicalize(&base)
         .map_err(|source| CloneError::LocalRepository {
-            path: repository_path(&repository),
+            path: repository_path,
             source,
         })?;
     gix::remote::name::validated(remote_name.as_bytes()).map_err(CloneError::RemoteName)?;
@@ -130,13 +133,9 @@ fn default_directory(repository: &gix::Url) -> Result<OsString, CloneError> {
         return Err(CloneError::MissingDirectoryName);
     }
     Ok(gix::path::from_bstr(name.as_bstr())
+        .map_err(CloneError::RepositoryUrl)?
         .into_owned()
         .into_os_string())
-}
-
-/// Convert a local repository URL path into an operating-system path.
-fn repository_path(repository: &gix::Url) -> PathBuf {
-    gix::path::from_bstr(repository.path.as_bstr()).into_owned()
 }
 
 /// Resolve a missing destination while rejecting traversal and collisions.
@@ -189,12 +188,12 @@ fn claim_destination(destination: &Path) -> Result<(), CloneError> {
 
 #[derive(Debug)]
 pub enum CloneError {
-    RepositoryUrl(gix::url::parse::Error),
+    RepositoryUrl(gix::Error),
     LocalRepository {
         path: PathBuf,
-        source: gix::path::realpath::Error,
+        source: gix::Error,
     },
-    RemoteName(gix::remote::name::Error),
+    RemoteName(gix::Error),
     MissingDirectoryName,
     InvalidBase {
         path: PathBuf,

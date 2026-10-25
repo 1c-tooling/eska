@@ -55,7 +55,9 @@ pub fn plan(project: &Project, base: Option<&str>) -> Result<PatchPlan, PatchErr
         .source()
         .strip_prefix(repository.work_dir())
         .map_err(|e| PatchError::new("path", e.to_string()))?;
-    let source_prefix = gix::path::to_unix_separators_on_windows(gix::path::into_bstr(source));
+    let source_prefix = gix::path::to_unix_separators_on_windows(
+        gix::path::into_bstr(source).map_err(|e| PatchError::new("path", e.to_string()))?,
+    );
     let source_prefix = source_prefix
         .to_str()
         .map_err(|e| PatchError::new("path", e.to_string()))?;
@@ -64,9 +66,11 @@ pub fn plan(project: &Project, base: Option<&str>) -> Result<PatchPlan, PatchErr
     } else {
         format!("{source_prefix}/")
     };
-    let config_path =
-        gix::path::to_unix_separators_on_windows(gix::path::into_bstr(root.join("eska.toml")))
-            .into_owned();
+    let config_path = gix::path::to_unix_separators_on_windows(
+        gix::path::into_bstr(root.join("eska.toml"))
+            .map_err(|e| PatchError::new("path", e.to_string()))?,
+    )
+    .into_owned();
     let source_files = collect_sources(&repository, *ancestor, &prefix, config_path.as_bstr())?;
     let name = format!("EskaPatch_{}", &head.id.to_string()[..12]);
     let classified = collect_changes(

@@ -548,7 +548,9 @@ fn restore_preflight(
                 .inner
                 .head_tree()
                 .map_err(|_| Error::InvalidShelf)?
-                .lookup_entry_by_path(gix::path::from_bstr(entry.path.as_bstr()).as_ref())
+                .lookup_entry_by_path(
+                    gix::path::from_bstr(entry.path.as_bstr()).map_err(|_| Error::InvalidShelf)?,
+                )
                 .map_err(|_| Error::InvalidShelf)?
                 .is_none()
                 && fs::symlink_metadata(&path).is_ok()

@@ -26,7 +26,7 @@ enum Kind {
 /// Validate a stored relative path without depending on the currently checked-out branch.
 pub(super) fn relative_path(bytes: &[u8]) -> Result<PathBuf, Error> {
     let relative =
-        gix::path::try_from_bstr(gix::bstr::BStr::new(bytes)).map_err(|_| Error::InvalidShelf)?;
+        gix::path::from_bstr(gix::bstr::BStr::new(bytes)).map_err(|_| Error::InvalidShelf)?;
     if relative.as_os_str().is_empty()
         || relative
             .components()

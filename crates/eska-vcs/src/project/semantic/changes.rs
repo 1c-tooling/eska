@@ -342,7 +342,10 @@ impl<'a> SemanticChangeAnalyzer<'a> {
 
     /// Convert a project-relative byte path into a source-relative platform path.
     fn source_relative_path(&self, project_path: &BStr) -> Option<PathBuf> {
-        let absolute = self.project.root().join(gix::path::from_bstr(project_path));
+        let absolute = self
+            .project
+            .root()
+            .join(gix::path::from_bstr(project_path).ok()?);
         absolute
             .strip_prefix(self.project.source())
             .ok()

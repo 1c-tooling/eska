@@ -94,11 +94,12 @@ pub fn source_changes(
         .entries
         .iter()
         .filter(|entry| {
-            repository
-                .work_dir()
-                .join(gix::path::from_bstr(entry.path.as_bstr()).as_ref())
-                .starts_with(project.source())
-                && !(empty_scaffold && entry.path.ends_with(b"/.gitkeep"))
+            gix::path::from_bstr(entry.path.as_bstr()).is_ok_and(|path| {
+                repository
+                    .work_dir()
+                    .join(path)
+                    .starts_with(project.source())
+            }) && !(empty_scaffold && entry.path.ends_with(b"/.gitkeep"))
         })
         .count())
 }
