@@ -495,8 +495,16 @@ pub(super) fn parse_statement(
     }
 }
 
-/// Every totals header has one BY owner, with OVERALL first and a bounded number of sequential pairs.
+/// Native execution accepts one TOTALS/BY pair; repeated pairs remain exact opaque text.
 fn totals_unavailable(input: &str, clauses: &[Clause]) -> Option<Unavailable> {
+    if clauses
+        .iter()
+        .filter(|clause| clause.kind == ClauseKind::Totals)
+        .count()
+        > 1
+    {
+        return Some(Unavailable::UnsupportedConstruct);
+    }
     if clauses.iter().enumerate().any(|(index, clause)| {
         (clause.kind == ClauseKind::Totals
             && clauses
@@ -514,14 +522,6 @@ fn totals_unavailable(input: &str, clauses: &[Clause]) -> Option<Unavailable> {
                 }))
     }) {
         return Some(Unavailable::InvalidSyntax);
-    }
-    if clauses
-        .iter()
-        .filter(|clause| clause.kind == ClauseKind::Totals)
-        .count()
-        > 32
-    {
-        return Some(Unavailable::ModelLimit);
     }
     None
 }

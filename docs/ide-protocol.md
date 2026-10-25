@@ -1748,34 +1748,42 @@ AND/И. Она принадлежит конкретной ветке, в том
 определяется языком SELECT, не locale. Сохраняются CAS, лимиты, точный no-op,
 комментарии и атомарный отказ при попытке фрагмента выйти в соседний оператор.
 
-### API 1.28: последовательные секции итогов
+### API 1.28/1.30: секция итогов и уровни группировки
 
-`queryConstructor.multipleTotals=true` и `maxTotalSections=32` разрешают
-несколько последовательных пар TOTALS/BY. Словарь clauses 1.27 не меняется:
-`totals` и `totalGroups` могут повторяться с разными индексами.
-У каждого statement добавлены `addTotals:boolean` и
+Текущий API 1.30 объявляет `queryConstructor.totalSections=true` и
+`maxTotalSections=1`. Реальная платформа 8.3.27.2325 отклоняет вторую секцию
+TOTALS/BY, несмотря на повторение в грамматике встроенной справки. Конструктор
+создаёт одну секцию с несколькими агрегатными выражениями и уровнями группировки.
+Исходный текст с повторными секциями остаётся непрозрачным, точный no-op разрешён.
+Для согласованных minor 28–29 сохранены прежние DTO и legacy capability
+`multipleTotals=true,maxTotalSections=32`; они не обходят общую проверку грамматики.
+Новые адаптеры используют capability 1.30 и её фактический лимит.
+
+Statement содержит `addTotals:boolean` и
 `totalSections:[{index,fields,groups,range,remove,moveUp,moveDown}]`, где fields
-и groups — индексы принадлежащих секции clauses, range — её общий byte range,
-remove — разрешение, moveUp/moveDown — целевой индекс либо null. В model добавлен
-`totalFocus:number|null` — сохранившаяся/добавленная секция после операции.
-Вложенные и непрозрачные операторы не получают разрешений на правку итогов.
+и groups — индексы clauses, range — общий byte range, remove — разрешение.
+При существующей секции `addTotals=false`, обе границы перемещения — null.
+В model добавлен `totalFocus:number|null`. Вложенные и непрозрачные операторы
+не получают разрешений на правку итогов.
 
-Новые actions: `addTotals:{statement,after:number|null}` (null — в конец),
+Actions (minor ≥ 28): `addTotals:{statement,after:number|null}`,
 `removeTotals:{statement,section,comments?}`, `moveTotals:{statement,section,to}`,
 `composeTotal:{statement,section,selection:null|Selection,expression}` и
 `appendTotal:{statement,section,clause:totals|totalGroups,text}`.
-ComposeTotal принимает только totalField, totalGroup или overall; selection
+Создание разрешено только при отсутствии секции и `after:null`; повторное
+добавление отклоняется атомарно с `constructor_unsupported`. MoveTotals допускает
+только проверенный no-op 0→0; остальные индексы недопустимы.
+ComposeTotal принимает totalField, totalGroup или overall; selection
 должна принадлежать этой секции. Добавленная секция содержит автоматические
 итоги и OVERALL; поля/группировки редактируются отдельно. OVERALL идемпотентен
-внутри своей секции и остаётся первым. Порядок, иерархия, периоды и комментарии
-относятся к конкретной паре, а общий хвост — к последней ветке UNION.
+и остаётся первым. Сохраняются порядок группировок, иерархия, периоды,
+комментарии и принадлежность общего хвоста последней ветке UNION.
 
-Удаление последней строки totalGroups убирает её пару; последняя строка totals
-оставляет автоматические итоги. Старый compose/append для итогов адресует первую
-секцию; replace/remove/move по точной selection сохраняют принадлежность.
-Новые actions требуют minor ≥ 28; старые клиенты видят оператор с несколькими
-секциями непрозрачным. Правки сохраняют CAS, byte no-op, комментарии и атомарный
-отказ при неверной секции/типе/границе; конструктор не пишет владельца.
+Удаление последней строки totalGroups убирает секцию; последняя строка totals
+оставляет автоматические итоги. Обычные compose/append/replace/remove/move
+сохраняют ту же принадлежность и проверку единственной секции.
+Правки сохраняют CAS, byte no-op, комментарии и атомарный отказ;
+конструктор не пишет владельца.
 
 ### API 1.29: типизированные конструкции СКД
 

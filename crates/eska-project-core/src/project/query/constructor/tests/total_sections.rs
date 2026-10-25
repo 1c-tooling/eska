@@ -1,98 +1,117 @@
 use super::*;
 
-/// Each pair retains its own fields/groups; an explicit section cannot accidentally edit a neighbour.
+/// Native 8.3.27 rejects repeated TOTALS even though the bundled grammar describes repetition.
 #[test]
-fn sequential_totals_own_independent_fields_groups_and_exact_noop() {
-    let input = "SELECT A, B FROM T TOTALS SUM(A) BY A TOTALS MAXIMUM(B) BY B";
-    let mut value = constructor(input);
-    assert!(value.model().statements[0].unavailable.is_none());
-    assert_eq!(value.model().statements[0].total_sections().len(), 2);
-    assert!(value.finish().unwrap().is_empty());
-    let first = value.model().statements[0].total_sections()[0]
-        .range
-        .clone();
-    let original = value.text()[first].to_owned();
-    apply(
-        &mut value,
-        &Action::ComposeTotal {
-            statement: 0,
-            section: 1,
-            selection: None,
-            expression: Expression::TotalField {
-                expression: "B".into(),
-                alias: String::new(),
-                aggregate: Some(Aggregate::Sum),
-            },
-        },
-    );
-    let owner = &value.model().statements[0];
-    assert_eq!(
-        value.text()[owner.total_sections()[0].range.clone()],
-        original
-    );
-    assert_eq!(
-        owner.clauses[owner.total_sections()[1].fields].items.len(),
-        2
-    );
-    apply(
-        &mut value,
-        &Action::ComposeTotal {
-            statement: 0,
-            section: 1,
-            selection: None,
-            expression: Expression::Overall,
-        },
-    );
-    let revision = value.revision();
-    apply(
-        &mut value,
-        &Action::ComposeTotal {
-            statement: 0,
-            section: 1,
-            selection: None,
-            expression: Expression::Overall,
-        },
-    );
-    assert_eq!(value.revision(), revision);
-    assert_eq!(value.total_focus(), Some(1));
-    assert_eq!(value.text().matches("OVERALL").count(), 1);
+fn repeated_totals_remain_exact_opaque_text_without_edit_permissions() {
+    for input in [
+        "SELECT A, B FROM T TOTALS SUM(A) BY A TOTALS MAXIMUM(B) BY B",
+        "ВЫБРАТЬ A, B ИЗ T ИТОГИ СУММА(A) ПО A ИТОГИ МАКСИМУМ(B) ПО B",
+        "SELECT A FROM T UNION ALL SELECT B FROM U TOTALS BY A TOTALS BY OVERALL",
+    ] {
+        let mut value = constructor(input);
+        let index = value.model().statements.len() - 1;
+        assert!(value.model().statements[index].unavailable.is_some());
+        assert!(value.model().statements[index].total_sections().is_empty());
+        assert!(value.finish().unwrap().is_empty());
+        assert!(
+            value
+                .apply(
+                    1,
+                    &Action::AddTotals {
+                        statement: index,
+                        after: None
+                    }
+                )
+                .is_err()
+        );
+        assert_eq!(value.text(), input);
+        assert_eq!(value.revision(), 1);
+    }
 }
 
-/// Creation, movement and removal operate on complete pairs, including automatic empty total expressions.
+/// One section supports independent aggregates and grouping levels without generating a second header.
 #[test]
-fn total_sections_add_move_remove_and_focus_preserve_unrelated_query_text() {
-    let input = "// keep 😀\r\nSELECT A, B FROM T\r\nTOTALS // first\r\nSUM(A) BY A\r\nTOTALS // second\r\nMAXIMUM(B) BY B";
+fn one_total_section_owns_multiple_fields_and_grouping_levels() {
+    let mut value = constructor("SELECT A, B FROM T TOTALS SUM(A) BY OVERALL");
+    for expression in [
+        Expression::TotalField {
+            expression: "B".into(),
+            alias: String::new(),
+            aggregate: Some(Aggregate::Maximum),
+        },
+        Expression::TotalGroup {
+            expression: "B".into(),
+            alias: String::new(),
+            hierarchy: Hierarchy::None,
+            period: None,
+        },
+    ] {
+        apply(
+            &mut value,
+            &Action::ComposeTotal {
+                statement: 0,
+                section: 0,
+                selection: None,
+                expression,
+            },
+        );
+    }
+    let owner = &value.model().statements[0];
+    let section = &owner.total_sections()[0];
+    assert_eq!(owner.clauses[section.fields].items.len(), 2);
+    assert_eq!(owner.clauses[section.groups].items.len(), 2);
+    let before = value.text().to_owned();
+    for after in [None, Some(0)] {
+        assert_eq!(
+            value
+                .apply(
+                    value.revision(),
+                    &Action::AddTotals {
+                        statement: 0,
+                        after
+                    }
+                )
+                .unwrap_err(),
+            Error::Unsupported
+        );
+        assert_eq!(value.text(), before);
+    }
+    apply(
+        &mut value,
+        &Action::ComposeTotal {
+            statement: 0,
+            section: 0,
+            selection: None,
+            expression: Expression::Overall,
+        },
+    );
+    assert_eq!(value.text(), before);
+    assert_eq!(value.total_focus(), Some(0));
+}
+
+/// Adding and removing the single section preserves comments and uses revision-bound section indices.
+#[test]
+fn total_section_lifecycle_keeps_comments_and_unrelated_query_text() {
+    let input = "// keep 😀\r\nSELECT A, B FROM T";
     let mut value = constructor(input);
     apply(
         &mut value,
         &Action::AddTotals {
             statement: 0,
-            after: Some(0),
+            after: None,
         },
     );
-    assert_eq!(value.total_focus(), Some(1));
-    let owner = &value.model().statements[0];
-    let section = &owner.total_sections()[1];
-    assert!(owner.clauses[section.fields].items.is_empty());
-    assert_eq!(
-        owner.clauses[section.groups].items[0].expression(value.text()),
-        "OVERALL"
-    );
+    assert_eq!(value.model().statements[0].total_sections().len(), 1);
+    assert_eq!(value.total_focus(), Some(0));
     apply(
         &mut value,
-        &Action::MoveTotals {
+        &Action::AppendTotal {
             statement: 0,
-            section: 2,
-            to: 0,
+            section: 0,
+            clause: ClauseKind::Totals,
+            text: "SUM(A) // total\r\n".into(),
         },
     );
-    assert!(
-        value
-            .text()
-            .starts_with("// keep 😀\r\nSELECT A, B FROM T\r\n")
-    );
-    assert!(value.text().find("// second").unwrap() < value.text().find("// first").unwrap());
-    assert_eq!(value.total_focus(), Some(0));
     let before = value.text().to_owned();
     assert_eq!(
         value
@@ -116,50 +135,56 @@ fn total_sections_add_move_remove_and_focus_preserve_unrelated_query_text() {
             comments: Some(CommentDecision::Keep),
         },
     );
-    assert_eq!(value.model().statements[0].total_sections().len(), 2);
-    assert!(value.text().contains("// second\r\n"));
-    assert!(!value.text().contains("MAXIMUM(B)"));
-    assert!(value.text().contains("SUM(A)"));
+    assert!(value.model().statements[0].total_sections().is_empty());
+    assert!(value.text().starts_with(input));
+    assert!(value.text().contains("// total"));
+    assert_eq!(value.total_focus(), None);
 }
 
-/// Removing the last group of the second pair removes that pair alone, retaining automatic fields in another pair.
+/// Totals stay on the UNION result; nested totals and forged section indices never gain write authority.
 #[test]
-fn last_group_removal_does_not_delete_other_total_sections() {
-    let mut value = constructor("SELECT A, B FROM T TOTALS BY A TOTALS SUM(B) BY B");
-    let groups = value.model().statements[0].total_sections()[1].groups;
+fn single_total_section_respects_union_scope_and_rejects_invalid_actions() {
+    let mut value =
+        constructor("SELECT A FROM T UNION ALL SELECT B FROM U TOTALS SUM(A) BY OVERALL");
+    assert!(value.model().statements[0].total_sections().is_empty());
+    assert_eq!(value.model().statements[1].total_sections().len(), 1);
+    let before = value.text().to_owned();
+    for action in [
+        Action::AddTotals {
+            statement: 0,
+            after: None,
+        },
+        Action::MoveTotals {
+            statement: 1,
+            section: 0,
+            to: 1,
+        },
+        Action::ComposeTotal {
+            statement: 1,
+            section: 1,
+            selection: None,
+            expression: Expression::Overall,
+        },
+        Action::AppendTotal {
+            statement: 1,
+            section: 0,
+            clause: ClauseKind::Totals,
+            text: "SUM(B) BY B TOTALS SUM(A) BY OVERALL".into(),
+        },
+    ] {
+        assert!(value.apply(value.revision(), &action).is_err());
+        assert_eq!(value.text(), before);
+        assert_eq!(value.revision(), 1);
+    }
     apply(
         &mut value,
-        &Action::Remove {
-            selection: selection(groups, 0),
-            comments: None,
+        &Action::MoveTotals {
+            statement: 1,
+            section: 0,
+            to: 0,
         },
     );
-    assert_eq!(value.model().statements[0].total_sections().len(), 1);
-    assert!(value.text().contains("TOTALS BY A"));
-    assert!(!value.text().contains("SUM(B)"));
-    assert_eq!(value.total_focus(), Some(0));
-}
-
-/// Multiple sections stay in the UNION tail while nested totals remain readable but inactive.
-#[test]
-fn multiple_total_sections_follow_union_result_and_reject_nested_edits() {
-    let mut value = constructor(
-        "SELECT A FROM T UNION ALL SELECT B FROM U TOTALS SUM(A) BY A TOTALS SUM(A) BY OVERALL",
-    );
-    assert!(value.model().statements[0].total_sections().is_empty());
-    assert_eq!(value.model().statements[1].total_sections().len(), 2);
-    assert_eq!(
-        value
-            .apply(
-                1,
-                &Action::AddTotals {
-                    statement: 0,
-                    after: None
-                }
-            )
-            .unwrap_err(),
-        Error::Unsupported
-    );
+    assert_eq!(value.text(), before);
     apply(
         &mut value,
         &Action::RemoveUnion {
@@ -167,12 +192,10 @@ fn multiple_total_sections_follow_union_result_and_reject_nested_edits() {
             comments: None,
         },
     );
-    assert_eq!(value.model().statements[0].total_sections().len(), 2);
-    let mut nested =
-        constructor("SELECT Q.A FROM (SELECT A FROM T TOTALS BY A TOTALS BY OVERALL) AS Q");
+    assert_eq!(value.model().statements[0].total_sections().len(), 1);
+    let mut nested = constructor("SELECT Q.A FROM (SELECT A FROM T TOTALS BY A) AS Q");
     assert!(nested.finish().unwrap().is_empty());
-    assert!(nested.model().statements[1].unavailable.is_some());
-    assert_eq!(
+    assert!(
         nested
             .apply(
                 1,
@@ -181,57 +204,6 @@ fn multiple_total_sections_follow_union_result_and_reject_nested_edits() {
                     after: None
                 }
             )
-            .unwrap_err(),
-        Error::Unsupported
-    );
-}
-
-/// Section indices, expression types, headers and model limits are checked before a private draft changes.
-#[test]
-fn total_section_failures_are_atomic_and_bounded() {
-    let original = "SELECT A, B FROM T TOTALS SUM(A) BY A TOTALS SUM(B) BY B";
-    let mut value = constructor(original);
-    for action in [
-        Action::ComposeTotal {
-            statement: 0,
-            section: 1,
-            selection: Some(selection(2, 0)),
-            expression: Expression::TotalField {
-                expression: "A".into(),
-                alias: String::new(),
-                aggregate: Some(Aggregate::Count),
-            },
-        },
-        Action::AppendTotal {
-            statement: 0,
-            section: 1,
-            clause: ClauseKind::Sources,
-            text: "T".into(),
-        },
-        Action::AppendTotal {
-            statement: 0,
-            section: 1,
-            clause: ClauseKind::Totals,
-            text: "SUM(B) BY B TOTALS SUM(A)".into(),
-        },
-    ] {
-        assert!(value.apply(1, &action).is_err());
-        assert_eq!(value.text(), original);
-        assert_eq!(value.revision(), 1);
-    }
-    let text = format!("SELECT A FROM T {}", "TOTALS BY A ".repeat(32));
-    let mut bounded = constructor(&text);
-    assert_eq!(bounded.model().statements[0].total_sections().len(), 32);
-    assert_eq!(
-        bounded
-            .apply(
-                1,
-                &Action::AddTotals {
-                    statement: 0,
-                    after: None
-                }
-            )
-            .unwrap_err(),
-        Error::TooLarge
+            .is_err()
     );
 }

@@ -197,7 +197,7 @@ impl View<'_> {
             let allowed = self.writable
                 && !opaque
                 && statement.append_unavailable(ClauseKind::Totals).is_none();
-            output["addTotals"] = json!(allowed && sections.len() < 32);
+            output["addTotals"] = json!(allowed && sections.is_empty());
             output["totalSections"] = json!(sections.iter().map(|section| json!({"index":section.index,"fields":section.fields,"groups":section.groups,"range":bytes(&section.range),"remove":allowed,
                 "moveUp":section.index.checked_sub(1).filter(|_|allowed), "moveDown":(allowed && section.index+1<sections.len()).then_some(section.index+1)})).collect::<Vec<_>>());
         }

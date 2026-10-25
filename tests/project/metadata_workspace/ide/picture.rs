@@ -61,7 +61,7 @@ fn process_picture_properties_preserve_bytes_and_recover_on_refresh() {
         assert_eq!(rejected["error"]["data"]["kind"], "unsupported_version");
         assert_eq!(
             rejected["error"]["data"]["details"]["supported"]["minor"],
-            29
+            30
         );
         let mut parameters = parameters;
         parameters["apiVersion"]["minor"] = json!(4);

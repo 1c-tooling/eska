@@ -1,4 +1,4 @@
-//! Each sequential totals pair is an independently addressed node in the shared result tail.
+//! One native totals pair owns all aggregate expressions and grouping levels in the result tail.
 
 use super::super::{
     Action, ClauseKind, Error, Expression, Model, Selection, Statement, TotalSection, editing,
@@ -27,7 +27,7 @@ pub(in super::super) fn plan(
             statement,
             section,
             to,
-        } => move_section(input, owner(model, *statement)?, *section, *to)?,
+        } => move_section(owner(model, *statement)?, *section, *to)?,
         Action::ComposeTotal {
             statement,
             section,
@@ -78,27 +78,17 @@ fn section_at(owner: &Statement, index: usize) -> Result<TotalSection, Error> {
 /// An empty expression list requests automatic totals; OVERALL supplies a complete, editable grouping list.
 fn add(input: &str, owner: &Statement, after: Option<usize>) -> Result<Vec<Replacement>, Error> {
     let sections = owner.total_sections();
-    if sections.len() >= 32 {
-        return Err(Error::TooLarge);
+    if after.is_some_and(|index| index >= sections.len()) {
+        return Err(Error::InvalidSelection);
     }
-    let position = if let Some(after) = after {
-        sections
-            .get(after)
-            .ok_or(Error::InvalidSelection)?
-            .range
-            .end
-    } else {
-        sections.last().map_or_else(
-            || {
-                owner
-                    .clauses
-                    .last()
-                    .and_then(|clause| clause.items.last())
-                    .map_or(owner.range.end, |item| item.range.end)
-            },
-            |section| section.range.end,
-        )
-    };
+    if !sections.is_empty() {
+        return Err(Error::Unsupported);
+    }
+    let position = owner
+        .clauses
+        .last()
+        .and_then(|clause| clause.items.last())
+        .map_or(owner.range.end, |item| item.range.end);
     let newline = editing::newline(input);
     Ok(vec![Replacement {
         range: position..position,
@@ -200,33 +190,11 @@ fn append(
     editing::append(input, &selected, kind, text, super::super::JoinKind::Inner)
 }
 
-/// Move complete pairs together; new separating newlines prevent a moved line comment from hiding the next header.
-fn move_section(
-    input: &str,
-    owner: &Statement,
-    from: usize,
-    to: usize,
-) -> Result<Vec<Replacement>, Error> {
-    let sections = owner.total_sections();
-    if from >= sections.len() || to >= sections.len() {
-        return Err(Error::InvalidSelection);
-    }
-    if from == to {
-        return Ok(Vec::new());
-    }
-    let mut order: Vec<_> = (0..sections.len()).collect();
-    let selected = order.remove(from);
-    order.insert(to, selected);
-    let newline = editing::newline(input);
-    Ok((from.min(to)..=from.max(to))
-        .map(|index| Replacement {
-            range: sections[index].range.clone(),
-            text: format!(
-                "{}{newline}",
-                input[sections[order[index]].range.clone()].trim_end()
-            ),
-        })
-        .collect())
+/// Preserve the documented action as a checked no-op for the only executable section.
+fn move_section(owner: &Statement, from: usize, to: usize) -> Result<Vec<Replacement>, Error> {
+    section_at(owner, from)?;
+    section_at(owner, to)?;
+    Ok(Vec::new())
 }
 
 /// A section edit cannot alter branches, nested scopes, non-total clauses or the number of unrelated sections.

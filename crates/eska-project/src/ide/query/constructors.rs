@@ -78,7 +78,11 @@ pub(super) fn capability(minor: u32) -> Value {
         }
         result["clauses"] = json!(clauses);
     }
-    if minor >= 28 {
+    if minor >= 30 {
+        result["totalSections"] = json!(true);
+        result["maxTotalSections"] = json!(1);
+    } else if minor >= 28 {
+        // Keep the negotiated legacy DTO; native grammar guards apply to every client.
         result["multipleTotals"] = json!(true);
         result["maxTotalSections"] = json!(32);
     }

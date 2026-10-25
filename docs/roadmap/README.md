@@ -73,7 +73,7 @@ T98–T99 в эту цель не входят. `DONE` фиксируется т
 По запросу от 2026-10-24 разрешена очередь
 **T109 → T110 → T111 → T112 → T113 → T114**:
 связанные метаданные базы/расширений, временные таблицы и пакеты, HAVING,
-последовательные итоги, конструкции СКД и приёмка реальной платформой.
+секции итогов, конструкции СКД и приёмка реальной платформой.
 T109–T113 завершены, выполняется T114; [scope и критерии](20-query-constructor-completion.md).
 Вся доменная логика принадлежит ESKA; расширение предоставляет интерфейс.
 Редактор T114 принят на Linux/VSCodium ru/en, включая копию buhmfo.
@@ -448,7 +448,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T109 | DONE | Связанные и наследуемые метаданные базы и расширений в каталоге ESKA | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 | T110 | DONE | Временные таблицы, INTO, порядок операторов и зависимости пакета | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 | T111 | DONE | Отбор по агрегатам ИМЕЮЩИЕ/HAVING в ESKA и интерфейсе | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
-| T112 | DONE | Несколько последовательных секций итогов | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
+| T112 | DONE | Одна исполнимая секция итогов с несколькими уровнями | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 | T113 | DONE | Типизированные конструкции языка СКД по грамматике платформы | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 | T114 | IN-PROGRESS | Редактор ru/en принят; выполнение запросов ожидает лицензированную среду и рабочую тестовую ИБ buhmfo | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 
