@@ -2,8 +2,8 @@
 
 `eska-check` — самостоятельный компонент для Designer XML и полного BSL-анализа
 выбранного приложения. Он не запускает `eska`, `eska-project`, IDE, Git или платформу
-и не связывает ядро bsl-analyzer. Нужен опубликованный `bsl-analyzer-app` 0.3.2
-с машинным контрактом 3.4. Сам компонент собирается: `cargo build -p eska-check --locked`.
+и не связывает ядро bsl-analyzer. Нужен опубликованный `bsl-analyzer-app` 0.4.0
+с машинным контрактом 3.5. Сам компонент собирается: `cargo build -p eska-check --locked`.
 
 Пример для CI; `PROJECT_ROOT`, `BSL_ANALYZER` и `CHECK_REPORT` задаёт среда запуска:
 
@@ -88,7 +88,7 @@ JSON schema 1 имеет `kind: "check"`. Завершённый отчёт со
 из JSONL. Human-вывод показывает строки и столбцы с единицы. Ошибка содержит
 `error: {code,data}` и не содержит неполного массива диагностик.
 
-Опубликованный JSONL 0.3.2 также выдаёт `Blocker`, `Critical` и `Major`.
+Опубликованный JSONL 0.4.0 также выдаёт `Blocker`, `Critical` и `Major`.
 Как и [LSP upstream](https://github.com/itrous/bsl-analyzer/blob/bdb221307b73f83f9401558e8013f3a1667969b9/crates/bsl-analyzer/src/lsp/to_proto.rs#L44),
 отчёт нормализует их в `Error`: они увеличивают `counts.errors` и участвуют
 в пороге ошибок. Публичные четыре категории и схема отчёта сохраняются;
@@ -117,8 +117,8 @@ JSON записывается потоково после проверки по�
 Значения JSON и байты текстового вывода совпали; это измерение сериализации,
 а не реального анализа BSL: [результаты](measurements/review-report-streaming.json).
 
-Контракт проверен по [исходникам analyze 0.3.2](https://github.com/itrous/bsl-analyzer/blob/v0.3.2/crates/bsl-analyzer/src/bin/cli/analyze.rs)
-и [JSONL-событиям](https://github.com/itrous/bsl-analyzer/blob/v0.3.2/crates/ide/src/jsonl.rs).
+Контракт проверен по [исходникам analyze 0.4.0](https://github.com/itrous/bsl-analyzer/blob/v0.4.0/crates/bsl-analyzer/src/bin/cli/analyze.rs)
+и [JSONL-событиям](https://github.com/itrous/bsl-analyzer/blob/v0.4.0/crates/ide/src/jsonl.rs).
 
 ## Проверка T93
 

@@ -459,9 +459,9 @@ fn lease_child() {
     }
 }
 
-/// Explicit integration uses the real published 0.3.2 binary; the ordinary suite does not fake this result.
+/// Explicit integration uses the real published 0.4.0 binary; the ordinary suite does not fake this result.
 #[test]
-#[ignore = "requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2"]
+#[ignore = "requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.4.0"]
 fn published_analyzer_accepts_all_project_kinds_and_rejects_unknown_policy() {
     let binary = std::env::var_os("ESKA_BSL_ANALYZER")
         .map(PathBuf::from)

@@ -17,9 +17,9 @@ def send(value):
 command = sys.argv[1]
 mode = (root / "stream-mode").read_text() if (root / "stream-mode").exists() else "ok"
 if command == "--version":
-    print("bsl-analyzer " + ("9.9.9" if mode == "wrong-version" else "0.3.2"))
+    print("bsl-analyzer " + ("9.9.9" if mode == "wrong-version" else "0.4.0"))
 elif command == "contract":
-    send({"build_version": "0.3.2", "contract_version": "3.4", "cli": {"commands": [
+    send({"build_version": "0.4.0", "contract_version": "3.5", "cli": {"commands": [
         {"name": name, "args": [{"name": "config"}]} for name in ["check-config", "analyze", "lsp"]]}})
 elif command == "check-config":
     pass
@@ -30,7 +30,7 @@ elif command == "analyze":
         time.sleep(30)
     if mode == "empty":
         sys.exit(0)
-    send({"type": "start", "version": "9.9.9" if mode == "stream-version" else "0.3.2", "total_files": len(files)})
+    send({"type": "start", "version": "9.9.9" if mode == "stream-version" else "0.4.0", "total_files": len(files)})
     total = 0
     for index, path in enumerate(files):
         diagnostics = []

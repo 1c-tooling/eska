@@ -157,7 +157,7 @@ fn fingerprint(path: &Path, analyzer: &Analyzer<'_>) -> Result<[u8; 32], Failure
     }
 }
 
-/// Literal directory exclusions are relative to the generated config, as in upstream 0.3.2.
+/// Literal directory exclusions are relative to the generated config, as in upstream 0.4.0.
 fn exclusions(policy: &toml::Table, root: &Path) -> Result<Vec<PathBuf>, Failure> {
     let Some(value) = policy
         .get("source")

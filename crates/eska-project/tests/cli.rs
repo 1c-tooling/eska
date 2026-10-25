@@ -509,7 +509,7 @@ fn analyzer_configuration_status_is_read_only_and_independent_of_locale() {
 
 /// The real published analyzer validates preview and migration through the standalone process CLI.
 #[test]
-#[ignore = "requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2"]
+#[ignore = "requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.4.0"]
 fn analyzer_migration_process_uses_real_check_config_and_stable_json() {
     let fixture = TestDir::new();
     export(&fixture.0.join("src"), "configuration");

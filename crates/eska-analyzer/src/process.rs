@@ -14,7 +14,7 @@ use serde_json::Value;
 
 use crate::Error;
 
-pub const SUPPORTED_VERSION: &str = "0.3.2";
+pub const SUPPORTED_VERSION: &str = "0.4.0";
 const MAX_OUTPUT: u64 = 4 * 1024 * 1024;
 
 /// The selected executable and operation limits do not locate a wrapper or a platform.
@@ -63,7 +63,7 @@ impl Analyzer<'_> {
             serde_json::from_slice(&output.stdout).map_err(|_| Error::AnalyzerContract)?;
         if !output.status.success()
             || contract["build_version"] != SUPPORTED_VERSION
-            || contract["contract_version"] != "3.4"
+            || contract["contract_version"] != "3.5"
         {
             return Err(Error::AnalyzerContract);
         }
