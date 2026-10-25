@@ -14,7 +14,66 @@ use crate::{
     test_support::TestDir,
 };
 
-use super::{ContextError, SettingsError, SourceRole, TargetPlatformVersion, resolve};
+use super::{
+    ContextError, SettingsError, SourceRole, TargetPlatformVersion, resolve, resolve_snapshot,
+};
+
+/// Plain editor context does not depend on a derived config or unrelated module contents.
+#[test]
+fn context_snapshot_tracks_declared_inputs_without_reading_derived_config() {
+    let fixture = TestDir::new();
+    let descriptor = project(&fixture.0, "configuration", None, None);
+    let first = resolve_snapshot(&fixture.0, None).unwrap();
+    fs::create_dir(fixture.0.join("bsl-analyzer.toml")).unwrap();
+    fs::write(
+        descriptor.parent().unwrap().join("NeverRead.bsl"),
+        "changed module bytes",
+    )
+    .unwrap();
+    assert_eq!(
+        resolve_snapshot(&fixture.0, None).unwrap().fingerprint,
+        first.fingerprint
+    );
+    let manifest = fixture.0.join("eska.toml");
+    fs::write(
+        &manifest,
+        format!(
+            "{}\n# exact manifest bytes\n",
+            fs::read_to_string(&manifest).unwrap()
+        ),
+    )
+    .unwrap();
+    let second = resolve_snapshot(&fixture.0, None).unwrap();
+    assert_ne!(second.fingerprint, first.fingerprint);
+    fs::write(
+        &descriptor,
+        format!(
+            "{}<!-- changed root bytes -->",
+            fs::read_to_string(&descriptor).unwrap()
+        ),
+    )
+    .unwrap();
+    assert_ne!(
+        resolve_snapshot(&fixture.0, None).unwrap().fingerprint,
+        second.fingerprint
+    );
+}
+
+/// Two declared application names remain distinct even if they select the same physical source.
+#[test]
+fn context_snapshot_distinguishes_application_selection_for_identical_sources() {
+    let fixture = TestDir::new();
+    project(&fixture.0.join("main"), "configuration", Some("main"), None);
+    workspace(
+        &fixture.0,
+        &["main"],
+        "[applications.first]\nconfiguration='main'\n[applications.second]\nconfiguration='main'\n",
+    );
+    let first = resolve_snapshot(&fixture.0, Some("first")).unwrap();
+    let second = resolve_snapshot(&fixture.0, Some("second")).unwrap();
+    assert_eq!(first.context.sources(), second.context.sources());
+    assert_ne!(first.fingerprint, second.fingerprint);
+}
 
 /// CI limits are strict root policy and survive serialization without entering the upstream table.
 #[test]

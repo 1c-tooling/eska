@@ -56,7 +56,9 @@ impl FileVersionReader<'_> {
     pub(crate) fn read(&self, path: &BStr) -> Result<FileVersions, Error> {
         let head = self.head_blob(path)?;
         let index = self.index_blob(path)?;
-        let worktree_path = self.repository.work_dir().join(gix::path::from_bstr(path));
+        let relative_path = gix::path::from_bstr(path)
+            .map_err(|source| Error::operation(Operation::Status, source))?;
+        let worktree_path = self.repository.work_dir().join(relative_path);
         let worktree = match fs::symlink_metadata(&worktree_path) {
             Ok(metadata) if metadata.file_type().is_file() => {
                 Some(fs::read(&worktree_path).map_err(|source| Error::Io {
@@ -85,7 +87,8 @@ impl FileVersionReader<'_> {
         let Some(tree) = &self.head else {
             return Ok(None);
         };
-        let relative_path = gix::path::from_bstr(path);
+        let relative_path = gix::path::from_bstr(path)
+            .map_err(|source| Error::operation(Operation::Status, source))?;
         let Some(entry) = tree
             .lookup_entry_by_path(relative_path.as_ref())
             .map_err(|source| Error::operation(Operation::Status, source))?

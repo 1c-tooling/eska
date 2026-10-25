@@ -1,0 +1,388 @@
+{
+  "schemaVersion": 1,
+  "task": "T114",
+  "phase": "minimal-native-runtime",
+  "date": "2026-10-25",
+  "platform": "8.3.27.2325",
+  "metadataApi": "1.30",
+  "runtime": {
+    "passed": true,
+    "input": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/platform/generated-cases.json",
+    "caseCount": 16,
+    "queriesExecuted": 16,
+    "create": {
+      "exitCode": 0,
+      "seconds": 4.02
+    },
+    "client": {
+      "exitCode": 0,
+      "seconds": 1.87
+    },
+    "results": [
+      {
+        "name": "nested",
+        "mode": "query",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "columns": [
+          "N"
+        ],
+        "rows": 1,
+        "values": [
+          1
+        ]
+      },
+      {
+        "name": "union",
+        "mode": "query",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "columns": [
+          "N"
+        ],
+        "rows": 2,
+        "values": [
+          1,
+          2
+        ]
+      },
+      {
+        "name": "union_all",
+        "mode": "query",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "columns": [
+          "N"
+        ],
+        "rows": 2,
+        "values": [
+          1,
+          2
+        ]
+      },
+      {
+        "name": "temporary_chain",
+        "mode": "batch",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "batchResults": 5,
+        "columns": [
+          "N"
+        ],
+        "rows": 1,
+        "values": [
+          7
+        ],
+        "temporaryTablesDestroyed": true
+      },
+      {
+        "name": "having",
+        "mode": "query",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "columns": [
+          "N"
+        ],
+        "rows": 1,
+        "values": [
+          1
+        ]
+      },
+      {
+        "name": "totals",
+        "mode": "totals",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "columns": [
+          "N"
+        ],
+        "rows": 2,
+        "values": [
+          1,
+          1
+        ],
+        "totalValues": [
+          1
+        ],
+        "totalRecordTypes": [
+          "Grand total"
+        ]
+      },
+      {
+        "name": "totals_grouping_levels",
+        "mode": "totals",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "columns": [
+          "N"
+        ],
+        "rows": 3,
+        "values": [
+          1,
+          1,
+          1
+        ],
+        "totalValues": [
+          1
+        ],
+        "totalRecordTypes": [
+          "Grand total"
+        ]
+      },
+      {
+        "name": "virtual_balance",
+        "mode": "query",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "columns": [
+          "N"
+        ],
+        "rows": 1,
+        "values": [
+          11
+        ]
+      },
+      {
+        "name": "dcs_select",
+        "mode": "dcs",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "platformExpandedQueries": [
+          "SELECT\n\t1 AS N"
+        ],
+        "rows": 1,
+        "columns": [
+          "N"
+        ],
+        "values": [
+          1
+        ]
+      },
+      {
+        "name": "dcs_filters",
+        "mode": "dcs",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "platformExpandedQueries": [
+          "SELECT\n\tT.Ref AS N\nFROM\n\tCatalog.Товары AS T\nWHERE\n\tT.Ref = &Item\n\tAND T.Ref = &P"
+        ],
+        "rows": 1,
+        "columns": [
+          "N"
+        ],
+        "values": [
+          "Acceptance A"
+        ]
+      },
+      {
+        "name": "dcs_virtual_arguments",
+        "mode": "dcs",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "platformExpandedQueries": [
+          "SELECT\n\tS.QuantityBalance AS N\nFROM\n\tAccumulationRegister.Stock.Balance(&P, (Item) = &P2) AS S"
+        ],
+        "rows": 1,
+        "columns": [
+          "N"
+        ],
+        "values": [
+          7
+        ]
+      },
+      {
+        "name": "dcs_optional_join",
+        "mode": "dcs",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "platformExpandedQueries": [
+          "SELECT\n\t1 AS N\nFROM\n\tCatalog.Товары AS T"
+        ],
+        "rows": 2,
+        "columns": [
+          "N"
+        ],
+        "values": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "union_duplicates",
+        "mode": "query",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "columns": [
+          "N"
+        ],
+        "rows": 1,
+        "values": [
+          1
+        ]
+      },
+      {
+        "name": "union_all_duplicates",
+        "mode": "query",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "columns": [
+          "N"
+        ],
+        "rows": 2,
+        "values": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "virtual_balance_period",
+        "mode": "query",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "columns": [
+          "N"
+        ],
+        "rows": 1,
+        "values": [
+          7
+        ]
+      },
+      {
+        "name": "dcs_optional_join_used",
+        "mode": "dcs",
+        "passed": true,
+        "attempted": true,
+        "executed": true,
+        "platformExpandedQueries": [
+          "SELECT\n\tU.Code AS N\nFROM\n\tCatalog.Товары AS T\n\t\tLEFT JOIN Catalog.Товары AS U\n\t\tON T.Ref = U.Ref"
+        ],
+        "rows": 2,
+        "columns": [
+          "N"
+        ],
+        "values": [
+          "A",
+          "B"
+        ]
+      }
+    ],
+    "directory": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/platform/matrix-runs/20261025T095705530288Z"
+  },
+  "negativeTotalsProbes": [
+    {
+      "name": "english_two_overall",
+      "mode": "query",
+      "passed": false,
+      "attempted": true,
+      "executed": false,
+      "error": "{CommonModule.QueryBSLServerCall.Module(60)}: Error calling context method (Execute): {(1, 66)}: Syntax error \"TOTALS\"\nSELECT 1 AS N FROM (SELECT 1 AS X) AS T TOTALS SUM(N) BY OVERALL <<?>>TOTALS SUM(N) BY OVERALL"
+    },
+    {
+      "name": "english_two_different",
+      "mode": "query",
+      "passed": false,
+      "attempted": true,
+      "executed": false,
+      "error": "{CommonModule.QueryBSLServerCall.Module(60)}: Error calling context method (Execute): {(1, 68)}: Syntax error \"TOTALS\"\nSELECT 1 AS N, 2 AS M FROM (SELECT 1 AS X) AS T TOTALS SUM(N) BY M <<?>>TOTALS SUM(N) BY OVERALL"
+    },
+    {
+      "name": "russian_two_different",
+      "mode": "query",
+      "passed": false,
+      "attempted": true,
+      "executed": false,
+      "error": "{CommonModule.QueryBSLServerCall.Module(60)}: Error calling context method (Execute): {(1, 73)}: Syntax error \"ИТОГИ\"\nВЫБРАТЬ 1 КАК N, 2 КАК M ИЗ (ВЫБРАТЬ 1 КАК X) КАК T ИТОГИ СУММА(N) ПО M <<?>>ИТОГИ СУММА(N) ПО ОБЩИЕ"
+    },
+    {
+      "name": "english_auto_sections",
+      "mode": "query",
+      "passed": false,
+      "attempted": true,
+      "executed": false,
+      "error": "{CommonModule.QueryBSLServerCall.Module(60)}: Error calling context method (Execute): {(1, 61)}: Syntax error \"TOTALS\"\nSELECT 1 AS N, 2 AS M FROM (SELECT 1 AS X) AS T TOTALS BY M <<?>>TOTALS BY N"
+    }
+  ],
+  "atomicCoreRejections": [
+    {
+      "name": "sequential_totals",
+      "reason": "constructor_unsupported",
+      "atomic": true,
+      "api": "1.30"
+    }
+  ],
+  "checks": [
+    {
+      "name": "fmt",
+      "exitCode": 0,
+      "seconds": 2.87
+    },
+    {
+      "name": "check",
+      "exitCode": 0,
+      "seconds": 0.5
+    },
+    {
+      "name": "clippy",
+      "exitCode": 0,
+      "seconds": 4.32
+    },
+    {
+      "name": "rustdoc",
+      "exitCode": 0,
+      "seconds": 5.05
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "seconds": 40.78
+    }
+  ],
+  "rustTests": {
+    "passed": 1125,
+    "ignored": 12
+  },
+  "dropRegression": {
+    "before": {
+      "passed": 3,
+      "failed": 4
+    },
+    "after": {
+      "passed": 7,
+      "failed": 0
+    }
+  },
+  "totalsRegression": {
+    "before": {
+      "passed": 2,
+      "failed": 2
+    },
+    "after": {
+      "passed": 4,
+      "failed": 0
+    }
+  },
+  "editorTotals": {
+    "locales": [
+      "en",
+      "ru"
+    ],
+    "passed": true,
+    "ruInitialAttempt": "test invoked module apply before constructor receipt/panel disposal; wait corrected, repeated successfully"
+  },
+  "fullBuhmfoAcceptance": "in-progress; this report does not close T114"
+}

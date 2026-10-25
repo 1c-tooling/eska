@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "date": "2026-10-24",
+  "problem": "After backend restart, restoring a declared non-root BSL module failed with unknown_node until an IDE expanded its metadata owner",
+  "fix": "QuerySession restore resolves the persisted owner through existing declared-ancestry lookup and expands only its module branch; current source mapping, scope, support, descriptor and context guards remain mandatory",
+  "before": {
+    "regression": "query_session_restores_an_unexpanded_module_after_reopening_project",
+    "exitCode": 101,
+    "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/recovery-unexpanded-before.log"
+  },
+  "after": {
+    "exitCode": 0,
+    "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/recovery-unexpanded-after.log",
+    "pausedUntilExplicitResume": true,
+    "nativeAndDiskSourceUnchanged": true
+  },
+  "checks": [
+    {
+      "name": "fmt",
+      "exitCode": 0,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/fmt-recovery.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "check",
+      "exitCode": 0,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/check-recovery.log",
+      "sha256": "258449f941fe2f8f7ba59ffbf48578a0862bfe8cdeab5deb2969ab6ab6bc6201"
+    },
+    {
+      "name": "clippy",
+      "exitCode": 0,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/clippy-recovery.log",
+      "sha256": "e6a5ff009dd6fd25393fbd2910337ba217592c9f656d20c26c76e346751df6fc"
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/test-recovery.log",
+      "sha256": "0ee66e83e6d8edf8239986dc942f5c5aeab7ac1b16d6e459563490d1725772ef"
+    },
+    {
+      "name": "rustdoc",
+      "exitCode": 0,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/rustdoc-recovery.log",
+      "sha256": "abde3f0272e108726a6a32e8006a12ff28e001637b376a5fe77e9686db087ebb"
+    }
+  ],
+  "rustTests": {
+    "suites": 35,
+    "passed": 1021,
+    "failed": 0,
+    "ignored": 12
+  },
+  "binary": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/bin/eska-project-recovery",
+    "sha256": "071611fe83f0f5abb9d015e1fbc0e8eb0ad28d0888893372ba0dd9e0ac44d3a4"
+  },
+  "nativeAcceptance": "Recorded separately after the installed adapter checks complete"
+}

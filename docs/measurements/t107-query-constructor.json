@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 1,
+  "task": "T107",
+  "status": "DONE",
+  "date": "2026-10-24",
+  "acceptedEnvironment": {
+    "os": "Linux x86_64",
+    "vscodiumDistribution": "1.109.51242",
+    "vscodiumCommit": "2a5b258b5b38d3d4c830bdaaa6e5c610eaacbd15",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "rust": "1.99.1",
+    "platformForReferenceUnpack": "8.3.27.2325",
+    "analyzer": "0.3.2, published contract 3.4",
+    "locales": [
+      "ru",
+      "en"
+    ]
+  },
+  "scope": {
+    "pages": [
+      "tablesFields",
+      "joins",
+      "group",
+      "conditions",
+      "order"
+    ],
+    "metadata": "Selected application sources, physical tables, standard/custom fields and tabular sections; lazy descriptors",
+    "domainOwner": "eska-project-core",
+    "rpcOwner": "eska-project, Metadata API 1.22",
+    "adapterOwner": "eska-vscode-explorer, forms and native tabs/Undo only"
+  },
+  "reference": {
+    "file": "КонсольЗапросов9000.epf",
+    "sha256": "92250cd632bc4e2fc5b909d723ae71f91f570143516eb0054168b1164e04f011",
+    "originalUnchanged": true,
+    "unpackTool": "eska-build unpack",
+    "unpackResult": "reference-unpack.json in the owned stand",
+    "source": "Forms/Форма/Ext/Form/Module.bsl:3871-3955",
+    "finding": "The console delegates to the platform QueryWizard; it does not contain an independent visual constructor. Its acceptance/cancellation flow is the lifecycle reference.",
+    "sourceCopiedIntoRepositories": false
+  },
+  "sourceCommits": {
+    "core": {
+      "hash": "95cac66a4374a6d57602c7ebc470e3d4c6724280",
+      "message": "feat(query): Добавлены метаданные и структурированные операции конструктора"
+    },
+    "explorer": {
+      "hash": "de6c109c30707b95504081a12fd46ceb35d8cced",
+      "message": "feat(query): Конструктор получил вкладки и выбор полей метаданных"
+    }
+  },
+  "artifacts": {
+    "standRelativeToCore": "../eska-playground/query-configurator-uo019ew3",
+    "backend": {
+      "file": "bin/eska-project",
+      "profile": "dist, optimized with thin LTO",
+      "sha256": "aba06918ced023d6b1900b47662798d5f526272a9af18ec52b3e3e344954dfca"
+    },
+    "vsix": {
+      "file": "query-builder.vsix",
+      "sha256": "6e03c91ea0c2087358915a39e3d7db7d4eff8ea477b0a05d456480f349c52b33",
+      "verifiedPayloadFiles": 1324
+    },
+    "screenshots": [
+      "screenshots/query-builder-ru.png",
+      "screenshots/query-builder-en.png"
+    ]
+  },
+  "checks": {
+    "rust": {
+      "commands": [
+        {
+          "name": "fmt",
+          "exitCode": 0,
+          "seconds": 1.02
+        },
+        {
+          "name": "check",
+          "exitCode": 0,
+          "seconds": 0.2
+        },
+        {
+          "name": "clippy",
+          "exitCode": 0,
+          "seconds": 0.3
+        },
+        {
+          "name": "rustdoc",
+          "exitCode": 0,
+          "seconds": 2.6
+        },
+        {
+          "name": "test",
+          "exitCode": 0,
+          "seconds": 35.18
+        }
+      ],
+      "totals": {
+        "suites": 35,
+        "passed": 1060,
+        "failed": 0,
+        "ignored": 12
+      },
+      "workspaceDefaultMembersCovered": true,
+      "auxiliaryLegacyToolsManifestsPresent": false
+    },
+    "explorer": {
+      "typescriptCheck": true,
+      "compile": true,
+      "rendererSyntax": true,
+      "vsixContents": true,
+      "node": {
+        "total": 278,
+        "passed": 275,
+        "failed": 0,
+        "skipped": 3
+      },
+      "bun": {
+        "total": 278,
+        "passed": 275,
+        "failed": 0,
+        "skipped": 3
+      },
+      "skipped": [
+        "legacy monolith reconnection without an explicit legacy binary",
+        "standalone analyzer CLI inspection without ESKA_TEST_ANALYZER_BINARY",
+        "upstream installer integration without explicit opt-in"
+      ]
+    },
+    "native": {
+      "commands": 10,
+      "windowResults": 12,
+      "allPassed": true,
+      "installedVsix": true,
+      "buhmfoCopyIncludesFiveExtensions": true,
+      "results": [
+        {
+          "name": "query-builder-host-en",
+          "exitCode": 0,
+          "seconds": 8.16,
+          "results": [
+            {
+              "passed": true,
+              "suite": "query-builder",
+              "locale": "en",
+              "accepted": [
+                "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+                "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+                "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "query-modal-host-en",
+          "exitCode": 0,
+          "seconds": 9.5,
+          "results": [
+            {
+              "passed": true,
+              "suite": "query-modal",
+              "locale": "en",
+              "accepted": [
+                "one_query_replaces_file_protected_and_split_parents",
+                "parent_cannot_receive_interactive_typing",
+                "nested_constructor_blocks_query_parent_and_returns_same_draft",
+                "readonly_comparison_blocks_query_parent_and_preserves_external_owner_change",
+                "apply_returns_unsaved_parent_with_single_undo",
+                "explicit_cancel_returns_unchanged_parent",
+                "unchanged_tab_close_returns_parent",
+                "keep_discard_and_cancelled_close_restore_correct_parent_or_child",
+                "scd_and_dynamic_list_save_return_xml_parent_and_preserve_other_query"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "query-modal-normal-host-en",
+          "exitCode": 0,
+          "seconds": 9.61,
+          "results": [
+            {
+              "passed": true,
+              "suite": "query-modal-normal",
+              "locale": "en",
+              "accepted": [
+                "native_cancel_preserves_dirty_parent_without_opening_child",
+                "explicit_native_save_precedes_source_capture_and_return",
+                "only_explicit_native_discard_can_revert_unsaved_parent",
+                "native_readonly_override_survives_modal_roundtrip"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "query-modal-restore-host-en",
+          "exitCode": 0,
+          "seconds": 15.83,
+          "results": [
+            {
+              "passed": true,
+              "suite": "query-modal-native-recovery",
+              "run": "0",
+              "locale": "en",
+              "installedNormalProcesses": true
+            },
+            {
+              "passed": true,
+              "suite": "query-modal-native-recovery",
+              "run": "1",
+              "locale": "en",
+              "installedNormalProcesses": true
+            }
+          ]
+        },
+        {
+          "name": "query-installed-host-en",
+          "exitCode": 0,
+          "seconds": 20.14,
+          "results": [
+            {
+              "passed": true,
+              "suite": "query-installed-normal",
+              "locale": "en",
+              "runtime": "<owned-profile>/extensions/1c-tooling.eska-explorer-0.0.12",
+              "privateApiExported": false,
+              "actualDomActions": true,
+              "analyzerMetadataCompletion": true,
+              "sameDraft": true,
+              "singleQueryView": true,
+              "parentReturned": true,
+              "unsavedModuleSingleUndo": true,
+              "diskUnchanged": true
+            }
+          ]
+        },
+        {
+          "name": "query-builder-host-ru",
+          "exitCode": 0,
+          "seconds": 12.55,
+          "results": [
+            {
+              "passed": true,
+              "suite": "query-builder",
+              "locale": "ru",
+              "accepted": [
+                "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+                "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+                "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "query-modal-host-ru",
+          "exitCode": 0,
+          "seconds": 14.33,
+          "results": [
+            {
+              "passed": true,
+              "suite": "query-modal",
+              "locale": "ru",
+              "accepted": [
+                "one_query_replaces_file_protected_and_split_parents",
+                "parent_cannot_receive_interactive_typing",
+                "nested_constructor_blocks_query_parent_and_returns_same_draft",
+                "readonly_comparison_blocks_query_parent_and_preserves_external_owner_change",
+                "apply_returns_unsaved_parent_with_single_undo",
+                "explicit_cancel_returns_unchanged_parent",
+                "unchanged_tab_close_returns_parent",
+                "keep_discard_and_cancelled_close_restore_correct_parent_or_child",
+                "scd_and_dynamic_list_save_return_xml_parent_and_preserve_other_query"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "query-modal-normal-host-ru",
+          "exitCode": 0,
+          "seconds": 13.61,
+          "results": [
+            {
+              "passed": true,
+              "suite": "query-modal-normal",
+              "locale": "ru",
+              "accepted": [
+                "native_cancel_preserves_dirty_parent_without_opening_child",
+                "explicit_native_save_precedes_source_capture_and_return",
+                "only_explicit_native_discard_can_revert_unsaved_parent",
+                "native_readonly_override_survives_modal_roundtrip"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "query-modal-restore-host-ru",
+          "exitCode": 0,
+          "seconds": 13.29,
+          "results": [
+            {
+              "passed": true,
+              "suite": "query-modal-native-recovery",
+              "run": "0",
+              "locale": "ru",
+              "installedNormalProcesses": true
+            },
+            {
+              "passed": true,
+              "suite": "query-modal-native-recovery",
+              "run": "1",
+              "locale": "ru",
+              "installedNormalProcesses": true
+            }
+          ]
+        },
+        {
+          "name": "query-installed-host-ru",
+          "exitCode": 0,
+          "seconds": 19.28,
+          "results": [
+            {
+              "passed": true,
+              "suite": "query-installed-normal",
+              "locale": "ru",
+              "runtime": "<owned-profile>/extensions/1c-tooling.eska-explorer-0.0.12",
+              "privateApiExported": false,
+              "actualDomActions": true,
+              "analyzerMetadataCompletion": true,
+              "sameDraft": true,
+              "singleQueryView": true,
+              "parentReturned": true,
+              "unsavedModuleSingleUndo": true,
+              "diskUnchanged": true
+            }
+          ]
+        }
+      ]
+    },
+    "documentation": {
+      "coreLocalLinksChecked": 252,
+      "missingLocalLinks": 0,
+      "gitDiffCheck": true
+    }
+  },
+  "validationObservation": {
+    "initialFullRustRun": "One unchanged recovery quota test returned Busy. The exact isolated test then passed; the repeated complete workspace suite passed. The recovery store implementation was not changed.",
+    "retainedLog": "first-full-test-busy.log in the owned stand"
+  },
+  "manualStand": {
+    "relativeToCore": "../eska-playground/buhmfo-query-manual-d5inc0y_",
+    "launcher": "run.sh",
+    "bundleSha256": "2f42c3e462b5f41fc1df115d988eef781267d646102f91bfa57e6d426181a9cf",
+    "verifiedArtifacts": 4,
+    "backupsCreated": 2,
+    "userProfileAndSourcesModified": false,
+    "currentlyOpenWindowRestarted": false,
+    "requiredForNewBundle": "Close the current manual test window and launch the same run.sh again."
+  },
+  "limitations": [
+    "Visual controls do not yet cover virtual-table parameters and full virtual-table schemas, nested sources, UNION, INTO, HAVING, TOTALS or SCD language extensions. Existing opaque text is retained.",
+    "The metadata catalog is a supported subset of standard and declared fields; a complete shared-attribute/platform schema remains future work.",
+    "Join reordering remains restricted until dependencies can be proven.",
+    "Query semantic diagnostics use the published external analyzer where available; no infobase query execution was added.",
+    "Windows, macOS, VS Code and Remote were not tested."
+  ]
+}

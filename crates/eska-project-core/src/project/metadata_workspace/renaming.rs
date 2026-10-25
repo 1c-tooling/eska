@@ -118,6 +118,9 @@ impl ProjectSession {
     /// # Errors
     /// An external change prevents restoration; the retained journal is never discarded on conflict.
     pub fn recover_rename(&mut self, expected: &str) -> Result<(), RenameError> {
+        if self.source_protections.is_active() {
+            return Err(EditError::ReadOnly.into());
+        }
         let guard =
             crate::project::metadata_rename::transaction::Guard::acquire(self.project().root())?;
         let generation = self
@@ -128,6 +131,7 @@ impl ProjectSession {
         let source = self.source.reopen().map_err(WorkspaceError::Source)?;
         let mut fresh = Self::open(source)?;
         fresh.generation = generation;
+        fresh.source_protections = std::mem::take(&mut self.source_protections);
         *self = fresh;
         Ok(())
     }
@@ -142,7 +146,9 @@ impl ProjectSession {
         new_name: &str,
     ) -> Result<RenamePlan, RenameError> {
         let source = self.source.reopen().map_err(WorkspaceError::Source)?;
-        Self::open(source)?.build_rename(id, new_name)
+        let mut fresh = Self::open(source)?;
+        fresh.source_protections = self.source_protections.clone();
+        fresh.build_rename(id, new_name)
     }
 
     /// Resolve from fresh declarations even if the visible tree has not received a file event yet.
@@ -168,6 +174,24 @@ impl ProjectSession {
 
     /// Structural writes require every changed source to remain editable at the operation boundary.
     fn rename_support(&mut self, plan: &mut RenamePlan) -> Result<(), WorkspaceError> {
+        for file in &plan.files {
+            if !file.replacements.is_empty() && self.source_protections.blocks(&file.path, None) {
+                plan.issues.push(RenameIssue {
+                    path: file.path.clone(),
+                    reason: "source_session_active",
+                });
+            }
+        }
+        for movement in &plan.moves {
+            if self.source_protections.blocks_move(&movement.from)
+                || self.source_protections.blocks_move(&movement.to)
+            {
+                plan.issues.push(RenameIssue {
+                    path: movement.from.clone(),
+                    reason: "source_session_active",
+                });
+            }
+        }
         let paths: Vec<_> = plan
             .files
             .iter()

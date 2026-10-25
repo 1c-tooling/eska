@@ -1,0 +1,570 @@
+{
+  "date": "2026-10-24",
+  "scenario": "Expand CommonModules with supportPolicy enabled in installed VSIX Extension Host",
+  "environment": {
+    "os": "Fedora 44 Linux",
+    "cpu": "Intel Core i5-13420H",
+    "rust": "1.99.1",
+    "node": "22.23.1",
+    "vscode": "1.109.5",
+    "profile": "dist",
+    "languageFeatures": false
+  },
+  "revisions": {
+    "before": {
+      "eska": "916f7eddeafc6468a082622f9a0a811e2bf08857",
+      "explorer": "25d91e0a037c73027b1240e50bbd770e14bba264"
+    },
+    "after": {
+      "eska": "257a4c217c901d5fda8cd9a609ab223f74bcc071",
+      "explorer": "dda0ddc274204f426b341cca83c1405b944caf1b"
+    }
+  },
+  "sha256": {
+    "beforeBackend": "76c0f597c17eb4910782e79212e55000785ebd741c2476637c59dd673a4ebf1b",
+    "afterBackend": "da5693c6728858e2596e329729dd84dfc9cddd8426340faea5964778534de5a1",
+    "beforeVsix": "0fcd2548b48168e7615fbe87609c2ad0890d1f285858c7082c8f1d0e198f9a9e",
+    "afterVsix": "de4a87b2eaf86244de439423a1c41bdfc370414712da882be33b62ac11e3e523"
+  },
+  "fixture": {
+    "source": "../eska-playground/big_configuration_temp/src/buhmfo",
+    "copy": "support-performance-m045fozb",
+    "copied": [
+      "eska.toml",
+      "src/Configuration.xml",
+      "src/Ext/ParentConfigurations.bin",
+      "src/CommonModules/"
+    ],
+    "hashedInputs": [
+      "src/Configuration.xml",
+      "src/Ext/ParentConfigurations.bin",
+      "src/CommonModules/ОбщегоНазначения.xml"
+    ],
+    "entries": 3808
+  },
+  "methodology": [
+    "Three alternating before/after pairs; each uses a fresh backend, editor process and disposable profile.",
+    "Same owned CommonModules slice; OS and derived metadata disk caches were not cleared. No builds or other load tests ran during the series.",
+    "Timing starts immediately before getChildren(CommonModules); view.reveal triggers actual native TreeItem requests.",
+    "childrenMs is the returned group list; firstMs is acknowledged support for its first 32 objects; allMs is acknowledged support for all 3808.",
+    "Polling only inspects published snapshots; it does not schedule extra support requests.",
+    "Times measure native provider publication, not a screenshot or individual pixel-paint deadline.",
+    "The fixture retains original root declarations and supplier rules but omits unrelated object groups; these measurements are not full-configuration startup timings."
+  ],
+  "medianMs": {
+    "before": {
+      "childrenMs": 69.79749500000003,
+      "firstMs": 3856.3092189999998,
+      "allMs": 3857.291427
+    },
+    "after": {
+      "childrenMs": 75.90648600000009,
+      "firstMs": 615.799105,
+      "allMs": 1344.6591
+    }
+  },
+  "speedup": {
+    "firstMs": 6.262284546516188,
+    "allMs": 2.8686017348188844
+  },
+  "runs": {
+    "before": [
+      {
+        "passed": true,
+        "suite": "support-navigation",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "entries": 3808,
+        "painted": 3808,
+        "childrenMs": 58.16810099999998,
+        "firstMs": 3844.5567740000006,
+        "allMs": 3845.3016080000007,
+        "counts": {
+          "metadata/children": 1,
+          "metadata/source": 3809,
+          "metadata/supportFiles": 30
+        },
+        "filePolicies": 3809,
+        "inputHashes": [
+          "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+          "8fbfcdd010659aadd2f6c7ba065ab8deb9a32f2421fe6cf92b3cd5371e59086a",
+          "f66dc1358a124ac2b7484a1a62c1a72b1f73384db4a8f00ff88ea7657ae4a65e"
+        ],
+        "rpcTimings": {
+          "metadata/children": {
+            "count": 1,
+            "totalMs": 48.64348300000006,
+            "minMs": 48.64348300000006,
+            "medianMs": 48.64348300000006,
+            "p95Ms": 48.64348300000006,
+            "maxMs": 48.64348300000006
+          },
+          "metadata/source": {
+            "count": 3809,
+            "totalMs": 664.9622700000068,
+            "minMs": 0.09360000000015134,
+            "medianMs": 0.14201300000013362,
+            "p95Ms": 0.2721919999999045,
+            "maxMs": 62.08575900000005
+          },
+          "metadata/supportFiles": {
+            "count": 30,
+            "totalMs": 1357.2174099999975,
+            "minMs": 21.439660000000003,
+            "medianMs": 41.49872800000003,
+            "p95Ms": 44.37707099999989,
+            "maxMs": 173.6684019999998
+          }
+        },
+        "objectBatchSizes": [],
+        "rawLogSha256": "fea4e4626b4a8d30426fc128bc3220004d62eba88003675200f45e4376db142c"
+      },
+      {
+        "passed": true,
+        "suite": "support-navigation",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "entries": 3808,
+        "painted": 3808,
+        "childrenMs": 73.95660799999996,
+        "firstMs": 3856.3092189999998,
+        "allMs": 3857.291427,
+        "counts": {
+          "metadata/children": 1,
+          "metadata/source": 3809,
+          "metadata/supportFiles": 30
+        },
+        "filePolicies": 3809,
+        "inputHashes": [
+          "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+          "8fbfcdd010659aadd2f6c7ba065ab8deb9a32f2421fe6cf92b3cd5371e59086a",
+          "f66dc1358a124ac2b7484a1a62c1a72b1f73384db4a8f00ff88ea7657ae4a65e"
+        ],
+        "rpcTimings": {
+          "metadata/children": {
+            "count": 1,
+            "totalMs": 62.49029399999995,
+            "minMs": 62.49029399999995,
+            "medianMs": 62.49029399999995,
+            "p95Ms": 62.49029399999995,
+            "maxMs": 62.49029399999995
+          },
+          "metadata/source": {
+            "count": 3809,
+            "totalMs": 865.8747370000206,
+            "minMs": 0.10094200000003184,
+            "medianMs": 0.1692270000003191,
+            "p95Ms": 0.37699400000019523,
+            "maxMs": 78.70739100000014
+          },
+          "metadata/supportFiles": {
+            "count": 30,
+            "totalMs": 1335.262110000002,
+            "minMs": 21.43048399999998,
+            "medianMs": 41.09297550000019,
+            "p95Ms": 43.38187400000015,
+            "maxMs": 165.77149400000008
+          }
+        },
+        "objectBatchSizes": [],
+        "rawLogSha256": "b4968f9b5646ac7a9231a2ef5076a7f35dc4d7e995f2a0cc487fa133a64d2e59"
+      },
+      {
+        "passed": true,
+        "suite": "support-navigation",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "entries": 3808,
+        "painted": 3808,
+        "childrenMs": 69.79749500000003,
+        "firstMs": 4150.330415,
+        "allMs": 4151.279226,
+        "counts": {
+          "metadata/children": 1,
+          "metadata/source": 3809,
+          "metadata/supportFiles": 30
+        },
+        "filePolicies": 3809,
+        "inputHashes": [
+          "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+          "8fbfcdd010659aadd2f6c7ba065ab8deb9a32f2421fe6cf92b3cd5371e59086a",
+          "f66dc1358a124ac2b7484a1a62c1a72b1f73384db4a8f00ff88ea7657ae4a65e"
+        ],
+        "rpcTimings": {
+          "metadata/children": {
+            "count": 1,
+            "totalMs": 58.12622899999997,
+            "minMs": 58.12622899999997,
+            "medianMs": 58.12622899999997,
+            "p95Ms": 58.12622899999997,
+            "maxMs": 58.12622899999997
+          },
+          "metadata/source": {
+            "count": 3809,
+            "totalMs": 1037.5420119999987,
+            "minMs": 0.10580100000015591,
+            "medianMs": 0.18184599999995044,
+            "p95Ms": 0.47812100000010105,
+            "maxMs": 109.72701200000006
+          },
+          "metadata/supportFiles": {
+            "count": 30,
+            "totalMs": 1362.5187039999996,
+            "minMs": 21.655431999999564,
+            "medianMs": 41.23457299999973,
+            "p95Ms": 44.30811300000005,
+            "maxMs": 186.348751
+          }
+        },
+        "objectBatchSizes": [],
+        "rawLogSha256": "5ab5cec5ff853a8e0a3908df50cf9001839281f48296c87ff7a00a79552e0a4c"
+      }
+    ],
+    "after": [
+      {
+        "passed": true,
+        "suite": "support-navigation",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "entries": 3808,
+        "painted": 3808,
+        "childrenMs": 69.25033499999995,
+        "firstMs": 624.2641249999999,
+        "allMs": 1344.6591,
+        "counts": {
+          "metadata/children": 1,
+          "metadata/supportObjects": 31
+        },
+        "filePolicies": 0,
+        "inputHashes": [
+          "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+          "8fbfcdd010659aadd2f6c7ba065ab8deb9a32f2421fe6cf92b3cd5371e59086a",
+          "f66dc1358a124ac2b7484a1a62c1a72b1f73384db4a8f00ff88ea7657ae4a65e"
+        ],
+        "rpcTimings": {
+          "metadata/children": {
+            "count": 1,
+            "totalMs": 57.30332700000008,
+            "minMs": 57.30332700000008,
+            "medianMs": 57.30332700000008,
+            "p95Ms": 57.30332700000008,
+            "maxMs": 57.30332700000008
+          },
+          "metadata/supportObjects": {
+            "count": 31,
+            "totalMs": 978.0617569999986,
+            "minMs": 15.721544999999878,
+            "medianMs": 18.613244000000122,
+            "p95Ms": 182.3987159999997,
+            "maxMs": 250.31779899999992
+          }
+        },
+        "objectBatchSizes": [
+          1,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          96
+        ],
+        "rawLogSha256": "08afdefc909d3b1b11f4b99c6cbcc8c281c165319ae475257de0cdb8b79f6403"
+      },
+      {
+        "passed": true,
+        "suite": "support-navigation",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "entries": 3808,
+        "painted": 3808,
+        "childrenMs": 81.32304899999986,
+        "firstMs": 615.799105,
+        "allMs": 1348.7388190000001,
+        "counts": {
+          "metadata/children": 1,
+          "metadata/supportObjects": 31
+        },
+        "filePolicies": 0,
+        "inputHashes": [
+          "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+          "8fbfcdd010659aadd2f6c7ba065ab8deb9a32f2421fe6cf92b3cd5371e59086a",
+          "f66dc1358a124ac2b7484a1a62c1a72b1f73384db4a8f00ff88ea7657ae4a65e"
+        ],
+        "rpcTimings": {
+          "metadata/children": {
+            "count": 1,
+            "totalMs": 69.25376800000004,
+            "minMs": 69.25376800000004,
+            "medianMs": 69.25376800000004,
+            "p95Ms": 69.25376800000004,
+            "maxMs": 69.25376800000004
+          },
+          "metadata/supportObjects": {
+            "count": 31,
+            "totalMs": 800.5806139999997,
+            "minMs": 15.801974999999857,
+            "medianMs": 18.15412699999979,
+            "p95Ms": 26.71854499999972,
+            "maxMs": 248.9718620000001
+          }
+        },
+        "objectBatchSizes": [
+          1,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          96
+        ],
+        "rawLogSha256": "55dd54b10e40e4302b9f53579a3b2acf55eaaa9d3f2eecf35a0d679e3cea6066"
+      },
+      {
+        "passed": true,
+        "suite": "support-navigation",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "entries": 3808,
+        "painted": 3808,
+        "childrenMs": 75.90648600000009,
+        "firstMs": 605.626782,
+        "allMs": 1343.16167,
+        "counts": {
+          "metadata/children": 1,
+          "metadata/supportObjects": 31
+        },
+        "filePolicies": 0,
+        "inputHashes": [
+          "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+          "8fbfcdd010659aadd2f6c7ba065ab8deb9a32f2421fe6cf92b3cd5371e59086a",
+          "f66dc1358a124ac2b7484a1a62c1a72b1f73384db4a8f00ff88ea7657ae4a65e"
+        ],
+        "rpcTimings": {
+          "metadata/children": {
+            "count": 1,
+            "totalMs": 62.776473000000124,
+            "minMs": 62.776473000000124,
+            "medianMs": 62.776473000000124,
+            "p95Ms": 62.776473000000124,
+            "maxMs": 62.776473000000124
+          },
+          "metadata/supportObjects": {
+            "count": 31,
+            "totalMs": 969.4631319999992,
+            "minMs": 15.851864999999634,
+            "medianMs": 17.90767300000016,
+            "p95Ms": 198.43919499999993,
+            "maxMs": 249.71869700000002
+          }
+        },
+        "objectBatchSizes": [
+          1,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          96
+        ],
+        "rawLogSha256": "1412e8d2ea5c3a13fc7ca4fc88c1d1571b04614a6bf1d30fffc047f5483c5bc5"
+      }
+    ]
+  },
+  "nativeAcceptance": {
+    "preloader": {
+      "passed": true,
+      "lazyTree": true,
+      "targetedRequests": 14,
+      "objectRequests": 1,
+      "bulkRequests": 0,
+      "independentDisplay": true,
+      "nativeProtected": true,
+      "dirtyPreserved": true,
+      "currentBytes": true
+    },
+    "preloader-ru": {
+      "passed": true,
+      "vscode": "1.109.5",
+      "locale": "ru",
+      "lazyTree": true,
+      "targetedRequests": 11,
+      "objectRequests": 1,
+      "bulkRequests": 0,
+      "independentDisplay": true,
+      "nativeProtected": true,
+      "dirtyPreserved": true,
+      "currentBytes": true
+    },
+    "protected": {
+      "passed": true,
+      "vscode": "1.109.5",
+      "locale": "en",
+      "protectedSessionOverride": true,
+      "protectedXml": true,
+      "sourceRefresh": true,
+      "voluntaryLock": true,
+      "virtualEventsObserved": 1,
+      "virtualEventsDoNotInvalidateSource": true
+    },
+    "multiroot": {
+      "passed": true,
+      "vscode": "1.109.5",
+      "multiRoot": true,
+      "liveToggle": true,
+      "sameUuidIsolated": true,
+      "unopenedTree": true,
+      "userSettingsPreserved": true,
+      "secondaryDisconnectPreservesLock": true,
+      "folderRemoval": true
+    }
+  },
+  "compatibilityWithApi124": {
+    "passed": true,
+    "suite": "support-navigation",
+    "vscode": "1.109.5",
+    "locale": "en",
+    "entries": 3808,
+    "painted": 3808,
+    "childrenMs": 82.17235500000015,
+    "firstMs": 4179.536572999999,
+    "allMs": 4180.494083,
+    "counts": {
+      "metadata/children": 1,
+      "metadata/source": 3809,
+      "metadata/supportFiles": 30
+    },
+    "filePolicies": 3809,
+    "inputHashes": [
+      "874f9727197a8d159acef09a9b4e30c0cc6c540c6f04fb4cd5bfb8bff864f0dc",
+      "8fbfcdd010659aadd2f6c7ba065ab8deb9a32f2421fe6cf92b3cd5371e59086a",
+      "f66dc1358a124ac2b7484a1a62c1a72b1f73384db4a8f00ff88ea7657ae4a65e"
+    ],
+    "rpcTimings": {
+      "metadata/children": {
+        "count": 1,
+        "totalMs": 64.28515500000003,
+        "minMs": 64.28515500000003,
+        "medianMs": 64.28515500000003,
+        "p95Ms": 64.28515500000003,
+        "maxMs": 64.28515500000003
+      },
+      "metadata/source": {
+        "count": 3809,
+        "totalMs": 1051.3686529999948,
+        "minMs": 0.10603300000002491,
+        "medianMs": 0.19020599999998922,
+        "p95Ms": 0.5046419999998761,
+        "maxMs": 78.96948799999996
+      },
+      "metadata/supportFiles": {
+        "count": 30,
+        "totalMs": 1412.3580949999987,
+        "minMs": 23.291417999999794,
+        "medianMs": 43.20375449999983,
+        "p95Ms": 50.480147000000215,
+        "maxMs": 173.57570299999998
+      }
+    },
+    "objectBatchSizes": [],
+    "rawLogSha256": "1fde20d3bff349b6d0d8a6e58864cb87633d9c194daf6f0d77f221a058954707"
+  },
+  "validation": {
+    "cargoFmt": "passed",
+    "cargoCheckWorkspace": "passed",
+    "cargoClippyWorkspaceAllTargetsAllFeatures": "passed -D warnings",
+    "cargoTestWorkspace": {
+      "passed": 1092,
+      "failed": 0,
+      "ignored": 12
+    },
+    "cargoDocWorkspace": "passed RUSTDOCFLAGS=-D warnings",
+    "nodeTests": {
+      "passed": 283,
+      "failed": 0,
+      "skipped": 3
+    },
+    "typescriptCheck": "passed",
+    "vsixPayload": "passed, 1325 files",
+    "markdownLocalLinks": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "limits": [
+    "Linux/VSCodium acceptance only; Windows and macOS were not run.",
+    "Three runs characterize this fixture, not all configurations or machines.",
+    "Only the three listed input hashes were verified, not the entire source tree.",
+    "The user editor profile and global installation were not updated.",
+    "API 1.25 and the updated extension are both required for batched display."
+  ]
+}

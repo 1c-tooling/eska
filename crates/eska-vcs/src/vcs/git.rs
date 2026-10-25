@@ -9,7 +9,7 @@ use std::{
 ///
 /// # Errors
 /// Returns the initialization error without retrying in another directory.
-pub fn initialize(root: &Path) -> Result<(), Box<gix::init::Error>> {
+pub fn initialize(root: &Path) -> Result<(), Box<gix::Error>> {
     // Ignore user/system config and Git environment overrides: initialization
     // must affect only the directory owned by the creation transaction.
     gix::ThreadSafeRepository::init_opts(
@@ -25,13 +25,13 @@ pub fn initialize(root: &Path) -> Result<(), Box<gix::init::Error>> {
 #[derive(Debug)]
 pub enum ExistingError {
     Io { path: PathBuf, source: io::Error },
-    Open(Box<gix::open::Error>),
+    Open(Box<gix::Error>),
     Bare,
 }
 
 pub enum InitializeError {
     Io { path: PathBuf, source: io::Error },
-    Git(Box<gix::init::Error>),
+    Git(Box<gix::Error>),
 }
 
 /// Inspect only on-disk repository markers, ignoring redirecting environment.

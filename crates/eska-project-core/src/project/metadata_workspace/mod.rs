@@ -8,10 +8,15 @@ mod editing_linked;
 mod editing_references;
 mod editing_values;
 mod property_reference;
+mod query;
+mod query_catalog;
 mod refresh;
 mod renaming;
 pub mod search;
 mod session;
+mod source_navigation;
+mod source_protection;
+mod source_view;
 mod support;
 pub use super::metadata_disk_cache::DiskCacheStats;
 pub use super::metadata_rename::transaction::RecoveryStatus as RenameRecovery;
@@ -21,9 +26,20 @@ pub use editing_history::{HistoryOperation, PropertyReplay};
 pub use editing_linked::PropertyEditPlan;
 pub use editing_references::PropertyReferenceChoice;
 pub use editing_values::PropertyValueChoice;
+pub use query::{
+    QueryApplyPlan, QueryDocument, QueryDocumentError, QueryDocumentKind, QueryEditorState,
+    QueryOwnerFormat, QueryOwnerRestrictions, QueryProjection, QueryProjectionTarget,
+    QueryRevision, QuerySession, QuerySessionError, QuerySessionRestore,
+};
 pub use refresh::RefreshReport;
 pub use renaming::RenameError;
-pub use support::{FileReason, FileSupport, ObjectSupport, SupportSnapshot};
+pub use source_navigation::SourceNavigation;
+pub use source_protection::SourceRestrictionInfo;
+pub use source_view::{
+    MAX_SOURCE_SNAPSHOT_BYTES, NativeSourceSnapshot, SourceAccessRequest, SourceFileState,
+    SourceProtection, SourceSnapshot, SourceSnapshotError, SourceSnapshotOrigin,
+};
+pub use support::{FileReason, FileSupport, ObjectSupport, ObjectSupportSnapshot, SupportSnapshot};
 
 use std::path::Path;
 
@@ -34,6 +50,9 @@ use super::{
     metadata_parser::LoadError,
 };
 
+pub use query_catalog::{
+    QueryCatalogPage, QueryCatalogRequest, QueryFieldChoice, QueryTableChoice,
+};
 pub use session::{ObjectSummary, ProjectSession};
 
 /// One discovery context; identical object IDs in different members remain isolated.

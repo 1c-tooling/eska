@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "task": "T105",
+  "date": "2026-10-24",
+  "case": "Source support policy permits analysis but refuses writes",
+  "status": "fixed and accepted on Linux/VSCodium",
+  "cause": "language_projection reused checked_document, whose final permission fence requires a writable source even for an immutable analysis view. User-level read-only tests did not cover a real source/support prohibition.",
+  "change": "checked_read_document retains version, complete native text, context, descriptor, ownership and disk guards. Write callers still require both captured and current write permission.",
+  "native": {
+    "passed": true,
+    "suite": "support-locked-query",
+    "input": {
+      "project": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo",
+      "module": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/buhmfo/src/CommonModules/GoogleПереводчик/Ext/Module.bsl",
+      "mode": "query",
+      "prefixA": "Орг.ИН",
+      "prefixB": "Орг.Ко",
+      "labelA": "ИНН",
+      "labelB": "Код",
+      "cacheRoots": [
+        "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/.eska",
+        "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/buhmfo/.eska",
+        "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/ExternalSystems/.eska",
+        "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/dzp_АвтоматическаяЗагрузкаВыписок/.eska",
+        "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/dzp_АдаптацияКодаТиповойКонфигурации/.eska",
+        "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/dzp_ЗаполнениеБанковскихВыписок/.eska",
+        "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/buhmfo/src/dzp_ИсправлениеОшибокКонфигурации/.eska"
+      ],
+      "operations": 6,
+      "readOnly": true
+    },
+    "locale": "en",
+    "metadataCompletionFromReadonlySource": true,
+    "constructorCannotGrantWrite": true,
+    "nativeAndDiskUnchanged": true,
+    "errors": [
+      {
+        "code": "requestFailed",
+        "details": {
+          "reason": "user_read_only"
+        }
+      }
+    ],
+    "samples": {
+      "open": [
+        6695.180153000001
+      ],
+      "firstCompletion": [
+        4672.7661100000005
+      ]
+    }
+  },
+  "rustGates": {
+    "fmt": 0,
+    "check": 0,
+    "clippy": 0,
+    "test": 0,
+    "rustdoc": 0,
+    "build": 0
+  },
+  "rustTests": {
+    "passed": 1048,
+    "failed": 0,
+    "ignored": 12,
+    "suites": 35
+  },
+  "backend": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/bin/eska-project-readonly",
+    "sha256": "ee177881480d1fe036a9e665b18cfc0c41d5adc6328fd56c5916c5394b17ebf1"
+  },
+  "failedPrototype": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-0-en-cold",
+    "status": "window closed without a test result; excluded from timings",
+    "confirmedBackendError": "query/projectionOpen: read_only on a support-prohibited source",
+    "secondAttempt": "/home/akalsin/Documents/Projects/eska-playground/t105-acceptance-x3vqgngv/runs/buhmfo-query-1-en-cold",
+    "secondAttemptStatus": "explicitly interrupted after confirming the same read_only backend error"
+  },
+  "limitations": [
+    "Read-only analysis does not grant constructor actions, source application, disk writes or Native read-only overrides.",
+    "Native case uses a synthetic query in an isolated copy of a real support-prohibited buhmfo module.",
+    "Full timing cohorts and native platform reload follow separately."
+  ]
+}

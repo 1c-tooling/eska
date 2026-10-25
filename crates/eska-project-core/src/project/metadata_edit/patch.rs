@@ -79,32 +79,13 @@ fn document(input: &str) -> Result<Document<'_>, EditError> {
 }
 
 /// Apply disjoint backend-computed ranges and validate the complete resulting XML.
-pub(super) fn replacements_plan(
+pub fn replacements_plan(
     input: &str,
-    mut replacements: Vec<Replacement>,
+    replacements: Vec<Replacement>,
 ) -> Result<EditPlan, EditError> {
-    replacements.retain(|replacement| {
-        input.get(replacement.range.clone()) != Some(replacement.text.as_str())
-    });
-    // An insertion at an edited range's start belongs before that range, not inside it.
-    replacements.sort_by_key(|replacement| (replacement.range.start, replacement.range.end));
-    let mut end = 0;
-    for replacement in &replacements {
-        if replacement.range.start < end || input.get(replacement.range.clone()).is_none() {
-            return Err(EditError::UnsupportedValue);
-        }
-        end = replacement.range.end;
-    }
-    let mut updated = input.to_owned();
-    for replacement in replacements.iter().rev() {
-        updated.replace_range(replacement.range.clone(), &replacement.text);
-    }
-    document(&updated)?;
-    Ok(EditPlan {
-        original: input.to_owned(),
-        updated,
-        replacements,
-    })
+    let plan = EditPlan::from_replacements(input, replacements)?;
+    document(plan.output())?;
+    Ok(plan)
 }
 
 /// Expand only the closing slash of an empty element, retaining its original qualified name.
@@ -135,7 +116,7 @@ pub(super) fn empty_content(
 }
 
 /// Escape text rather than interpolating markup; preserve CR explicitly against normalization.
-pub(super) fn escape(value: &str) -> Result<String, EditError> {
+pub fn escape(value: &str) -> Result<String, EditError> {
     let mut result = String::with_capacity(value.len());
     for character in value.chars() {
         match character {

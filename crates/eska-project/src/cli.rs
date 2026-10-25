@@ -140,7 +140,7 @@ pub fn run() -> ExitCode {
         &args,
         "eska-project",
         env!("CARGO_PKG_VERSION"),
-        Some((1, 12)),
+        Some((1, u64::from(crate::ide::API_MINOR))),
     ) {
         return code;
     }

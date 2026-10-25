@@ -49,7 +49,7 @@ impl ProjectSession {
             && paths
                 .iter()
                 .all(|path| path == Path::new("Ext/ParentConfigurations.bin"))
-            && self.support_rules.unchanged(self.project().source())
+            && self.support_rules.unchanged(self.source.project().source())
         {
             return Ok(RefreshReport {
                 generation: self.generation,

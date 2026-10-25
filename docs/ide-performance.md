@@ -60,17 +60,23 @@ open 124,50 мс, индекс 8,607 с, поиск p95 27,40 мс, peak RSS 190
 
 ## Воспроизведение
 
+Историческая серия выше получена через legacy-вход. Текущий стенд по умолчанию
+запускает самостоятельный `eska-project serve --stdio`:
+
 ```sh
-cargo build --profile dist
+cargo build -p eska-project --profile dist
 python3 tools/ide-protocol-bench.py small
 python3 tools/ide-protocol-bench.py synthetic
-python3 tools/ide-protocol-bench.py big
-python3 tools/ide-protocol-bench.py big --cached
+python3 tools/ide-protocol-bench.py big --root ../eska-playground/big_configuration_temp/src/buhmfo
 ```
 
 `--runs` задаёт число свежих процессов; `--binary` — путь к executable.
 Small/synthetic создаются только во временном собственном каталоге соседнего
-`eska-playground` и удаляются после измерений. Big читает
-`../eska-playground/big_configuration_temp`; команда не собирает проект 1С.
+`eska-playground` и удаляются после измерений. Для big задайте существующий
+корень проекта через `--root`; по умолчанию сохранён исторический путь
+`../eska-playground/big_configuration_temp`. Явный `--root` запрещает `--cached`,
+чтобы не записывать кеш в существующий проект. Команда не собирает проект 1С.
+`--backend legacy --binary <путь-к-eska>` выбирает прежний `ide --stdio`.
 
 [Исходные результаты](measurements/t70-ide.json).
+[Сравнительные замеры текущих компонентов от 2026-10-24](reviews/2026-10-24.md).

@@ -1,6 +1,7 @@
 use super::*;
 use crate::backend::project::metadata_workspace::{
-    EditingSnapshot, HistoryOperation, ProjectSession,
+    EditingSnapshot, HistoryOperation, ProjectSession, QueryOwnerFormat, QueryOwnerRestrictions,
+    QuerySession,
 };
 
 /// Keep a second linked document, a different numerator, and unlinked content in the same declared source.
@@ -52,6 +53,76 @@ fn change(
             value: value.into(),
         },
     )
+}
+
+/// A headless native-lock receipt permits core testing without claiming any IDE input-prevention guarantee.
+fn hold_query_owner(project: &mut ProjectSession, owner: &ObjectId, path: &Path) -> QuerySession {
+    project.property_editing(owner).unwrap();
+    let document = project
+        .query_document(&NodeId::Object(owner.clone()), path, 7, None)
+        .unwrap();
+    let identity = document
+        .bsl_query(document.input().find('"').unwrap())
+        .unwrap()
+        .identity;
+    QuerySession::open(
+        project,
+        document,
+        identity,
+        None,
+        QueryOwnerFormat::Source,
+        QueryOwnerRestrictions {
+            user_read_only: false,
+        },
+    )
+    .unwrap()
+}
+
+/// A protected secondary descriptor stops the entire linked write and its history before any source is published.
+#[test]
+fn linked_numbering_respects_a_query_session_on_an_affected_document() {
+    let (directory, _, _, _) = linked_fixture();
+    let source = directory.0.join("src");
+    let module = Path::new("Documents/Second/Ext/ObjectModule.bsl");
+    fs::create_dir_all(source.join(module).parent().unwrap()).unwrap();
+    fs::write(source.join(module), "Текст = \"ВЫБРАТЬ 1\";\n").unwrap();
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let numerator = object(MetadataKind::DocumentNumerator, "Shared", None);
+    let second = object(MetadataKind::Document, "Second", None);
+    let mut owner = hold_query_owner(project, &second, module);
+    let state = project.property_editing(&numerator).unwrap();
+    assert!(
+        state.writable,
+        "the primary source remains independently writable"
+    );
+    assert_eq!(state.linked_objects, 2);
+    let original = bytes(&source);
+    assert!(
+        matches!(change(project, &numerator, &state, "NumberLength", "30"),
+        Err(PropertyEditError::Related { object_id, error: EditError::ReadOnly, .. }) if object_id == second)
+    );
+    assert_eq!(bytes(&source), original);
+    owner.close();
+    change(project, &numerator, &state, "NumberLength", "30").unwrap();
+    let mut owner = hold_query_owner(project, &second, module);
+    let state = project.property_editing(&numerator).unwrap();
+    let changed = bytes(&source);
+    assert!(
+        matches!(project.undo_property(&numerator, &state.properties.snapshot, state.context_snapshot.as_deref(), true),
+        Err(PropertyEditError::Related { object_id, error: EditError::ReadOnly, .. }) if object_id == second)
+    );
+    assert_eq!(bytes(&source), changed);
+    owner.close();
+    project
+        .undo_property(
+            &numerator,
+            &state.properties.snapshot,
+            state.context_snapshot.as_deref(),
+            true,
+        )
+        .unwrap();
+    assert_eq!(bytes(&source), original);
 }
 
 /// Document assignment copies all five settings in one descriptor; Unicode names retain their declared spelling.

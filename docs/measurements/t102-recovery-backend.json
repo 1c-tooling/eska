@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-23",
+  "part": "IDE-independent backend recovery and API 1.14",
+  "backendRecoveryAccepted": true,
+  "clientMigrationComplete": false,
+  "ownerLockAccepted": false,
+  "productionBslEditingEnabled": false,
+  "branch": "codex/design-xml-analyzer",
+  "sourceParent": "a72b945273ab313752aadc06d7f981a824fba377",
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0",
+  "environment": {
+    "os": "Linux",
+    "rust": "1.99.1 (58cf8f9c3 2026-10-13)",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "vscodium": "1.109.5",
+    "nativeNode": "22.21.1"
+  },
+  "sourceSha256": {
+    "Cargo.lock": "7c9eaa33b43255f9585e3e0e5e620403011ae8daaad5caa7bc857940f8857c58",
+    "crates/eska-project-core/Cargo.toml": "22602fa96dbbb049ccc275311a1083d70c255e3e7567cd498a8721aef185f3eb",
+    "crates/eska-project-core/src/project/query/mod.rs": "ce572c95b149e380a8af4ed6d4a11e000b3a1116793c66877c19bb35371256b0",
+    "crates/eska-project-core/src/project/query/recovery/mod.rs": "4f5c0603ae1105d8e2ff158844863cab965491a77e1daa5a0f9d99fea4a486cd",
+    "crates/eska-project-core/src/project/query/recovery/record.rs": "03db0c8bf724ebf274bba06f081105f4ccd8fb5d39ef02f9ab893b59c8449e71",
+    "crates/eska-project-core/src/project/query/recovery/store.rs": "1ef526ef0ddb99fcf92fa982db2edf3871e56a3bded25b998e3d4adde49dcd94",
+    "crates/eska-project/src/ide/mod.rs": "26a3a17651dcb0be900705f07b4af4010e09668820b1bbb3b487b74bb74d6c3b",
+    "crates/eska-project/src/ide/query/mod.rs": "92a63fcb257ddeed35f3168a349e281753a1d08cf709b021eac9e66d49598884",
+    "crates/eska-project/src/ide/query/recovery.rs": "b9b6c3b28f7b9fac353f073698ed71d70d7926d47cd47e6dff242e42a4604fac",
+    "crates/eska-project/src/ide/query/recovery/transfer.rs": "60d810a8f17498160f80eb868043a7800c0b7a981d8341fcdf57d232b0248c10",
+    "crates/eska-project/src/ide/runtime.rs": "d6717620fc82cdd19c7ef7af8504de75df4c91af1135c1fccc6d230f12915090",
+    "crates/eska-project/src/ide/server.rs": "53c2c991c24f10be579caa3babd52539e71c72a647dbf038a58fb15b4eca0784",
+    "crates/eska-project/tests/server.rs": "08146ebba06b4976e8c34dab9c3e715d8379796c9f1feb2c508aa1665f085660",
+    "crates/eska-project/tests/server/recovery.rs": "fc0343ab22376a6d91efd6aa097c982a1ccbc32c3b6af917bd0f33e2a7ea40ec",
+    "tests/project/metadata_workspace/ide.rs": "8bc5585f3a1918ad443676367282f82e5f6c71445f7ae532331226e1da9ce767",
+    "tests/project/metadata_workspace/ide/picture.rs": "752e2d2fe0ff692254cdf9783757e210f285d754dd999a3c7ab23b5e3b2cdf6f",
+    "tests/project/metadata_workspace/query.rs": "91af465a2afc7af94cbbf0fb448d2c00a1f1154fc170fa424c7831cbd8d688fa",
+    "tests/project/metadata_workspace/query/recovery.rs": "0e8e60e8e7c2cd391c5c7632b8828d46e912ace5e34d7c6f43bba2e0caa4d5b2"
+  },
+  "architecture": {
+    "owner": "eska-project-core::project::query::recovery",
+    "transport": "eska-project Metadata API 1.14, connection-scoped request-only RPC",
+    "availableWithoutMetadata": true,
+    "sourceWrites": false,
+    "storeFormat": "T101 JSON/base64 storageVersion 1",
+    "atomicCheckpoint": true,
+    "compareRevisionAcrossProcesses": true,
+    "nativeEditorLockProvided": false,
+    "limits": {
+      "records": 16,
+      "retainedTextBytes": 33554432,
+      "metadataBytes": 1048576,
+      "textPartBytes": 8388608,
+      "chunkBytes": 131072,
+      "uploads": 1
+    }
+  },
+  "validation": {
+    "cargoFmt": {
+      "command": "cargo fmt --check",
+      "exitCode": 0
+    },
+    "cargoCheck": {
+      "command": "cargo check",
+      "exitCode": 0
+    },
+    "cargoClippy": {
+      "command": "cargo clippy --all-targets --all-features -- -D warnings",
+      "exitCode": 0
+    },
+    "cargoTest": {
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test",
+      "exitCode": 0,
+      "passed": 973,
+      "failed": 0,
+      "ignored": 12
+    },
+    "rustdoc": {
+      "command": "RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps",
+      "exitCode": 0
+    },
+    "node": {
+      "command": "npm run test:node",
+      "passed": 231,
+      "failed": 0,
+      "skipped": 3,
+      "binary": "bin-independent/eska-project"
+    },
+    "bun": {
+      "command": "bun test test/*.test.mjs",
+      "passed": 231,
+      "failed": 0,
+      "skipped": 3,
+      "binary": "bin-independent/eska-project"
+    },
+    "coreNewTests": 9,
+    "rpcNewTests": 7,
+    "rpcCoverage": [
+      "real process SIGKILL then cold restore in ru and en",
+      "before/failed metadata open and after workspace close",
+      "two processes with compare-revision conflicts",
+      "remove cancels pending update and prevents stale resurrection",
+      "chunks, offsets, checksums and malformed bindings",
+      "source-directory rejection, including metadata reopen",
+      "count/byte quotas, damaged records and symlinks"
+    ],
+    "nativeExistingClient": [
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true
+      }
+    ],
+    "actualNodeRustInterop": {
+      "passed": true,
+      "suite": "actual-node-v1-rust-rpc-node-v1-interop",
+      "api": {
+        "major": 1,
+        "minor": 14
+      },
+      "noMetadataWorkspaceRequired": true,
+      "legacyBytesUnchangedOnRead": true,
+      "ownerAndBaseReused": true,
+      "rustCheckpointReadableByExistingNodeClient": true
+    },
+    "earlierFailures": [
+      {
+        "failure": "Existing future-version picture assertion requested API 1.14 after it became supported",
+        "resolution": "Unsupported version changed to 1.15; supported maximum asserted as 1.14"
+      },
+      {
+        "failure": "One earlier full run hit ETXTBSY in the existing updater fixture",
+        "resolution": "Focused rerun and final unchanged standard full suite passed; updater code was not modified and its cause is unproven"
+      }
+    ]
+  },
+  "testedRuntime": {
+    "backend": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/bin-independent/eska-project",
+      "sha256": "ce6e6550a0464e48ebfc8f41be14ac284631857cb66b04e9cbc7af0f54fbf29a"
+    },
+    "vsix": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eska-query-t101-shutdown.vsix",
+      "sha256": "37999358b05d3e9c59d7cacdfe996ff2a530d036cb63bc416fb35b145976667e"
+    },
+    "explorerHead": "0ab0175",
+    "explorerSourceChanged": false,
+    "installedClientApi": "1.13",
+    "nativeAcceptanceScope": "Compatibility of existing installed T101 VSIX with API 1.14 backend. Its production recovery still uses the previous client file store."
+  },
+  "evidence": {
+    "fmt-independent.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/fmt-independent.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "check-independent.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/check-independent.log",
+      "sha256": "7523ecda17187e6c922fc68a31c3c973b4b10ddc5add9e83ef493264082ff4e6"
+    },
+    "clippy-independent.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/clippy-independent.log",
+      "sha256": "3c5b969a3ce496e5cfea85a7361d00d1a008002c18ae90bdc99ba5ece0f1a4e2"
+    },
+    "test-independent.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/test-independent.log",
+      "sha256": "e8ed93bc4f35bbc2d9e28a87c7068ac6fcd73efce7ee8cf5f3a958a601bad383"
+    },
+    "rustdoc-independent.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/rustdoc-independent.log",
+      "sha256": "a6ebda305b454938c6b6ce98c30584ce00b9bc8e297694221f78429881016a90"
+    },
+    "node-independent.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/node-independent.log",
+      "sha256": "fbb1e4a73d42daa13c5311957633503d25923c09ddf8a4b4fd8e5e238dbacfe2"
+    },
+    "bun-independent.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/bun-independent.log",
+      "sha256": "f0411e76e160e584b4c53ab405cb481fd150297c12540ad64fa7677ba5dd062d"
+    },
+    "independent-old-vsix-native-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/independent-old-vsix-native-result.log",
+      "sha256": "59e56f06c2d9720956345069aa2e6caf090f9986d23b4c2ee4ecabaaa4e9736a"
+    },
+    "node-v1-interop-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-fz14k3p0/node-v1-interop-result.log",
+      "sha256": "e5191630690da475c19c468e45cfc8361b1ff33dd867479ab8c50ac1cadbf9d8"
+    }
+  },
+  "remaining": [
+    "Migrate production adapter from local file recovery to the common RPC, including failed metadata startup and shutdown acknowledgement.",
+    "Move remaining source-session and protection transitions into ESKA; keep native editor enforcement in each adapter.",
+    "Prove temporary native owner locking and release without losing prior user restrictions, including dirty/split/reopened views.",
+    "Implement and accept BSL Apply/Cancel only after the required owner lock is supported.",
+    "Continue T103, T104 and T105 in the requested order; none is complete."
+  ],
+  "unverifiedEnvironments": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ]
+}

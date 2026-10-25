@@ -28,6 +28,13 @@ pub struct ObjectSupport {
     pub reason: Reason,
 }
 
+/// Tree presentation needs object rules without a physical-file permission inventory.
+#[derive(Debug)]
+pub struct ObjectSupportSnapshot {
+    pub objects: Vec<ObjectSupport>,
+    pub diagnostics: Vec<String>,
+}
+
 /// File-level explanation does not replace the linked objects' individual rules.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]

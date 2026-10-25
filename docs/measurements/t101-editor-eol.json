@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "task": "T101",
+  "status": "in-progress",
+  "part": "editor-line-endings",
+  "date": "2026-10-23",
+  "problem": "VS Code normalizes inserted newlines to the owner model EOL, invalidating a raw LF byte plan for CRLF owners.",
+  "change": "Optional query/plan lineEnding=lf|crlf under queryEditing.editorLineEndings; only generated physical source lines change.",
+  "compatibility": {
+    "metadataApi": "1.13",
+    "newCapability": "editorLineEndings",
+    "oldRequestsUnchanged": true,
+    "rustApi": "query::plan and ProjectSession::plan_query append Option<query::LineEnding>; internal consumers updated",
+    "clientApi": "QueryDocument.plan fourth parameter is options {signal?,lineEnding?}; unsupported peers reject the requested style locally"
+  },
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj",
+  "checks": [
+    {
+      "name": "fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exitCode": 0,
+      "seconds": 0.816,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-rust-l78yo6ig/fmt.log"
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check"
+      ],
+      "exitCode": 0,
+      "seconds": 0.174,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-rust-l78yo6ig/check.log"
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exitCode": 0,
+      "seconds": 11.193,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-rust-l78yo6ig/clippy.log"
+    },
+    {
+      "name": "build",
+      "command": [
+        "cargo",
+        "build",
+        "--workspace"
+      ],
+      "exitCode": 0,
+      "seconds": 10.365,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-rust-l78yo6ig/build.log"
+    },
+    {
+      "name": "test",
+      "command": [
+        "cargo",
+        "test"
+      ],
+      "exitCode": 0,
+      "seconds": 34.583,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-rust-l78yo6ig/test.log"
+    },
+    {
+      "name": "rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--workspace",
+        "--no-deps"
+      ],
+      "exitCode": 0,
+      "seconds": 6.262,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-rust-l78yo6ig/rustdoc.log"
+    }
+  ],
+  "rustTests": {
+    "passed": 957,
+    "failed": 0,
+    "ignored": 12,
+    "suites": 35
+  },
+  "node": {
+    "passed": 223,
+    "failed": 0,
+    "skipped": 3,
+    "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-client-node-final.log"
+  },
+  "bun": {
+    "passed": 223,
+    "failed": 0,
+    "skipped": 3,
+    "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-client-bun-final.log"
+  },
+  "native": {
+    "result": {
+      "passed": true,
+      "suite": "T101-real-query-plan-editor-EOL",
+      "vscode": "1.109.5",
+      "node": "v22.21.1",
+      "results": [
+        {
+          "name": "EolLF",
+          "eol": "lf",
+          "snapshotMatched": true,
+          "projectedMapMatched": true,
+          "bomRetained": true
+        },
+        {
+          "name": "EolCRLF",
+          "eol": "crlf",
+          "snapshotMatched": true,
+          "projectedMapMatched": true,
+          "bomRetained": true
+        },
+        {
+          "name": "EolFirstLine",
+          "eol": "crlf",
+          "snapshotMatched": true,
+          "projectedMapMatched": true,
+          "bomRetained": true
+        }
+      ]
+    },
+    "script": "test/query-eol-host.cjs",
+    "scriptSha256": "6313099ed325098d94f491f1544d65fcb3ff81d933894d1fa26cdf7f885b8427",
+    "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-committed-native.log",
+    "resultLog": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-committed-result.log",
+    "backendSha256": "28ac0e7e48b728079757d3d115cb3de78d1550cb623349e6aa094e3ce76f7b10",
+    "fixtureBytesNeverSavedByPlanning": true,
+    "projectionEqualsActualEditorBuffer": true,
+    "execution": "development host; compiled client modules and real project backend"
+  },
+  "testedRustFiles": {
+    "crates/eska-project-core/src/project/metadata_workspace/query.rs": "af9a0091e7eb6470ec65e6a9ca2cb862ee6f1bacb225f3573611f3ca985f9946",
+    "crates/eska-project-core/src/project/query/editing.rs": "575dd722fe8fe0f5d2e3b50979a00070670411d8649c03f48a82290d88dbbc9b",
+    "crates/eska-project-core/src/project/query/editing/bsl.rs": "c91fd5ca09310ffb2ce2a32d3f3f8920164bfb0e321e750351ea1fbd22e6d214",
+    "crates/eska-project-core/src/project/query/editing/tests.rs": "76d3d1a475a7b85ed713d5424b946ff85b1b3e461a7a031e39afc222dd8aaf83",
+    "crates/eska-project-core/src/project/query/editing/xml.rs": "adf7ce9093baa261ab85f88fb1f1e4234df55c7dc75ac10a1bf7fd0a06a38146",
+    "crates/eska-project-core/src/project/query/mod.rs": "a97cb9fc84c0eb544324bb7abb8ecfc020086b58859dc691a91515b4915b32b8",
+    "crates/eska-project/src/ide/query/documents.rs": "99248b4c634362e926b05e946d55bdb5dbda51f2f3bb1e25e1d4e7da23564ccc",
+    "crates/eska-project/src/ide/query/mod.rs": "3668cd227872a64e4d1dadf4a88105c9bad727bb5ee96eb9102e290a70077061",
+    "crates/eska-project/src/ide/query/params.rs": "3c661941736587ce79bd7c88f39d7bf5a0d16c01ee6ba15ebae2f4c7129c6c9e",
+    "tests/project/metadata_workspace/ide/query/xml.rs": "860a02f7aacc0fd86dfdc385616a018a3e9a917a6879dd98577cb45218df1ea2",
+    "tests/project/metadata_workspace/query.rs": "050a34337f7b562d40ecfceeb6de76d42b977062526b5e79bfc4033e39a4084e"
+  },
+  "testedClientFiles": {
+    "src/query/client.ts": "ec3cb404c5931f054ba12692247f7ef59f04261ececa9ef0ca39a920b347b686",
+    "src/query/protocol.ts": "4b8dc8c0f0bf60972754e4eae196839df031555dd4b4f322c9af5abcf6bed2f0",
+    "test/query-client.test.mjs": "8724dd2334dd809e93abb11a64baacd83257be36ada732cd5e9f209f00cf210d",
+    "test/query-eol-host.cjs": "6313099ed325098d94f491f1544d65fcb3ff81d933894d1fa26cdf7f885b8427"
+  },
+  "limitations": [
+    "T101 query tree, production sessions/tabs, restart recovery and platform acceptance remain pending",
+    "No installed-VSIX acceptance in this part",
+    "No 1C platform XML load or query execution",
+    "Windows, macOS, VS Code and Remote unverified"
+  ],
+  "prototype": {
+    "saveResult": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/save-prototype-result.log",
+    "normalizationResult": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eol-prototype-result.log"
+  },
+  "references": [
+    "https://raw.githubusercontent.com/microsoft/vscode/1.109.5/src/vs/workbench/api/common/extHostBulkEdits.ts",
+    "https://code.visualstudio.com/api/references/vscode-api"
+  ]
+}

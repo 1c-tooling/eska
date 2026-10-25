@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "task": "Query parent modal UX",
+  "status": "PASS",
+  "date": "2026-10-24T16:15:01.386237+00:00",
+  "scope": "UX refinement after T105: child views replace parent views and return to their parent when editing or inspection ends.",
+  "acceptedEnvironment": {
+    "os": "Linux x86_64",
+    "distribution": "VSCodium 1.109.51242",
+    "vscodiumApi": "1.109.5",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "backend": "eska-project 0.15.0, Metadata API 1.21, dist profile",
+    "analyzer": "bsl-analyzer-app 0.3.2, published contract 3.4",
+    "locales": [
+      "en",
+      "ru"
+    ]
+  },
+  "source": {
+    "explorerCommit": "8b70bf25796dfc6e0a28d109fd0939daf1532dbc",
+    "explorerCommitMessage": "fix(query): Запросы заменяют вкладки родителя до закрытия",
+    "backendChanged": false,
+    "publicProtocolChanged": false,
+    "newDependencies": false
+  },
+  "artifacts": {
+    "stand": "/home/akalsin/Documents/Projects/eska-playground/query-modal-aden_z32",
+    "vsix": "/home/akalsin/Documents/Projects/eska-playground/query-modal-aden_z32/query-modal.vsix",
+    "artifactDigests": {
+      "vsix": "8fc4052359b6a081ec5f7035c956c97bf7afa43435aa2858ef2328e87f1461bf",
+      "backend": "90b7dc163b6843dc5e5b85f1851c0c7a86040619fd0f25572c151f43bb0aa2aa",
+      "analyzer": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+      "languagePack": "210ec158fd3092bc2730cf5ba378e1ea1f8bae1f01862ad584fcac150ca1e0e8"
+    },
+    "bundleSha256": "e559c91dbc87309f2b175f3edac25dab8c3c9dd24dd14aa76c9f2e3895e62607",
+    "bundleHashMethod": "SHA-256 of the compact sorted JSON mapping artifact names to their SHA-256 digests"
+  },
+  "architecture": [
+    "ESKA remains responsible for source extraction, owner snapshots, permissions, checkpoints, conflict detection, constructor operations and verified write plans.",
+    "The IDE adapter alone owns tab identity, selection, focus redirection, readonly comparison mirrors and native Undo/Redo application. No VS Code identity or new domain edit model was added to ESKA.",
+    "Opening a query hides file, protected and split views of its parent. Native dirty-close decisions are explicit Save, Do not save or Cancel; the ESKA session captures the result after that decision.",
+    "Parent navigation returns to the deepest active child. Constructor and owner comparison replace the query until they close. Both comparison sides reject writes.",
+    "Apply, Cancel, Keep and an unchanged close return the parent. XML Save ends XML query editing; BSL Save remains checkpoint-only. Cancelled closure keeps the child active.",
+    "Native readonly overrides are preserved. External or programmatic source edits remain possible and are rejected by the unchanged core conflict checks."
+  ],
+  "checks": {
+    "typescriptCheck": {
+      "command": "npm run check",
+      "exitCode": 0
+    },
+    "compile": {
+      "command": "npm run compile",
+      "exitCode": 0
+    },
+    "package": {
+      "files": 1324,
+      "audit": "python3 scripts/check-vsix.py",
+      "exitCode": 0
+    },
+    "node": {
+      "passed": 270,
+      "failed": 0,
+      "skipped": 3,
+      "total": 273,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/query-modal-aden_z32/accepted-node.log"
+    },
+    "bun": {
+      "passed": 270,
+      "failed": 0,
+      "skipped": 3,
+      "total": 273,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/query-modal-aden_z32/final-bun-with-backend.log"
+    },
+    "rustGates": {
+      "run": false,
+      "reason": "No Rust source, dependencies or build configuration changed; the ESKA repository contains documentation and this report only."
+    },
+    "nativeSuites": [
+      {
+        "name": "accepted-modal-en",
+        "suite": "query-modal-host.cjs",
+        "locale": "en",
+        "normal": false,
+        "fullBuhmfo": false,
+        "exitCode": 0,
+        "seconds": 10.05,
+        "result": {
+          "passed": true,
+          "suite": "query-modal",
+          "locale": "en",
+          "accepted": [
+            "one_query_replaces_file_protected_and_split_parents",
+            "parent_cannot_receive_interactive_typing",
+            "nested_constructor_blocks_query_parent_and_returns_same_draft",
+            "readonly_comparison_blocks_query_parent_and_preserves_external_owner_change",
+            "apply_returns_unsaved_parent_with_single_undo",
+            "explicit_cancel_returns_unchanged_parent",
+            "unchanged_tab_close_returns_parent",
+            "keep_discard_and_cancelled_close_restore_correct_parent_or_child",
+            "scd_and_dynamic_list_save_return_xml_parent_and_preserve_other_query"
+          ]
+        }
+      },
+      {
+        "name": "accepted-modal-ru",
+        "suite": "query-modal-host.cjs",
+        "locale": "ru",
+        "normal": false,
+        "fullBuhmfo": false,
+        "exitCode": 0,
+        "seconds": 12.55,
+        "result": {
+          "passed": true,
+          "suite": "query-modal",
+          "locale": "ru",
+          "accepted": [
+            "one_query_replaces_file_protected_and_split_parents",
+            "parent_cannot_receive_interactive_typing",
+            "nested_constructor_blocks_query_parent_and_returns_same_draft",
+            "readonly_comparison_blocks_query_parent_and_preserves_external_owner_change",
+            "apply_returns_unsaved_parent_with_single_undo",
+            "explicit_cancel_returns_unchanged_parent",
+            "unchanged_tab_close_returns_parent",
+            "keep_discard_and_cancelled_close_restore_correct_parent_or_child",
+            "scd_and_dynamic_list_save_return_xml_parent_and_preserve_other_query"
+          ]
+        }
+      },
+      {
+        "name": "accepted-normal-en",
+        "suite": "query-modal-normal-host.cjs",
+        "locale": "en",
+        "normal": true,
+        "fullBuhmfo": false,
+        "exitCode": 0,
+        "seconds": 11.3,
+        "result": {
+          "passed": true,
+          "suite": "query-modal-normal",
+          "locale": "en",
+          "accepted": [
+            "native_cancel_preserves_dirty_parent_without_opening_child",
+            "explicit_native_save_precedes_source_capture_and_return",
+            "only_explicit_native_discard_can_revert_unsaved_parent",
+            "native_readonly_override_survives_modal_roundtrip"
+          ]
+        }
+      },
+      {
+        "name": "accepted-normal-ru",
+        "suite": "query-modal-normal-host.cjs",
+        "locale": "ru",
+        "normal": true,
+        "fullBuhmfo": false,
+        "exitCode": 0,
+        "seconds": 13.4,
+        "result": {
+          "passed": true,
+          "suite": "query-modal-normal",
+          "locale": "ru",
+          "accepted": [
+            "native_cancel_preserves_dirty_parent_without_opening_child",
+            "explicit_native_save_precedes_source_capture_and_return",
+            "only_explicit_native_discard_can_revert_unsaved_parent",
+            "native_readonly_override_survives_modal_roundtrip"
+          ]
+        }
+      },
+      {
+        "name": "accepted-buhmfo-en",
+        "suite": "query-installed-host.cjs",
+        "locale": "en",
+        "normal": true,
+        "fullBuhmfo": true,
+        "exitCode": 0,
+        "seconds": 15.02,
+        "result": {
+          "passed": true,
+          "suite": "query-installed-normal",
+          "locale": "en",
+          "runtime": "/home/akalsin/Documents/Projects/eska-playground/explorer-host-z1tONN/extensions/1c-tooling.eska-explorer-0.0.12",
+          "privateApiExported": false,
+          "actualDomActions": true,
+          "analyzerMetadataCompletion": true,
+          "sameDraft": true,
+          "singleQueryView": true,
+          "parentReturned": true,
+          "unsavedModuleSingleUndo": true,
+          "diskUnchanged": true
+        }
+      },
+      {
+        "name": "accepted-buhmfo-ru",
+        "suite": "query-installed-host.cjs",
+        "locale": "ru",
+        "normal": true,
+        "fullBuhmfo": true,
+        "exitCode": 0,
+        "seconds": 18.34,
+        "result": {
+          "passed": true,
+          "suite": "query-installed-normal",
+          "locale": "ru",
+          "runtime": "/home/akalsin/Documents/Projects/eska-playground/explorer-host-TRb9Ua/extensions/1c-tooling.eska-explorer-0.0.12",
+          "privateApiExported": false,
+          "actualDomActions": true,
+          "analyzerMetadataCompletion": true,
+          "sameDraft": true,
+          "singleQueryView": true,
+          "parentReturned": true,
+          "unsavedModuleSingleUndo": true,
+          "diskUnchanged": true
+        }
+      }
+    ],
+    "nativeRecovery": [
+      {
+        "name": "accepted-recovery-en",
+        "exitCode": 0,
+        "results": [
+          {
+            "passed": true,
+            "suite": "query-modal-native-recovery",
+            "run": "0",
+            "locale": "en",
+            "installedNormalProcesses": true
+          },
+          {
+            "passed": true,
+            "suite": "query-modal-native-recovery",
+            "run": "1",
+            "locale": "en",
+            "installedNormalProcesses": true
+          }
+        ]
+      },
+      {
+        "name": "accepted-recovery-ru",
+        "exitCode": 0,
+        "results": [
+          {
+            "passed": true,
+            "suite": "query-modal-native-recovery",
+            "run": "0",
+            "locale": "ru",
+            "installedNormalProcesses": true
+          },
+          {
+            "passed": true,
+            "suite": "query-modal-native-recovery",
+            "run": "1",
+            "locale": "ru",
+            "installedNormalProcesses": true
+          }
+        ]
+      }
+    ]
+  },
+  "nativeCoverage": [
+    "One query replaces file/protected/split parent views; reopening the parent does not permit interactive typing.",
+    "Constructor closure returns the same draft; reopening the query while the constructor is active returns focus to the constructor.",
+    "Readonly comparison replaces the query; an external native edit updates the current side, preserves the original side and causes a core Apply conflict.",
+    "Apply returns one unsaved parent, leaves the disk unchanged and is one native Undo operation.",
+    "Explicit Cancel, unchanged close, Keep, Discard and cancelled closure return the expected parent or child.",
+    "SCD and dynamic list Save return XML and preserve the other query.",
+    "Normal installed windows exercise actual native Save, Do not save and Cancel dialogs in both locales, and preserve the prior native readonly override.",
+    "A separate buhmfo copy with five extensions exercises installed public commands, actual constructor DOM actions, published analyzer metadata completion and one-Undo unsaved application.",
+    "Two normal installed processes per locale restore the query without auto-application, retain modal navigation and require explicit Resume before Apply."
+  ],
+  "manualStandUpdate": {
+    "passed": true,
+    "manualStand": "/home/akalsin/Documents/Projects/eska-playground/buhmfo-query-manual-d5inc0y_",
+    "vsixSha256": "8fc4052359b6a081ec5f7035c956c97bf7afa43435aa2858ef2328e87f1461bf",
+    "previousVsixSha256": "2ea5a305d40bd335b2469c5e2346eaf44dfd79bf18ac4ccb0326bdfcf8b12ce7",
+    "previousPackageBackup": "/home/akalsin/Documents/Projects/eska-playground/buhmfo-query-manual-d5inc0y_/packages/eska-query-before-modal-2ea5a305d40b.vsix",
+    "bundleSha256": "e559c91dbc87309f2b175f3edac25dab8c3c9dd24dd14aa76c9f2e3895e62607",
+    "bundleHashMethod": "SHA-256 of the compact sorted JSON mapping artifact names to their SHA-256 digests",
+    "artifactDigests": {
+      "vsix": "8fc4052359b6a081ec5f7035c956c97bf7afa43435aa2858ef2328e87f1461bf",
+      "backend": "90b7dc163b6843dc5e5b85f1851c0c7a86040619fd0f25572c151f43bb0aa2aa",
+      "analyzer": "e5ca2b17270338c797b6d1b6a7ea564e0b9235e8a823d1b99cf1b42a36e2fd0d",
+      "languagePack": "210ec158fd3092bc2730cf5ba378e1ea1f8bae1f01862ad584fcac150ca1e0e8"
+    },
+    "liveWindowRestarted": false,
+    "profileChanged": false,
+    "sourcesChanged": false,
+    "launcherCheckRun": false,
+    "launcherCheckReason": "Existing user window holds the launcher lock; all four artifact hashes were verified directly."
+  },
+  "correctedValidationAttempts": [
+    {
+      "issue": "A parent-open event could finish after the first focus guard.",
+      "resolution": "Re-evaluate parent views after successful guarding; native parent navigation passed in both locales."
+    },
+    {
+      "issue": "An external WorkspaceEdit could reveal a dirty parent in another group; returning to the original group created two parent tabs.",
+      "resolution": "Restore the original view and close only duplicate text views while retaining the same dirty native model; both locale suites passed."
+    },
+    {
+      "issue": "Extension-test windows bypass native dirty save confirmations.",
+      "resolution": "Validate all native save decisions in normal installed windows using a disposable startup probe."
+    },
+    {
+      "issue": "The first buhmfo workspace did not pin the supplied backend and selected an incompatible global backend.",
+      "resolution": "The host runner now writes the supplied executable into the performance workspace settings; both normal buhmfo runs passed."
+    },
+    {
+      "issue": "The first final Node suite ran concurrently with compilation regenerating icon resources and observed a partial directory.",
+      "resolution": "Rerun after compilation settled; all 270 eligible tests passed, with three expected skips."
+    }
+  ],
+  "limitations": [
+    "Windows, macOS, VS Code, Remote and other IDE adapters were not tested.",
+    "This is modal IDE navigation, not an operating-system file lock; external or programmatic edits still require core conflict detection.",
+    "Only the native suites listed in this report were run for the UX refinement; historical acceptance files retain their original contracts and measurements.",
+    "The full T105 performance series, platform build/round-trip and query execution in an infobase were not rerun for this adapter-only change.",
+    "The existing manual test window was left running. Its next run.sh launch installs the updated VSIX; no live profile or copied source file was changed."
+  ]
+}

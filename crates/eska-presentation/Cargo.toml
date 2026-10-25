@@ -15,7 +15,7 @@ authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
 workspace = true
 
 [dependencies]
-clap = { version = "4.6.6", features = ["derive", "string"] }
+clap = { version = "4.6.7", features = ["derive", "string"] }
 eska-tool-runtime = { workspace = true }
 eska-project-core = { workspace = true }
 fluent = "0.17.0"

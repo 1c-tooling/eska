@@ -20,7 +20,11 @@ use super::{
     metadata::{self, MetadataPath},
     object_model::{LogicalObject, ObjectModel},
 };
-use crate::vcs::{diff::ResolvedCommit, repository::Repository, status::Change};
+use crate::vcs::{
+    diff::ResolvedCommit,
+    repository::{Error as RepositoryError, Operation, Repository},
+    status::Change,
+};
 use descriptor::{analyze_descriptor, descriptor_objects};
 use gix::bstr::{BStr, BString, ByteSlice};
 use routines::{RoutineKind, parse_routines};
@@ -60,7 +64,7 @@ pub fn diff_workspace(
     diff: &ProjectDiff,
 ) -> Result<SemanticDiff, SemanticDiffError> {
     let repository = semantic_repository(project)?;
-    let prefix = repository_project_prefix(&repository, project);
+    let prefix = repository_project_prefix(&repository, project)?;
     let mut versions_reader = None;
     let mut events = BTreeSet::new();
     let mut fallbacks = BTreeSet::new();
@@ -212,12 +216,18 @@ fn semantic_repository(project: &Project) -> Result<Repository, SemanticDiffErro
 }
 
 /// Return the repository-relative prefix of the project root.
-fn repository_project_prefix(repository: &Repository, project: &Project) -> BString {
+fn repository_project_prefix(
+    repository: &Repository,
+    project: &Project,
+) -> Result<BString, SemanticDiffError> {
     let relative = project
         .root()
         .strip_prefix(repository.work_dir())
         .expect("semantic repository preflight checked containment");
-    gix::path::to_unix_separators_on_windows(gix::path::into_bstr(relative)).into_owned()
+    let bytes = gix::path::into_bstr(relative).map_err(|source| {
+        SemanticDiffError::Repository(RepositoryError::operation(Operation::Status, source))
+    })?;
+    Ok(gix::path::to_unix_separators_on_windows(bytes).into_owned())
 }
 
 /// Join two Git byte paths without converting either through UTF-8.
@@ -239,16 +249,18 @@ fn project_relative_path(
 ) -> Option<BString> {
     let absolute = repository
         .work_dir()
-        .join(gix::path::from_bstr(repository_path));
+        .join(gix::path::from_bstr(repository_path).ok()?);
     let relative = absolute.strip_prefix(project.root()).ok()?;
-    Some(gix::path::to_unix_separators_on_windows(gix::path::into_bstr(relative)).into_owned())
+    Some(
+        gix::path::to_unix_separators_on_windows(gix::path::into_bstr(relative).ok()?).into_owned(),
+    )
 }
 
 /// Scope one project-relative path to its configured source directory.
 fn source_relative_path(project: &Project, project_path: &BStr) -> Option<PathBuf> {
     project
         .root()
-        .join(gix::path::from_bstr(project_path))
+        .join(gix::path::from_bstr(project_path).ok()?)
         .strip_prefix(project.source())
         .ok()
         .map(Path::to_path_buf)
@@ -286,8 +298,11 @@ fn analyze_snapshots(
         .unwrap_or_default();
     let owner = owners.first().map(|value| semantic_object(value));
     let project_type = project.configuration().project_type();
-    let source_bytes =
-        gix::path::to_unix_separators_on_windows(gix::path::into_bstr(snapshot.source_path));
+    let Ok(source_bytes) = gix::path::into_bstr(snapshot.source_path) else {
+        record_fallback(fallbacks, SemanticFallbackReason::OwnerUnresolved, snapshot);
+        return;
+    };
+    let source_bytes = gix::path::to_unix_separators_on_windows(source_bytes);
 
     if metadata::is_object_descriptor(project_type, source_bytes.as_ref()) {
         analyze_descriptor(

@@ -1,6 +1,9 @@
 use std::fs;
 
-use crate::backend::vcs::{repository::Repository, status::Change};
+use crate::backend::vcs::{
+    repository::{Error, Repository},
+    status::Change,
+};
 
 use super::support::{commit, git, repository};
 
@@ -61,4 +64,22 @@ fn merge_base_resolves_the_branch_point() {
         repository.merge_base_commit(main, feature).unwrap().id,
         base
     );
+}
+
+/// Unrelated histories remain a structured failure when gix reports no merge base.
+#[test]
+fn merge_base_rejects_unrelated_histories() {
+    let dir = repository();
+    commit(&dir.0, "base.txt");
+    git(&dir.0, &["checkout", "--orphan", "unrelated"]);
+    commit(&dir.0, "unrelated.txt");
+
+    let repository = Repository::discover(&dir.0).unwrap();
+    let main = repository.resolve_commit("main").unwrap();
+    let unrelated = repository.resolve_commit("unrelated").unwrap();
+    assert!(matches!(
+        repository.merge_base_commit(main, unrelated),
+        Err(Error::NoMergeBase { left, right }) if left == main.id && right == unrelated.id
+    ));
+    assert_eq!(repository.merge_bases(main, unrelated).unwrap(), Vec::new());
 }

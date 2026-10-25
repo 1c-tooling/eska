@@ -1,8 +1,11 @@
 //! Read-only resolution and tree comparison for Git revisions.
 
-use std::{convert::Infallible, ops::ControlFlow};
+use std::ops::ControlFlow;
 
-use gix::{ObjectId, bstr::BString};
+use gix::{
+    ObjectId,
+    bstr::{BString, ByteSlice},
+};
 
 use super::{
     repository::{Error, Operation, Repository},
@@ -92,7 +95,11 @@ impl Repository {
         let id = self
             .inner
             .merge_base(left.id, right.id)
-            .map_err(|source| Error::operation(Operation::MergeBase, source))?;
+            .map_err(|source| Error::operation(Operation::MergeBase, source))?
+            .ok_or(Error::NoMergeBase {
+                left: left.id,
+                right: right.id,
+            })?;
         Ok(ResolvedCommit { id: id.detach() })
     }
 
@@ -129,10 +136,14 @@ impl Repository {
         platform
             .for_each_to_obtain_tree(&new_tree, |change| {
                 record_tree_change(&mut changes, change);
-                Ok::<_, Infallible>(ControlFlow::Continue(()))
+                Ok(ControlFlow::Continue(()))
             })
             .map_err(|source| Error::operation(Operation::TreeDiff, source))?;
         changes.sort_by(|left, right| left.path.cmp(&right.path));
+        for change in &changes {
+            gix::path::from_bstr(change.path.as_bstr())
+                .map_err(|source| Error::operation(Operation::TreeDiff, source))?;
+        }
         Ok(changes)
     }
 

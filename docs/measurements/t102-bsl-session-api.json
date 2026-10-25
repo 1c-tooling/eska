@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "date": "2026-10-24",
+  "scope": "API 1.19 backend BSL sessions; Native adapter acceptance recorded separately",
+  "decision": "Protected owner snapshot and exact conflict checks; ordinary file tabs may be edited; Native readonly overrides remain untouched",
+  "branch": "codex/design-xml-analyzer",
+  "baseline": "38874e94cdbbd4dfbd4d9aa300b462974bcca972",
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2",
+  "architecture": {
+    "nativeLockToken": false,
+    "sourceLease": "owned by QuerySession; numeric ID is descriptive",
+    "domain": "ESKA owns source, descriptor, disk and Native revision guards, support, context, recovery and BSL encoding",
+    "bslSaveOwner": false,
+    "oldClients": "API 1.15-1.18 retain bslEditing:false"
+  },
+  "checks": [
+    {
+      "name": "fmt",
+      "exitCode": 0,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/fmt-accepted.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "check",
+      "exitCode": 0,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/check-accepted.log",
+      "sha256": "7a7c5f339ce35cb7811e73ee64d146487d7e72eb2090f8175330980b4fb58593"
+    },
+    {
+      "name": "clippy",
+      "exitCode": 0,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/clippy-accepted-fixed.log",
+      "sha256": "33d32509e8541bb4fa49eae1bbf361670572a1118bd29548ff258f366abb115f"
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/test-accepted.log",
+      "sha256": "cc7ac12a720e3dd83433790a07f3c7c4dec1c6a8529c1f3fb9d731d53d4fc055"
+    },
+    {
+      "name": "rustdoc",
+      "exitCode": 0,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/rustdoc-accepted.log",
+      "sha256": "dda3bb15ba47234f4f28d05391f7fdaabc2a5dd32a431b673448720be3da03b2"
+    }
+  ],
+  "acceptance": [
+    "Native version mismatch pauses without consuming the draft",
+    "Hash mismatch at the same Native version is rejected",
+    "Dirty owner and untouched source preserved",
+    "BSL plan does not save owner",
+    "One exact application receipt advances base; close releases only owned source restriction",
+    "ru-RU/en-US use identical machine reasons"
+  ],
+  "limitations": [
+    "Native UI adapter acceptance is separate",
+    "Other IDEs and operating systems have not been accepted",
+    "Published external analyzer is unchanged; query language integration remains T103"
+  ],
+  "rustTests": {
+    "suites": 35,
+    "passed": 1020,
+    "failed": 0,
+    "ignored": 12
+  },
+  "experimentalRustApiChange": "Removed QueryOwnerRestrictions.owner_lock, QueryEditorState.owner_lock and QuerySessionError.OwnerLockRequired; close returns only its actual source restriction ID. Documented RPC fields remain null."
+}

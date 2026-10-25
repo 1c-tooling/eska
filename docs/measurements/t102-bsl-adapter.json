@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "DONE",
+  "date": "2026-10-24",
+  "acceptedEnvironment": "Linux / VSCodium 1.109.5",
+  "branches": {
+    "eska": "codex/design-xml-analyzer",
+    "explorer": "codex/design-xml-analyzer"
+  },
+  "commits": {
+    "eskaBackend": "e7060462b3b8637d85efcc25462dc5600d4a8002",
+    "explorer": "0a748b798267b1148bc09161e6e9db5acafab6ab"
+  },
+  "contract": {
+    "decision": "2026-10-24: protected full owner snapshot and exact conflict checks; ordinary file tabs may be edited",
+    "backend": "ESKA owns identity, source policy, snapshot, draft, checkpoints, conflict guards, BSL codec, plans, receipts and recovery",
+    "adapter": "Native tabs, protected view, editor facts, one undoable transaction and explicit actions",
+    "save": "BSL Save/autosave checkpoint only; explicit Apply never saves module",
+    "nativeReadonlyOverrides": "Not changed by production code",
+    "lease": "Only the actual owned backend source restriction is released"
+  },
+  "binary": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/bin/eska-project-recovery",
+    "sha256": "071611fe83f0f5abb9d015e1fbc0e8eb0ad28d0888893372ba0dd9e0ac44d3a4"
+  },
+  "finalArtifact": {
+    "vsix": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/eska-bsl-api19-complete.vsix",
+    "sha256": "805f5a9b9640c7ae73af5ee8246199247391dcdc51af8d7f9f582f9d9912c173",
+    "comparedFiles": 1318,
+    "matched": 1318,
+    "differences": []
+  },
+  "native": [
+    {
+      "case": "BSL lifecycle en",
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/native-bsl-en-complete-result.log",
+      "logSha256": "80ad7517a0a60590090d0684388cf9880aaca7741fdd97df711561d7e9735446",
+      "vsix": "eska-bsl-api19-complete.vsix",
+      "vsixSha256": "805f5a9b9640c7ae73af5ee8246199247391dcdc51af8d7f9f582f9d9912c173",
+      "results": [
+        {
+          "passed": true,
+          "locale": "en",
+          "accepted": [
+            "split_query_tabs_share_one_draft",
+            "dirty_owner_snapshot_and_provider_write_denial",
+            "save_checkpoints_without_preparing_or_applying",
+            "ordinary_file_tabs_remain_editable_and_conflict_retains_both_texts",
+            "explicit_apply_preserves_other_queries_bom_crlf_dirty_text_and_single_undo_redo",
+            "close_cancel_keep_explicit_resume_and_discard",
+            "close_explicit_apply_never_saves_owner",
+            "late_native_edit_aborts_prepared_intent_and_preserves_draft",
+            "prior_readonly_and_writeable_overrides_preserved_configured_restriction_refuses_apply",
+            "computed_expression_refused_without_owner_mutation",
+            "real_backend_kill_retains_dirty_parent_and_checkpoint_explicit_resume_no_replay"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "BSL lifecycle ru",
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/native-bsl-ru-complete-result.log",
+      "logSha256": "bafe1b00dd962f3f1ede21e6d3270bdb694ff385d13ca1b4cfdb6f37fa6b7185",
+      "vsix": "eska-bsl-api19-complete.vsix",
+      "vsixSha256": "805f5a9b9640c7ae73af5ee8246199247391dcdc51af8d7f9f582f9d9912c173",
+      "results": [
+        {
+          "passed": true,
+          "locale": "ru",
+          "accepted": [
+            "split_query_tabs_share_one_draft",
+            "dirty_owner_snapshot_and_provider_write_denial",
+            "save_checkpoints_without_preparing_or_applying",
+            "ordinary_file_tabs_remain_editable_and_conflict_retains_both_texts",
+            "explicit_apply_preserves_other_queries_bom_crlf_dirty_text_and_single_undo_redo",
+            "close_cancel_keep_explicit_resume_and_discard",
+            "close_explicit_apply_never_saves_owner",
+            "late_native_edit_aborts_prepared_intent_and_preserves_draft",
+            "prior_readonly_and_writeable_overrides_preserved_configured_restriction_refuses_apply",
+            "computed_expression_refused_without_owner_mutation",
+            "real_backend_kill_retains_dirty_parent_and_checkpoint_explicit_resume_no_replay"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "XML regression",
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/native-xml-en-release-result.log",
+      "logSha256": "d0bdee45606cb05ab45f85a649748d7700442223576b73fdb4f6a935f3f107d5",
+      "vsix": "eska-bsl-api19-release.vsix",
+      "vsixSha256": "5e8734a06dd71c632fffc56df84ad4054ab290763e7771ac8a70ff5bbaa41ee0",
+      "results": [
+        {
+          "passed": true,
+          "locale": "en",
+          "suite": "query-source-sessions"
+        }
+      ]
+    },
+    {
+      "case": "Two normal IDE processes en",
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/native-bsl-en-recovery-result.log",
+      "logSha256": "5086cdb29053de092eb81a7ea869e4d9017fe91f7b1536b8c1187c0239e1340d",
+      "vsix": "eska-bsl-api19-presentation.vsix",
+      "vsixSha256": "c23645d19d2573557257777e5d00aad2fa06122043ab12b6f589a0d5163f2ec0",
+      "results": [
+        {
+          "passed": true,
+          "locale": "en",
+          "suite": "bsl-native-recovery",
+          "run": "0"
+        },
+        {
+          "passed": true,
+          "locale": "en",
+          "suite": "bsl-native-recovery",
+          "run": "1"
+        }
+      ]
+    },
+    {
+      "case": "Two normal IDE processes ru",
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/native-bsl-ru-recovery-result.log",
+      "logSha256": "4ef5ffe17bfc05a7e2f926c612f473dc97e3e8b691aa27ddeb4d3daede485017",
+      "vsix": "eska-bsl-api19-accepted.vsix",
+      "vsixSha256": "94e2ef4395a650d02e842792d99eb7003620657efb1d4f98ca5d2f521b0e478f",
+      "results": [
+        {
+          "passed": true,
+          "locale": "ru",
+          "suite": "bsl-native-recovery",
+          "run": "0"
+        },
+        {
+          "passed": true,
+          "locale": "ru",
+          "suite": "bsl-native-recovery",
+          "run": "1"
+        }
+      ]
+    },
+    {
+      "case": "Two simultaneous normal IDE windows",
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/native-bsl-two-workspaces-result.log",
+      "logSha256": "9698c93a2400e936b2747e616dbdbab2777ad43360940f2727315b5a930e08d3",
+      "vsix": "eska-bsl-api19-release.vsix",
+      "vsixSha256": "5e8734a06dd71c632fffc56df84ad4054ab290763e7771ac8a70ff5bbaa41ee0",
+      "results": [
+        {
+          "passed": true,
+          "locale": "en",
+          "suite": "bsl-two-native-windows",
+          "extensionHosts": [
+            1534107,
+            1534439
+          ],
+          "dirtyParentPreserved": true,
+          "externalSourcePreserved": true,
+          "draftPreservedOnConflict": true
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "rust": "See t102-bsl-recovery.json: fmt/check/Clippy/test/Rustdoc, 1021 passed, 0 failed, 12 ignored",
+    "node": {
+      "passed": 255,
+      "failed": 0,
+      "skipped": 3,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/node-release.log"
+    },
+    "bun": {
+      "passed": 255,
+      "failed": 0,
+      "skipped": 3,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t102-bsl-6k8c8kr2/bun-release.log"
+    },
+    "typescript": "npm run check and compile passed",
+    "package": "vsce packaging passed; 1318 packaged runtime, resources, metadata and documentation files match current checkout"
+  },
+  "limits": [
+    "Windows, macOS, Microsoft VS Code and Remote are unverified",
+    "SDBL context analysis and constructor remain T103 and T104",
+    "Native close-decision selection is scripted; lifecycle, tabs, filesystem provider and backend are real",
+    "Backend is required for private checkpoint/removal operations; disconnected text is retained in the IDE until reconnection"
+  ],
+  "rejectedRuns": [
+    "Early Native readonly lock prototype is historical and superseded by the explicit contract decision",
+    "Closed TextEditor restoration race failed then passed after BSL checkpoint restoration fix",
+    "Unexpanded module recovery failed before core fix and passed afterwards",
+    "Extension test/development hosts do not prove native hot exit; final cold tests use a fully installed startup probe in normal IDE processes"
+  ]
+}

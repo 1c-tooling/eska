@@ -19,6 +19,13 @@ use serde_json::{Value, json};
 #[path = "../../../tests/support/mod.rs"]
 mod support;
 
+#[path = "server/recovery.rs"]
+mod recovery;
+#[path = "server/source_navigation.rs"]
+mod source_navigation;
+#[path = "server/support_objects.rs"]
+mod support_objects;
+
 struct Client {
     child: Child,
     input: ChildStdin,
@@ -75,6 +82,13 @@ impl Client {
 
     /// Write complete frames and correlate only responses, retaining no production protocol code.
     fn request(&mut self, method: &str, params: &Value) -> Value {
+        let value = self.response(method, params);
+        assert!(value.get("error").is_none(), "{value}");
+        value["result"].clone()
+    }
+
+    /// Negative protocol scenarios inspect actual errors without weakening success assertions.
+    fn response(&mut self, method: &str, params: &Value) -> Value {
         self.serial += 1;
         self.send(&json!({"jsonrpc":"2.0","id":self.serial,"method":method,"params":params}));
         loop {
@@ -83,8 +97,7 @@ impl Client {
                 continue;
             }
             assert_eq!(value["id"], self.serial);
-            assert!(value.get("error").is_none(), "{value}");
-            return value["result"].clone();
+            return value;
         }
     }
 

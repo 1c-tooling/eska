@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "task": "T104",
+  "status": "DONE",
+  "date": "2026-10-24",
+  "environment": {
+    "os": "Linux x86_64",
+    "vscodium": "1.109.5",
+    "locales": [
+      "ru",
+      "en"
+    ],
+    "node": "22.23.1",
+    "extensionHostNode": "22.21.1",
+    "bun": "1.4.2"
+  },
+  "commits": {
+    "core": "0522f1f",
+    "explorer": "ea0a705866da395ea5b71a0dadfef3efe0c4e574"
+  },
+  "architecture": {
+    "parserAndOperations": "ESKA core; no IDE/parser dependency or new crate",
+    "adapter": "Core DTO rendering, native draft ownership and one undoable plan application",
+    "ownerWritesByConstructor": false,
+    "canonicalDraftCAS": "shared recovery/session queue",
+    "unacceptedWorkingModelDurable": false
+  },
+  "checks": {
+    "rust": {
+      "fmt-core": 0,
+      "check-core": 0,
+      "clippy-core": 0,
+      "test-core": 0,
+      "rustdoc-core": 0,
+      "build-core": 0
+    },
+    "rustTests": {
+      "passed": 1047,
+      "failed": 0,
+      "ignored": 12,
+      "suites": 35
+    },
+    "node": {
+      "tests": 273,
+      "passed": 270,
+      "failed": 0,
+      "skipped": 3,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/node-final.log"
+    },
+    "bun": {
+      "tests": 273,
+      "passed": 270,
+      "failed": 0,
+      "skipped": 3,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/bun-final.log"
+    },
+    "typescript": true,
+    "compile": true,
+    "native": {
+      "en": {
+        "passed": true,
+        "suite": "query-constructor",
+        "accepted": [
+          "all_editable_splits_replaced_by_constructor_and_core_draft_lock",
+          "comments_follow_nodes_explicit_keep_and_same_draft_single_undo_redo",
+          "constructor_result_uses_existing_explicit_bsl_apply_without_disk_save",
+          "opening_and_applying_without_operations_preserves_exact_draft_and_owner",
+          "cancel_discards_only_unaccepted_constructor_operations_and_releases_its_lock",
+          "six_clause_operations_preserve_opaque_package_and_readonly_constructor_cannot_grant_write_access",
+          "installed_webview_dom_six_sections_translated_labels_text_only_rendering_expression_submission_and_cancel",
+          "xml_constructor_keeps_existing_draft_undo_and_explicit_source_comment_placement_without_owner_save",
+          "backend_crash_retains_checkpoint_discards_unaccepted_model_and_requires_explicit_resume"
+        ],
+        "errors": [],
+        "locale": "en"
+      },
+      "ru": {
+        "passed": true,
+        "suite": "query-constructor",
+        "accepted": [
+          "all_editable_splits_replaced_by_constructor_and_core_draft_lock",
+          "comments_follow_nodes_explicit_keep_and_same_draft_single_undo_redo",
+          "constructor_result_uses_existing_explicit_bsl_apply_without_disk_save",
+          "opening_and_applying_without_operations_preserves_exact_draft_and_owner",
+          "cancel_discards_only_unaccepted_constructor_operations_and_releases_its_lock",
+          "six_clause_operations_preserve_opaque_package_and_readonly_constructor_cannot_grant_write_access",
+          "installed_webview_dom_six_sections_translated_labels_text_only_rendering_expression_submission_and_cancel",
+          "xml_constructor_keeps_existing_draft_undo_and_explicit_source_comment_placement_without_owner_save",
+          "backend_crash_retains_checkpoint_discards_unaccepted_model_and_requires_explicit_resume"
+        ],
+        "errors": [],
+        "locale": "ru"
+      }
+    },
+    "package": {
+      "archive": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/eska-constructor-final.vsix",
+      "sha256": "ec0b8f7480669aa917ddadf050ddc33278fb5057d1fa457f792eccddd9d25651",
+      "files": 1324,
+      "runtimeMatchesCommittedSource": true,
+      "documentationDifference": "Only the source-comment command label in docs/query-editing.md was corrected after packaging; runtime files unchanged."
+    }
+  },
+  "artifacts": {
+    "backend": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/bin/eska-project-core",
+      "sha256": "96c11c54f2a756519667de4ed6f26f8b7b1d8f1fd00b45e57e297a9316b3da90"
+    },
+    "bundleSha256": "2d2f64dada9509eeffcdd657d09201cba0b798fbc60e1d9e53ff4f75859b9a50",
+    "screenshots": [
+      "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/constructor-en.png",
+      "/home/akalsin/Documents/Projects/eska-playground/t104-constructor-vqt_0ooe/constructor-ru.png"
+    ]
+  },
+  "limits": [
+    "Expressions are entered as query text; no metadata picker.",
+    "First structural subset only: opaque statements remain exact text; no join reordering/dependency analysis.",
+    "Unaccepted constructor operations are memory-only; acknowledged canonical checkpoint survives backend crash.",
+    "Private canonical draft updates are fenced in core/RPC; native tests replace writable splits with the visual panel and read-only provider metadata.",
+    "Native comment dialog selections are scripted; actual webview buttons, expression submission and cancellation are driven through Chromium DOM.",
+    "UI acceptance is VSCodium/Linux only; Windows/macOS/VS Code/Remote and other IDE adapters unverified.",
+    "T105 full-configuration performance and fresh platform reload follow separately."
+  ]
+}

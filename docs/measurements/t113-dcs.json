@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "task": "T113",
+  "status": "DONE",
+  "date": "2026-10-25",
+  "metadataApi": "1.29",
+  "domainOwner": "eska-project-core",
+  "features": [
+    "Typed DCS SELECT aliases and WHERE fields, children and binary conditions",
+    "Existing optional JOIN wrappers retain their complete body",
+    "Conditional period parameters and filter lists use register virtual-table signatures",
+    "Full original buhmfo price query with CASE, ON(TRUE), compound joins and nested filters",
+    "Original Designer XML extraction, scalar-only encoding, BOM/CRLF and source comment preservation",
+    "Unknown macros, wrong positions, nested unknown blocks, stale revisions and read-only fences",
+    "Compact brace removal preserves lexical separation and selected tabs remain visible"
+  ],
+  "primaryReference": {
+    "platform": "8.3.27.2325",
+    "archive": "dcsui_ru.hbk",
+    "entry": "SKD_ExtQueryLangv"
+  },
+  "realFixture": {
+    "path": "crates/eska-project-core/src/project/query/constructor/tests/fixtures/buhmfo-price-query.sdbl",
+    "source": "DataProcessors/ВыгрузкаНоменклатурыИЦенВФайл/Templates/ОсновнаяСхемаКомпоновкиДанных/Ext/Template.xml"
+  },
+  "checks": [
+    {
+      "name": "fmt",
+      "exitCode": 0,
+      "seconds": 1.61
+    },
+    {
+      "name": "check",
+      "exitCode": 0,
+      "seconds": 2.92
+    },
+    {
+      "name": "clippy",
+      "exitCode": 0,
+      "seconds": 9.6
+    },
+    {
+      "name": "rustdoc",
+      "exitCode": 0,
+      "seconds": 43.59
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "seconds": 68.17
+    },
+    {
+      "name": "typescript",
+      "exitCode": 0,
+      "seconds": 0.65
+    },
+    {
+      "name": "node",
+      "exitCode": 0,
+      "seconds": 31.01
+    },
+    {
+      "name": "bun",
+      "exitCode": 0,
+      "seconds": 50.4
+    }
+  ],
+  "rustTestTotals": {
+    "passed": 1123,
+    "failed": 0,
+    "ignored": 12
+  },
+  "node": {
+    "passed": 297,
+    "skipped": 3,
+    "failed": 0
+  },
+  "bun": {
+    "passed": 297,
+    "skipped": 3,
+    "failed": 0
+  },
+  "native": [
+    {
+      "name": "t113-query-dcs-host-en",
+      "exitCode": 0,
+      "seconds": 18.38,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-dcs",
+          "locale": "en",
+          "accepted": [
+            "typed_dcs_lists_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t113-query-total-sections-host-en",
+      "exitCode": 0,
+      "seconds": 15.36,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-total-sections",
+          "locale": "en",
+          "accepted": [
+            "independent_total_sections_add_select_move_remove_cancel_apply_and_native_undo_redo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t113-query-dcs-host-ru",
+      "exitCode": 0,
+      "seconds": 17.15,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-dcs",
+          "locale": "ru",
+          "accepted": [
+            "typed_dcs_lists_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "t113-query-total-sections-host-ru",
+      "exitCode": 0,
+      "seconds": 19.68,
+      "results": [
+        {
+          "passed": true,
+          "suite": "query-total-sections",
+          "locale": "ru",
+          "accepted": [
+            "independent_total_sections_add_select_move_remove_cancel_apply_and_native_undo_redo"
+          ]
+        }
+      ]
+    }
+  ],
+  "artifacts": {
+    "backend": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/bin/eska-project-t113",
+      "sha256": "b999c6962d486dbb6486ec17bbb1b110767ed4886acb96a9c9586907fd9a12b4"
+    },
+    "vsix": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/query-completion-nuun9c9e/query-t113.vsix",
+      "sha256": "8e6fac613791c8b8782b3be5851b9df86a9c1e2ad8492328a253b01df9656254"
+    }
+  },
+  "vsixFiles": 1325,
+  "limitations": [
+    "Ordinary query clauses containing DCS extensions remain read-only in the visual constructor",
+    "Characteristics and unknown extension positions remain opaque",
+    "Complete platform type checking and execution deferred to T114",
+    "Windows, macOS, Microsoft VS Code and Remote remain unverified"
+  ]
+}

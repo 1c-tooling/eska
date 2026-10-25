@@ -169,7 +169,7 @@ mod tests {
     /// A reference stream contains a clean file and a finding with exact upstream coordinates.
     fn events() -> Vec<serde_json::Value> {
         vec![
-            json!({"type":"start","total_files":1,"version":"0.3.2"}),
+            json!({"type":"start","total_files":1,"version":"0.4.0"}),
             json!({"type":"file","path":"/selected/Module.bsl","diagnostics":[{"code":"Rule","message":"finding","severity":"Error","start_line":0,"start_column":2,"end_line":1,"end_column":0}]}),
             json!({"type":"done","elapsed_secs":0.1,"total_files":1,"total_diagnostics":1,"failed_files":0}),
         ]

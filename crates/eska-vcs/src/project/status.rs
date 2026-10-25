@@ -280,10 +280,8 @@ fn head_state(head: &Head) -> (HeadState, Option<BString>) {
 
 fn belongs_to_project(repository: &Repository, root: &Path, entry: &PathStatus) -> bool {
     root == repository.work_dir()
-        || repository
-            .work_dir()
-            .join(gix::path::from_bstr(entry.path.as_bstr()).as_ref())
-            .starts_with(root)
+        || gix::path::from_bstr(entry.path.as_bstr())
+            .is_ok_and(|path| repository.work_dir().join(path).starts_with(root))
 }
 
 fn summarize<'a>(entries: impl Iterator<Item = &'a PathStatus>) -> ChangeSummary {

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "task": "T109",
+  "status": "DONE",
+  "date": "2026-10-24",
+  "domainOwner": "eska-project-core",
+  "metadataApi": "1.25, existing catalog contract",
+  "implementation": [
+    "Lazy effective query schema across selected ordered application sources",
+    "Omitted properties inherited; explicit values and named inline children overlaid",
+    "Related accounting chart, schedule and calculation base resolved across members",
+    "Unrelated applications excluded; missing declared descriptors remain errors",
+    "Catalog opens neighboring sources without disk cache or source writes"
+  ],
+  "validation": [
+    {
+      "name": "fmt",
+      "exitCode": 0,
+      "seconds": 1.13
+    },
+    {
+      "name": "check",
+      "exitCode": 0,
+      "seconds": 0.28
+    },
+    {
+      "name": "clippy",
+      "exitCode": 0,
+      "seconds": 0.55
+    },
+    {
+      "name": "rustdoc",
+      "exitCode": 0,
+      "seconds": 3.33
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "seconds": 36.33
+    }
+  ],
+  "testTotals": {
+    "passed": 1095,
+    "failed": 0,
+    "ignored": 12
+  },
+  "regressions": [
+    "Borrowed owner flags and field overrides from two extensions",
+    "Assigned chart, schedule resources and base-register fields across members",
+    "Preserved inherited XML namespace bindings",
+    "Unknown relation, missing declared relation, limited standalone extension",
+    "Read-only byte equality including absence of cache files",
+    "Independent framed RPC clients ru-RU and en-US produce equal catalogs"
+  ],
+  "nativeAcceptance": "Combined installed VSIX and real platform acceptance scheduled in T114; no UI code changed in T109",
+  "limitations": [
+    "Only selected declared Designer XML sources participate",
+    "No database execution or analyzer dependency in catalog"
+  ]
+}

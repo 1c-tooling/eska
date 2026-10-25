@@ -17,6 +17,7 @@ use super::{
 
 pub(crate) use mapping::decode as identity_parts;
 pub use mapping::{LogicalLocation, SourceLocation, SourceRole};
+pub(crate) use opening::existing_file;
 pub(crate) use opening::open_analysis_project;
 pub(crate) use opening::open_project;
 pub use opening::open_projects;
@@ -55,7 +56,10 @@ impl DesignerSource {
     }
 
     /// Count containment/existence probes at the shared resolver boundary.
-    fn checked_file(&self, relative: &std::path::Path) -> Result<Option<PathBuf>, SourceError> {
+    pub(crate) fn checked_file(
+        &self,
+        relative: &std::path::Path,
+    ) -> Result<Option<PathBuf>, SourceError> {
         let mut stats = self.io_stats.get();
         let result = opening::existing_file(self.project.source(), relative, &mut stats);
         self.io_stats.set(stats);

@@ -409,6 +409,9 @@ impl ProjectSession {
         id: &ObjectId,
         path: &std::path::Path,
     ) -> Result<bool, WorkspaceError> {
+        if self.source_protections.blocks(path, None) {
+            return Ok(false);
+        }
         let policy = self.support_files(&[path.to_path_buf()])?;
         Ok(policy.diagnostics.is_empty()
             && policy.objects.iter().any(|object| {

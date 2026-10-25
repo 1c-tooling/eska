@@ -10,6 +10,8 @@ const LIMIT: u64 = 64 * 1024 * 1024;
 #[derive(Debug, Default)]
 pub(in crate::project::metadata_workspace) struct RuleCache {
     hash: Option<[u8; 32]>,
+    event_hash: Option<[u8; 32]>,
+    initialized: bool,
     readable: bool,
     policy: Option<Arc<Support>>,
     diagnostics: Vec<String>,
@@ -17,10 +19,15 @@ pub(in crate::project::metadata_workspace) struct RuleCache {
 
 impl RuleCache {
     /// An unchanged rules-only filesystem event must not invalidate the tree or ownership map.
-    pub(in crate::project::metadata_workspace) fn unchanged(&self, root: &Path) -> bool {
-        self.readable
-            && read_input(root)
-                .is_ok_and(|input| self.hash == Some(Sha256::digest(input.as_bytes()).into()))
+    pub(in crate::project::metadata_workspace) fn unchanged(&mut self, root: &Path) -> bool {
+        let current = read_input(root)
+            .ok()
+            .map(|input| Sha256::digest(input.as_bytes()).into());
+        let unchanged =
+            self.initialized && self.readable && current.is_some() && self.event_hash == current;
+        self.event_hash = current;
+        self.initialized = true;
+        unchanged
     }
 
     /// External artifacts have no configuration support; configuration rules still require bytes.
@@ -40,9 +47,15 @@ impl RuleCache {
         match read_input(root) {
             Ok(input) => {
                 self.readable = true;
-                self.parse(&input)
+                let result = self.parse(&input);
+                if !self.initialized {
+                    self.event_hash = self.hash;
+                    self.initialized = true;
+                }
+                result
             }
             Err(error) => {
+                self.initialized = true;
                 self.readable = false;
                 (None, vec![error])
             }

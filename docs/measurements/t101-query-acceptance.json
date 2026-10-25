@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 1,
+  "task": "T101",
+  "status": "DONE",
+  "date": "2026-10-23",
+  "environment": {
+    "os": "Linux",
+    "vscodium": "1.109.5",
+    "extensionHostNode": "22.21.1",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "platform": "8.3.27.2325"
+  },
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj",
+  "architecture": [
+    "Designer XML remains the only source; virtual eska-query SDBL uses one active session per owner",
+    "Every discovery/save closes transient API 1.13 query handles; no analyzer process is required",
+    "Ctrl+S applies a verified minimal WorkspaceEdit; only initially clean XML is saved",
+    "Private bounded atomic recovery retains the exact owner buffer and draft; resume is explicit"
+  ],
+  "acceptance": {
+    "multipleSchemaDataSets": true,
+    "multipleManualFormLists": true,
+    "wholePackageWithCommentAndUnicode": true,
+    "noInventedAutomaticListQuery": true,
+    "exactXmlDiff": true,
+    "sameQueryFocus": true,
+    "dirtyXmlSingleUndoRedo": true,
+    "externalConflictRetainsDraft": true,
+    "coldDirtyDraftRecovery": true,
+    "originalDirtyXmlSnapshot": true,
+    "platformBuildReloadAndExport": true,
+    "shutdownWaitsForQueries": true
+  },
+  "checks": {
+    "compile": {
+      "passed": true,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/tabs-compile-shutdown.log"
+    },
+    "typescript": {
+      "passed": true,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/tabs-check-shutdown.log"
+    },
+    "node": {
+      "passed": 231,
+      "failed": 0,
+      "skipped": 3,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/tabs-node-shutdown.log"
+    },
+    "bun": {
+      "passed": 231,
+      "failed": 0,
+      "skipped": 3,
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/tabs-bun-shutdown.log"
+    },
+    "package": {
+      "passed": true,
+      "checker": "eska-vscode-explorer/scripts/check-vsix.py",
+      "files": 1320,
+      "archive": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/eska-query-t101-shutdown.vsix",
+      "sha256": "37999358b05d3e9c59d7cacdfe996ff2a530d036cb63bc416fb35b145976667e",
+      "bundleSha256": "4260396070af57487209f919f9e56615e9dc82507346e4afc30bcaa5339dbc42"
+    },
+    "native": {
+      "en": [
+        {
+          "passed": true,
+          "suite": "query-tabs",
+          "vscode": "1.109.5",
+          "locale": "en",
+          "node": "v22.21.1",
+          "cleanXmlSave": true,
+          "dirtyXmlSave": true,
+          "wholePackage": true,
+          "ownerUndoRedo": true,
+          "noExtraXmlDiff": true,
+          "repeatedOpen": true,
+          "manualLists": 2,
+          "automaticListInvented": false,
+          "privateRecoveryRecords": 2,
+          "externalConflictRetainsDraft": true,
+          "analyzerRequired": false,
+          "shutdownWaitsForQueries": true
+        },
+        {
+          "passed": true,
+          "suite": "query-tabs-cold-recovery",
+          "vscode": "1.109.5",
+          "locale": "en",
+          "dirtyDraftRecovered": true,
+          "originalDirtyXmlSnapshotRetained": true,
+          "automaticApply": false,
+          "conflictRetainsDraft": true,
+          "explicitResumeUnderFreshEditorVersion": true,
+          "independentOwnerSave": true
+        }
+      ],
+      "ru": [
+        {
+          "passed": true,
+          "suite": "language-pack-registration",
+          "locale": "en"
+        },
+        {
+          "passed": true,
+          "suite": "query-tabs",
+          "vscode": "1.109.5",
+          "locale": "ru",
+          "node": "v22.21.1",
+          "cleanXmlSave": true,
+          "dirtyXmlSave": true,
+          "wholePackage": true,
+          "ownerUndoRedo": true,
+          "noExtraXmlDiff": true,
+          "repeatedOpen": true,
+          "manualLists": 2,
+          "automaticListInvented": false,
+          "privateRecoveryRecords": 2,
+          "externalConflictRetainsDraft": true,
+          "analyzerRequired": false,
+          "shutdownWaitsForQueries": true
+        },
+        {
+          "passed": true,
+          "suite": "query-tabs-cold-recovery",
+          "vscode": "1.109.5",
+          "locale": "ru",
+          "dirtyDraftRecovered": true,
+          "originalDirtyXmlSnapshotRetained": true,
+          "automaticApply": false,
+          "conflictRetainsDraft": true,
+          "explicitResumeUnderFreshEditorVersion": true,
+          "independentOwnerSave": true
+        }
+      ]
+    },
+    "nativeFixture": {
+      "preparedBeforeActivation": true,
+      "backendExecutablePinnedBeforeActivation": true,
+      "actualSourceWatcherBarrier": true,
+      "automaticQueryRetry": false
+    }
+  },
+  "platform": {
+    "test": "tests/native_queries.py",
+    "stand": "/home/akalsin/Documents/Projects/eska-playground/t101-native-queries-8zt18ipd",
+    "resultSha256": "58a9b148fc4ff7403fd290953f8eec72e57041ec3acd9e4ee9fef3cc9c2d186b",
+    "result": {
+      "complete": true,
+      "platformVersion": "8.3.27.2325",
+      "runner": "distrobox",
+      "queriesExecuted": false,
+      "queryEdits": {
+        "before": {
+          "Configuration.xml": "4be47599a46bcac47e3cf586554d703173d6a67c4abd85a378cfc6f550d7c2c7",
+          "ConfigDumpInfo.xml": "d9e1739e465860bb72377119299cc362ad569950994ec8c349830884551477e9",
+          "Languages/English.xml": "60d8dbb80f4ef018a9d653cbd2b4f15442135622685fa9910bfdbfd81acd33e6",
+          "CommonTemplates/QuerySchema.xml": "2ffca4245df7d6ed60dfe18ac16d8a8b893264704246644276af241f07a41764",
+          "CommonForms/QueryLists.xml": "274b78bd77165984ba47e0e7f7207db7366b2e8e866c37dda8151eb1be512eb0",
+          "Ext/ParentConfigurations.bin": "597421127acd97300b1d9d4731e5c816031fab292c3bc098ad40a0c29c424a26",
+          "CommonForms/QueryLists/Ext/Form.xml": "d0420bee05fa8aa4e8d5508b65104f988b0c91b90763b4add73a8205a5a834f7",
+          "CommonTemplates/QuerySchema/Ext/Template.xml": "a8f2902d3b99570ed7ec18d8d23fd063dafa44d17915f422f54af6e7b9f0b85a"
+        },
+        "after": {
+          "Configuration.xml": "4be47599a46bcac47e3cf586554d703173d6a67c4abd85a378cfc6f550d7c2c7",
+          "ConfigDumpInfo.xml": "d9e1739e465860bb72377119299cc362ad569950994ec8c349830884551477e9",
+          "Languages/English.xml": "60d8dbb80f4ef018a9d653cbd2b4f15442135622685fa9910bfdbfd81acd33e6",
+          "CommonTemplates/QuerySchema.xml": "2ffca4245df7d6ed60dfe18ac16d8a8b893264704246644276af241f07a41764",
+          "CommonForms/QueryLists.xml": "274b78bd77165984ba47e0e7f7207db7366b2e8e866c37dda8151eb1be512eb0",
+          "Ext/ParentConfigurations.bin": "597421127acd97300b1d9d4731e5c816031fab292c3bc098ad40a0c29c424a26",
+          "CommonForms/QueryLists/Ext/Form.xml": "e11a2fc8ec518b5a204609161e4061cbe583d2723c518937f6ad79b2d1a49ce4",
+          "CommonTemplates/QuerySchema/Ext/Template.xml": "934330024ae0fe649da8306f7aad695cc33d3b5b65ad87beabb206e911357682"
+        },
+        "changes": [
+          {
+            "source": "CommonTemplates/QuerySchema/Ext/Template.xml",
+            "identity": {
+              "kind": "dataSet",
+              "path": [
+                "First"
+              ]
+            },
+            "text": "SELECT 11 AS N",
+            "sha256": "934330024ae0fe649da8306f7aad695cc33d3b5b65ad87beabb206e911357682"
+          },
+          {
+            "source": "CommonForms/QueryLists/Ext/Form.xml",
+            "identity": {
+              "id": "1",
+              "kind": "dynamicList",
+              "name": "List"
+            },
+            "text": "SELECT 12 AS N",
+            "sha256": "e11a2fc8ec518b5a204609161e4061cbe583d2723c518937f6ad79b2d1a49ce4"
+          }
+        ]
+      },
+      "schemaQueries": [
+        "SELECT 11 AS N",
+        "SELECT 2 AS N"
+      ],
+      "dynamicListQueries": [
+        "SELECT 12 AS N"
+      ],
+      "artifactSha256": "041197905db801e5e6950d988e762222a277094a76285d447fd3256617c8d16e",
+      "artifactBytes": 80987,
+      "sourceUnchangedByBuild": true,
+      "backendSha256": "28ac0e7e48b728079757d3d115cb3de78d1550cb623349e6aa094e3ce76f7b10",
+      "builderSha256": "bd49bcb2182afb2b62f41b6a48b9ee72d62e3a9df3ef0b7358d94ada106a20c9"
+    }
+  },
+  "testedExplorerFiles": {
+    "src/query/owner.ts": "972652bcb8950aec56d6a036ad8c9ca720be7d6c8f00ebd71e91a70a1695f853",
+    "src/query/recovery.ts": "36b03fdcc53c6cf65aa3c88b9408c707c3404e19d263648b9c6ab3636a11e328",
+    "src/query/tabs.ts": "f49efda791aefade6e51cab7415ccc56b9cecf12c426f5d18dc90d72e6868e03",
+    "src/query/tree.ts": "70aa376dd0b66161596116d81d8802b0a679c01722da45b6b4dc05168715bdaf",
+    "src/extension.ts": "d6372b35e1ed35203c9837d7382a480503eb7c4e9ad28e4da7ea07bae24de077",
+    "src/language/service.ts": "648d23ed5f738da7394ac818e4a84245d4170447ba52c626d87e853707b66bf2",
+    "src/messages.ts": "1ab79260cce2569515146bfbae7d729535040d35e92bbcec95e644f4b2ab7996",
+    "package.json": "af0a9f46d67d5c8520ef8f6c9de01a4498964aeda41a3502ca998174a7dd2817",
+    "package.nls.json": "7a0678ffd3acad26be4b85a8976d6fbf7a1c5b43dbc6cb99d970119a63948418",
+    "package.nls.ru.json": "53e598b10cf100864471f3b4686b001c753db4f041c3096f74543c512591536c",
+    "test/query-tabs-host.cjs": "89fee5b6109ead0c04a190d2348b5dd8e024ced7cd024e8bd6fe305f559b6b3d",
+    "test/query-recovery.test.mjs": "c6dd7f75e2405d38138030435e7585c16872bfa9454fd0cca8c5499922efb5a0",
+    "test/run-host.mjs": "a5cb95c3d741328e1c708abea61bd8455c68002e810b37ba6f06a8f0853f9754",
+    "test/query-fixture.mjs": "58a4cb2d11f9ce59210b5398e7adef9cf7f52518a427941d3739629627b4163c"
+  },
+  "testedRootFiles": {
+    "tests/native_queries.py": "b7b208cce386d778eb61b1a9513bc4bdfc5be5f23f1c3a8d328753ef8d14700a",
+    "tests/fixtures/query-editing/schema.xml": "a8f2902d3b99570ed7ec18d8d23fd063dafa44d17915f422f54af6e7b9f0b85a",
+    "tests/fixtures/query-editing/form.xml": "d0420bee05fa8aa4e8d5508b65104f988b0c91b90763b4add73a8205a5a834f7"
+  },
+  "backend": {
+    "commit": "1611b5b",
+    "binarySha256": "28ac0e7e48b728079757d3d115cb3de78d1550cb623349e6aa094e3ce76f7b10",
+    "previousFullRustChecks": "docs/measurements/t101-editor-eol.json",
+    "rustCodeChangedAfterThoseChecks": false
+  },
+  "earlierAttempts": [
+    {
+      "result": "read-only cached TextDocument outlived its tab; session lifecycle corrected and verified in installed VSIX",
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/tabs-lifecycle-fixed-result.log"
+    },
+    {
+      "result": "locale flag initially resolved to en; fresh-profile language-pack registration now precedes strict ru assertions",
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/normal-locale-warmup-result.log"
+    },
+    {
+      "result": "Transient empty form rows and a refused save during source/settings mutation at startup. Test fixture and explicit backend setting are now prepared before activation; real watcher notifications drain before the next independent owner. No query RPC auto-retry introduced.",
+      "logs": [
+        "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/tabs-final-vsix-ru.log",
+        "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/tabs-acceptance-en-final.log"
+      ]
+    },
+    {
+      "result": "Native barrier assertion reproduced metadata shutdown before query completion on the earlier archive. Fixed teardown awaits query results before disposing the connection; final installed ru/en runs verify the barrier.",
+      "log": "/home/akalsin/Documents/Projects/eska-playground/t101-query-w5biaxqj/tabs-shutdown-before.log"
+    }
+  ],
+  "limitations": [
+    "BSL separate editing, owner lock, contextual query analysis and constructor remain T102-T104",
+    "Ambiguous XML source-comment relocation refuses save; explicit placement UI remains for T104",
+    "No query execution or runtime form behavior tested in a production infobase",
+    "Windows, macOS, VS Code and Remote unverified",
+    "Three optional binary test scenarios skipped: legacy backend and two analyzer artifact probes",
+    "Metadata generation changes during an operation cancel that operation and retain the draft; resumption is explicit."
+  ],
+  "explorerCommit": "d2601ed818ab467bb9ecc8ea026a0d636d5e9206"
+}

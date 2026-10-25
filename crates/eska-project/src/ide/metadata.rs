@@ -32,6 +32,7 @@ pub(super) fn is_method(method: &str) -> bool {
             | "metadata/renamePreview"
             | "metadata/renameApply"
             | "metadata/supportFiles"
+            | "metadata/supportObjects"
             | "metadata/root"
             | "metadata/children"
             | "metadata/get"
@@ -39,6 +40,7 @@ pub(super) fn is_method(method: &str) -> bool {
             | "metadata/source"
             | "metadata/search"
             | "metadata/reveal"
+            | "metadata/revealSource"
             | "metadata/refresh"
             | "metadata/index"
             | "metadata/indexErrors"
@@ -54,6 +56,12 @@ impl Server {
         events: &mut Vec<Value>,
     ) -> Result<Value, Value> {
         let input: params::Context = params::decode(args)?;
+        if method == "metadata/revealSource" && self.client_minor < 24 {
+            return Err(error(-32601));
+        }
+        if method == "metadata/supportObjects" && self.client_minor < 25 {
+            return Err(error(-32601));
+        }
         if matches!(method, "metadata/renamePreview" | "metadata/renameApply")
             && self.client_minor < 9
         {
@@ -176,6 +184,7 @@ fn metadata_request(
             super::renaming::apply(labels, session, state, project, args, events)
         }
         "metadata/supportFiles" => support_files(project, args),
+        "metadata/supportObjects" => support_objects(project, args),
         "metadata/support" => {
             let offset = match args.get("offset") {
                 None => 0,
@@ -231,6 +240,7 @@ fn metadata_request(
             Ok(json!({"sources":sources.iter().map(dto::source).collect::<Vec<_>>()}))
         }
         "metadata/search" => search(project, args),
+        "metadata/revealSource" => reveal_source(labels, project, args),
         "metadata/reveal" => {
             let id: ObjectId = params::decode(&args["objectId"])?;
             let ancestry = reveal_ancestry(project, &id)?;
@@ -241,6 +251,32 @@ fn metadata_request(
         "metadata/indexErrors" => index_errors(project, args),
         _ => Err(error(-32601)),
     }
+}
+
+/// Return only the selected source's ancestry, avoiding transport and client retention of every sibling.
+fn reveal_source(
+    labels: &dto::Labels,
+    project: &mut ProjectSession,
+    args: &Value,
+) -> Result<Value, Value> {
+    let path: params::Path = params::decode(&args["path"])?;
+    let Some(navigation) = project
+        .reveal_source(&path.native()?)
+        .map_err(|failure| errors::workspace(&failure))?
+    else {
+        return Ok(json!({"source":null,"nodes":[]}));
+    };
+    let nodes = navigation
+        .ancestry
+        .iter()
+        .map(|id| {
+            project
+                .node(id)
+                .map(|node| labels.node(node))
+                .map_err(|failure| errors::workspace(&failure))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(json!({"source":dto::source(&navigation.source),"nodes":nodes}))
 }
 
 /// Reuse visible ancestry before asking the lazy index to reveal an unloaded object.
@@ -507,6 +543,21 @@ pub(super) fn changed(
     }
     events.push(notification);
     Ok(())
+}
+
+/// Return display policy in bounded batches without resolving source paths in every IDE adapter.
+fn support_objects(project: &mut ProjectSession, args: &Value) -> Result<Value, Value> {
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Objects {
+        object_ids: Vec<ObjectId>,
+    }
+    let input: Objects = params::decode(args)?;
+    if input.object_ids.is_empty() || input.object_ids.len() > 128 {
+        return Err(error(-32602));
+    }
+    let snapshot = project.support_objects(&input.object_ids);
+    Ok(json!({"objects":snapshot.objects,"diagnostics":snapshot.diagnostics,"freshness":"current"}))
 }
 
 /// Classify a bounded set of source-relative paths without starting a support inventory.

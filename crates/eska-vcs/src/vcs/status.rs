@@ -2,7 +2,7 @@
 
 use std::{collections::BTreeMap, fs, io};
 
-use gix::bstr::{BStr, BString};
+use gix::bstr::{BStr, BString, ByteSlice};
 
 use super::repository::{Error, Operation, Repository};
 
@@ -60,7 +60,7 @@ impl Repository {
     /// Repository-local ignore rules and attributes are handled by `gix`.
     ///
     /// # Errors
-    /// Returns an index preflight error or `Operation::Status` for unreadable repository data.
+    /// Returns an index preflight error or `Operation::Status` for unreadable data or unrepresentable paths.
     pub fn status(&self) -> Result<Status, Error> {
         self.check_index_size()?;
         let platform = self
@@ -80,6 +80,10 @@ impl Repository {
                 gix::status::Item::TreeIndex(change) => record_index(&mut paths, &change),
                 gix::status::Item::IndexWorktree(change) => record_worktree(&mut paths, &change),
             }
+        }
+        for entry in paths.values() {
+            gix::path::from_bstr(entry.path.as_bstr())
+                .map_err(|source| Error::operation(Operation::Status, source))?;
         }
         Ok(Status {
             entries: paths.into_values().collect(),

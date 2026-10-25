@@ -1,10 +1,10 @@
 use crate::backend::project::{
-    metadata_model::ProjectScope,
+    metadata_model::{ObjectId, ProjectScope},
     metadata_workspace::MetadataWorkspace,
     support::{Reason, State},
 };
 use crate::support::TestDir;
-use std::{fs, path::Path};
+use std::{fmt::Write, fs, path::Path};
 const ROOT: &str = "11111111-1111-1111-1111-111111111111";
 const CHILD: &str = "22222222-2222-2222-2222-222222222222";
 
@@ -46,6 +46,74 @@ fn rules(mode: u8, rule: u8) -> String {
     format!(
         "{{6,0,1,{ROOT},{mode},{ROOT},\"1\",\"Vendor\",\"Test\",2,{rule},0,{ROOT},{ROOT},0,0,{CHILD},{CHILD},0,0,0,1,0,0,0,1,0,1,0,1,1,1,1}}"
     )
+}
+
+/// Display batches reuse the declared owner chain but never substitute for a mixed-file permission check.
+#[test]
+fn object_support_batches_are_current_lazy_and_independent_of_file_permissions() {
+    let dir = TestDir::new();
+    fixture(&dir.0);
+    let policy = dir.0.join("src/Ext/ParentConfigurations.bin");
+    fs::write(&policy, rules(0, 1)).unwrap();
+    let before = super::bytes(&dir.0);
+    let ids: Vec<ObjectId> = [
+        "catalog:Items".to_owned(),
+        "catalog:Items/attribute:Code".to_owned(),
+        "catalog:NotDeclared".to_owned(),
+        "form:Deep/".repeat(1024),
+    ]
+    .into_iter()
+    .map(|id| serde_json::from_value(serde_json::json!(id)).unwrap())
+    .collect();
+    let mut workspace = MetadataWorkspace::open(&dir.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let reads = session.source_io_stats().xml_reads;
+    let display = session.support_objects(&ids);
+    assert_eq!(session.source_io_stats().xml_reads - reads, 2);
+    assert_eq!(display.objects.len(), ids.len());
+    assert_eq!(display.objects[0].state, State::EditableWithSupport);
+    assert_eq!(display.objects[1].state, State::Locked);
+    assert!(
+        display.objects[2..]
+            .iter()
+            .all(|object| object.state == State::Unknown)
+    );
+    assert_eq!(
+        session.search_progress().state,
+        crate::backend::project::metadata_workspace::search::IndexState::NotStarted
+    );
+    let file = session
+        .support_files(&["Catalogs/Items.xml".into()])
+        .unwrap();
+    assert!(file.files[0].read_only && file.files[0].mixed);
+    assert_eq!(before, super::bytes(&dir.0));
+    for rule in [0, 2, 1] {
+        fs::write(&policy, rules(0, rule)).unwrap();
+        let actual = session.support_objects(&ids[..1]);
+        assert_eq!(
+            actual.objects[0].state,
+            [
+                State::Locked,
+                State::EditableWithSupport,
+                State::Unrestricted
+            ][usize::from(rule)]
+        );
+    }
+    fs::write(&policy, "broken").unwrap();
+    assert_eq!(
+        session.support_objects(&ids[..1]).objects[0].state,
+        State::Unknown
+    );
+    fs::write(&policy, rules(0, 1)).unwrap();
+    fs::write(
+        dir.0.join("src/Configuration.xml"),
+        xml("Configuration", "Test", ""),
+    )
+    .unwrap();
+    assert_eq!(
+        session.support_objects(&ids[..1]).objects[0].state,
+        State::Unknown
+    );
 }
 
 #[test]
@@ -115,6 +183,54 @@ fn targeted_permissions_follow_current_bytes_without_scan_or_file_events() {
     );
 }
 
+/// Every batch needs the root; filling the bounded cache with children must not evict it.
+#[test]
+fn support_object_batches_keep_the_shared_root_parse() {
+    let dir = TestDir::new();
+    fixture(&dir.0);
+    fs::write(dir.0.join("src/Ext/ParentConfigurations.bin"), rules(0, 0)).unwrap();
+    let names: Vec<_> = (0..129).map(|index| format!("Item{index:03}")).collect();
+    let mut declarations = String::new();
+    for name in &names {
+        write!(declarations, "<Catalog>{name}</Catalog>").unwrap();
+    }
+    fs::write(
+        dir.0.join("src/Configuration.xml"),
+        xml("Configuration", "Test", &declarations),
+    )
+    .unwrap();
+    for name in &names {
+        fs::write(
+            dir.0.join(format!("src/Catalogs/{name}.xml")),
+            xml("Catalog", name, ""),
+        )
+        .unwrap();
+    }
+    let ids: Vec<ObjectId> = names
+        .iter()
+        .map(|name| serde_json::from_value(serde_json::json!(format!("catalog:{name}"))).unwrap())
+        .collect();
+    let mut workspace = MetadataWorkspace::open_cached(&dir.0, &[], false).unwrap();
+    let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    assert_eq!(session.support_objects(&ids[..128]).objects.len(), 128);
+    let hits = session.disk_cache_stats().unwrap().hits;
+    assert_eq!(
+        session.support_objects(&ids[128..]).objects[0].state,
+        State::Locked
+    );
+    assert_eq!(session.disk_cache_stats().unwrap().hits, hits);
+    // Retention never bypasses the current-byte check after a missed filesystem event.
+    fs::write(
+        dir.0.join("src/Configuration.xml"),
+        xml("Configuration", "Test", ""),
+    )
+    .unwrap();
+    assert_eq!(
+        session.support_objects(&ids[128..]).objects[0].state,
+        State::Unknown
+    );
+}
+
 #[test]
 fn targeted_policy_matches_source_ownership_across_all_project_types() {
     for kind in ["configuration", "extension", "processing", "report"] {
@@ -136,6 +252,18 @@ fn targeted_policy_matches_source_ownership_across_all_project_types() {
             .map(|file| file.path.clone())
             .collect();
         let targeted = session.support_files(&paths).unwrap();
+        let ids: Vec<_> = inventory
+            .objects
+            .iter()
+            .map(|object| object.object_id.clone())
+            .collect();
+        let display = session.support_objects(&ids);
+        assert_eq!(
+            serde_json::to_value(&display.objects).unwrap(),
+            serde_json::to_value(&inventory.objects).unwrap(),
+            "{kind}: {:?}",
+            display.diagnostics
+        );
         for (expected, actual) in inventory.files.iter().zip(&targeted.files) {
             assert_eq!(
                 (expected.read_only, expected.unknown, &expected.objects),
@@ -312,6 +440,16 @@ fn support_separates_mixed_xml_from_module_and_invalidates_without_writes() {
         |object| object.object_id.as_str().contains("predefined-item")
             && object.state == State::Locked
     ));
+    let ids: Vec<_> = first
+        .objects
+        .iter()
+        .map(|object| object.object_id.clone())
+        .collect();
+    let display = session.support_objects(&ids);
+    assert_eq!(
+        serde_json::to_value(&display.objects).unwrap(),
+        serde_json::to_value(&first.objects).unwrap()
+    );
     fs::write(
         dir.0.join("src/Catalogs/Items/Ext/ObjectModule.bsl"),
         "// edited",

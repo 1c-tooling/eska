@@ -35,6 +35,7 @@ crates/eska-project-core/
         ├── metadata_parser.rs      # bounded Designer XML parsing
         ├── metadata_parser/        # properties, predefined values and tests
         ├── metadata_workspace/     # tree sessions, search, support and checked edits
+        │   └── source_navigation.rs # reverse source ownership and ancestry shared by IDE adapters
         ├── metadata_disk_cache.rs  # disposable source-verified metadata cache
         ├── configurator/           # typed Configurator tree schema and projection
         ├── metadata_edit/          # checked property writes and snapshots

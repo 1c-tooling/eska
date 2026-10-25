@@ -1,0 +1,1057 @@
+{
+  "schemaVersion": 1,
+  "task": "T114",
+  "status": "DONE",
+  "date": "2026-10-25",
+  "evidenceRootRelativeToCore": "../eska-playground/query-completion-nuun9c9e",
+  "metadataApi": "1.30",
+  "domainOwner": "eska",
+  "completedTasks": [
+    "T109",
+    "T110",
+    "T111",
+    "T112",
+    "T113",
+    "T114"
+  ],
+  "environment": {
+    "os": "Linux",
+    "editor": "VSCodium 1.109.51242",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "platform": "8.3.27.2325",
+    "distrobox": "1c-ubuntu-env",
+    "nativeBuildCli": "eska 0.15.2",
+    "database": "Postgres Pro 1C 17.10-1.jammy",
+    "analyzer": "bsl-analyzer-app 0.3.2; contract 3.4"
+  },
+  "architecture": [
+    "ESKA owns application metadata relationships, syntax, scopes, typed intentions, validation and minimal edit plans",
+    "Explorer owns DTO validation, native view lifecycle, UI controls and Undo/Redo",
+    "The original query remains canonical; unknown DCS constructs retain their exact text"
+  ],
+  "acceptanceFixes": [
+    {
+      "repository": "eska",
+      "commit": "430b4ec",
+      "problem": "An unaliased CASE DCS source item lost its full byte boundary",
+      "result": "A length-preserving masked token keeps the complete source range, including Cyrillic and nested clauses"
+    },
+    {
+      "repository": "eska-vscode-explorer",
+      "commit": "0878006",
+      "problem": "A stale dirty parent TextEditor caused unconditional focus retries and an unresponsive Extension Host",
+      "result": "Only a completed clean-tab close schedules a recheck; an already active constructor panel is not revealed again",
+      "beforeFixRegression": {
+        "failed": 4,
+        "passed": 0
+      },
+      "afterFixRegression": {
+        "failed": 0,
+        "passed": 4
+      },
+      "dirtyOwnerSavedOrDiscardedByGuard": false,
+      "profileEvidence": "t114-unresponsive-profile-top.json"
+    },
+    {
+      "repository": "eska-vscode-explorer",
+      "commit": "ccf2662",
+      "problem": "A pending native open flushed by LanguageClient waited on the same projected URI synchronization queue",
+      "result": "Suppressed native traffic returns before enqueueing and cannot block its own projection notification",
+      "beforeFixRegression": {
+        "failed": 1,
+        "passed": 0
+      },
+      "afterFixModuleTests": {
+        "failed": 0,
+        "passed": 5
+      },
+      "nativeFailureEvidence": "t114-lsp-deadlock-explorer.log",
+      "nativeFailureSecondsBeforeClosingOwnedTestWindow": 275.01
+    },
+    {
+      "repository": "eska",
+      "commit": "02916a8",
+      "problem": "The native query engine rejects the formerly generated English DESTROY keyword",
+      "result": "Parse and emit DROP / УНИЧТОЖИТЬ; keep the documented RPC operation destroy; preserve unknown DESTROY as opaque text"
+    },
+    {
+      "repository": "eska",
+      "commit": "22708a7",
+      "problem": "The native query engine rejects a second TOTALS / ИТОГИ section despite repeated sections in the installed help grammar",
+      "result": "Allow one executable totals section with multiple grouping levels; atomically reject a second section and preserve unsupported source exactly; API 1.30 reports totalSections=true,maxTotalSections=1"
+    },
+    {
+      "repository": "eska-vscode-explorer",
+      "commit": "4dc5ecb",
+      "result": "Display the server totals limit and disable unavailable additions; use DROP in package acceptance; wait for the constructor close receipt before Undo/Redo in the native fixture"
+    }
+  ],
+  "platformQueryExecution": {
+    "passed": true,
+    "generatedScenariosExecuted": 19,
+    "generatedScenariosPassed": 19,
+    "counting": "A batch or DCS scenario counts once; independent raw syntax probes and negative tests are counted separately",
+    "minimal": {
+      "evidence": "platform/matrix-final.json",
+      "database": "owned file infobase with seeded catalog and register records",
+      "passed": 16,
+      "create": {
+        "exitCode": 0,
+        "seconds": 3.88
+      },
+      "client": {
+        "exitCode": 0,
+        "seconds": 1.92
+      },
+      "results": [
+        {
+          "name": "nested",
+          "mode": "query",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "columns": [
+            "N"
+          ],
+          "rows": 1,
+          "values": [
+            1
+          ]
+        },
+        {
+          "name": "union",
+          "mode": "query",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "columns": [
+            "N"
+          ],
+          "rows": 2,
+          "values": [
+            1,
+            2
+          ]
+        },
+        {
+          "name": "union_all",
+          "mode": "query",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "columns": [
+            "N"
+          ],
+          "rows": 2,
+          "values": [
+            1,
+            2
+          ]
+        },
+        {
+          "name": "temporary_chain",
+          "mode": "batch",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "batchResults": 5,
+          "columns": [
+            "N"
+          ],
+          "rows": 1,
+          "values": [
+            7
+          ],
+          "temporaryTablesDestroyed": true
+        },
+        {
+          "name": "having",
+          "mode": "query",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "columns": [
+            "N"
+          ],
+          "rows": 1,
+          "values": [
+            1
+          ]
+        },
+        {
+          "name": "totals",
+          "mode": "totals",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "columns": [
+            "N"
+          ],
+          "rows": 2,
+          "values": [
+            1,
+            1
+          ],
+          "totalValues": [
+            1
+          ],
+          "totalRecordTypes": [
+            "Grand total"
+          ]
+        },
+        {
+          "name": "totals_grouping_levels",
+          "mode": "totals",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "columns": [
+            "N"
+          ],
+          "rows": 3,
+          "values": [
+            1,
+            1,
+            1
+          ],
+          "totalValues": [
+            1
+          ],
+          "totalRecordTypes": [
+            "Grand total"
+          ]
+        },
+        {
+          "name": "virtual_balance",
+          "mode": "query",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "columns": [
+            "N"
+          ],
+          "rows": 1,
+          "values": [
+            11
+          ]
+        },
+        {
+          "name": "dcs_select",
+          "mode": "dcs",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "platformExpandedQueries": [
+            "SELECT\n\t1 AS N"
+          ],
+          "rows": 1,
+          "columns": [
+            "N"
+          ],
+          "values": [
+            1
+          ]
+        },
+        {
+          "name": "dcs_filters",
+          "mode": "dcs",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "platformExpandedQueries": [
+            "SELECT\n\tT.Ref AS N\nFROM\n\tCatalog.Товары AS T\nWHERE\n\tT.Ref = &Item\n\tAND T.Ref = &P"
+          ],
+          "rows": 1,
+          "columns": [
+            "N"
+          ],
+          "values": [
+            "Acceptance A"
+          ]
+        },
+        {
+          "name": "dcs_virtual_arguments",
+          "mode": "dcs",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "platformExpandedQueries": [
+            "SELECT\n\tS.QuantityBalance AS N\nFROM\n\tAccumulationRegister.Stock.Balance(&P, (Item) = &P2) AS S"
+          ],
+          "rows": 1,
+          "columns": [
+            "N"
+          ],
+          "values": [
+            7
+          ]
+        },
+        {
+          "name": "dcs_optional_join",
+          "mode": "dcs",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "platformExpandedQueries": [
+            "SELECT\n\t1 AS N\nFROM\n\tCatalog.Товары AS T"
+          ],
+          "rows": 2,
+          "columns": [
+            "N"
+          ],
+          "values": [
+            1,
+            1
+          ]
+        },
+        {
+          "name": "union_duplicates",
+          "mode": "query",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "columns": [
+            "N"
+          ],
+          "rows": 1,
+          "values": [
+            1
+          ]
+        },
+        {
+          "name": "union_all_duplicates",
+          "mode": "query",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "columns": [
+            "N"
+          ],
+          "rows": 2,
+          "values": [
+            1,
+            1
+          ]
+        },
+        {
+          "name": "virtual_balance_period",
+          "mode": "query",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "columns": [
+            "N"
+          ],
+          "rows": 1,
+          "values": [
+            7
+          ]
+        },
+        {
+          "name": "dcs_optional_join_used",
+          "mode": "dcs",
+          "passed": true,
+          "attempted": true,
+          "executed": true,
+          "platformExpandedQueries": [
+            "SELECT\n\tU.Code AS N\nFROM\n\tCatalog.Товары AS T\n\t\tLEFT JOIN Catalog.Товары AS U\n\t\tON T.Ref = U.Ref"
+          ],
+          "rows": 2,
+          "columns": [
+            "N"
+          ],
+          "values": [
+            "A",
+            "B"
+          ]
+        }
+      ]
+    },
+    "buhmfo": {
+      "evidence": "platform/buhmfo-extension-current.json",
+      "generatorEvidence": "platform/buhmfo-generated-fields.json",
+      "database": "eska_t114_buhmfo04_nuun9c9e",
+      "data": "Fresh metadata-only database; no user business records",
+      "createImportApply": {
+        "evidence": "platform/pg-buhmfo/attempt04/result.json",
+        "exitCode": 0,
+        "seconds": 848.61
+      },
+      "extensions": [
+        {
+          "member": "dzp-auto-statements",
+          "nativeName": "dzp_АвтоматическаяЗагрузкаВыписок",
+          "applied": true,
+          "input": "ESKA-built CFE"
+        },
+        {
+          "member": "dzp-fill-bank-statements",
+          "nativeName": "dzp_ЗаполнениеБанковскихВыписок",
+          "applied": true,
+          "input": "ESKA-built CFE"
+        },
+        {
+          "member": "dzp-config-fixes",
+          "nativeName": "dzp_ИсправлениеОшибокКонфигурации",
+          "applied": true,
+          "input": "ESKA-built CFE"
+        },
+        {
+          "member": "external-systems",
+          "nativeName": "ExternalSystems",
+          "applied": true,
+          "input": "Unchanged Designer XML imported by native ibcmd into the applied base context"
+        },
+        {
+          "member": "dzp-typical-code",
+          "nativeName": "dzp_АдаптацияКодаТиповойКонфигурации",
+          "applied": true,
+          "input": "Unchanged Designer XML imported by native ibcmd into the applied base context"
+        }
+      ],
+      "extensionEvidence": [
+        "platform/pg-buhmfo/attempt04/extensions/results.json",
+        "platform/pg-buhmfo/attempt04/extensions-from-xml-02/results.json",
+        "platform/pg-buhmfo/attempt04/extensions-from-xml-03/results.json",
+        "platform/pg-buhmfo/attempt04/extensions-from-xml-03/extension-list.log"
+      ],
+      "earlierApplyRetry": "external-systems imported successfully, then apply returned 255 while an owned client session was active; after expiring that owned session apply returned 0",
+      "catalogChecks": [
+        {
+          "name": "inherited_organization_field",
+          "table": "Справочник.Организации",
+          "field": "R.ИНН",
+          "contextFingerprint": "8f72538d32dabb6ceaa558adc02db0c19b7cabe625a88b5d4c964b3acaab5443",
+          "found": true,
+          "limitedContext": false
+        },
+        {
+          "name": "related_accounting_chart_subconto",
+          "table": "РегистрБухгалтерии.Хозрасчетный.ДвиженияССубконто",
+          "field": "R.СубконтоДт1",
+          "contextFingerprint": "8f72538d32dabb6ceaa558adc02db0c19b7cabe625a88b5d4c964b3acaab5443",
+          "found": true,
+          "limitedContext": false
+        }
+      ],
+      "nativeRun": {
+        "directory": "platform/buhmfo-extension-runs/20261025T110410716212Z",
+        "seconds": 21.07,
+        "clientExitCode": 0,
+        "results": [
+          {
+            "name": "buhmfo_price_schema",
+            "attempted": true,
+            "executed": true,
+            "passed": true,
+            "platformExpandedQueries": [
+              "ВЫБРАТЬ\n\tСправочникНоменклатура.Ссылка КАК Номенклатура,\n\tЦеныНоменклатурыСрезПоследних.Цена КАК Цена\nИЗ\n\tСправочник.Номенклатура КАК СправочникНоменклатура\n\t\tЛЕВОЕ СОЕДИНЕНИЕ Справочник.ТипыЦенНоменклатуры КАК СправочникТипыЦен\n\t\tПО (ИСТИНА)\n\t\tЛЕВОЕ СОЕДИНЕНИЕ РегистрСведений.ЦеныНоменклатуры.СрезПоследних(, ) КАК ЦеныНоменклатурыСрезПоследних\n\t\tПО (СправочникТипыЦен.Ссылка = ЦеныНоменклатурыСрезПоследних.ТипЦен)\n\t\t\tИ (ЦеныНоменклатурыСрезПоследних.Номенклатура = СправочникНоменклатура.Ссылка)\nГДЕ\n\tНЕ СправочникНоменклатура.ЭтоГруппа"
+            ],
+            "rows": 0,
+            "columns": [
+              "Номенклатура",
+              "Цена"
+            ]
+          },
+          {
+            "name": "inherited_organization_field",
+            "attempted": true,
+            "executed": true,
+            "passed": true,
+            "platformExpandedQueries": [
+              "ВЫБРАТЬ\n\tR.ИНН КАК N\nИЗ\n\tСправочник.Организации КАК R"
+            ],
+            "rows": 0,
+            "columns": [
+              "N"
+            ]
+          },
+          {
+            "name": "related_accounting_chart_subconto",
+            "attempted": true,
+            "executed": true,
+            "passed": true,
+            "platformExpandedQueries": [
+              "ВЫБРАТЬ\n\tR.СубконтоДт1 КАК N\nИЗ\n\tРегистрБухгалтерии.Хозрасчетный.ДвиженияССубконто(, , , , ) КАК R"
+            ],
+            "rows": 0,
+            "columns": [
+              "N"
+            ]
+          }
+        ],
+        "passed": true
+      },
+      "runner": "platform/run-buhmfo-extension.py",
+      "harness": {
+        "nativeName": "EskaT114Acceptance",
+        "additionalToFiveApplicationExtensions": true,
+        "source": "platform/HttpAcceptance/src",
+        "buildEvidence": "platform/http-runner-build-11.json",
+        "artifactType": "extension",
+        "scope": "Only the isolated acceptance database; no user infobase changes"
+      },
+      "resultBoundary": "All three scenarios compiled, executed and returned expected columns with zero rows; seeded minimal cases establish value semantics"
+    },
+    "independentControls": {
+      "aggregateEvidence": "platform/aggregate-diagnostic-run.json",
+      "rawAggregateProbesPassed": 4,
+      "generatedByEska": false,
+      "aggregates": [
+        "MAXIMUM",
+        "MINIMUM",
+        "AVERAGE",
+        "COUNT(1)"
+      ],
+      "nativeRepeatedTotalsEvidence": "platform/diagnostic-run-01.json",
+      "nativeRepeatedTotalsRejected": 4,
+      "diagnosticReportPassed": false,
+      "diagnosticReportNote": "This discovery run contains four rejected repeated-TOTALS variants; it is not presented as a successful positive matrix",
+      "backendAtomicRejections": [
+        {
+          "name": "sequential_totals",
+          "reason": "constructor_unsupported",
+          "atomic": true,
+          "api": "1.30"
+        }
+      ]
+    }
+  },
+  "editorAcceptance": {
+    "passed": true,
+    "locales": [
+      "en",
+      "ru"
+    ],
+    "native": {
+      "evidence": "t114-native-fixes-native-checks.json",
+      "passed": 16,
+      "failed": 0,
+      "retainedAttempts": 17,
+      "suites": [
+        {
+          "name": "t114-native-fixes-query-total-sections-host-en",
+          "exitCode": 0,
+          "seconds": 9.64,
+          "results": [
+            {
+              "suite": "query-total-sections",
+              "locale": "en",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-total-sections-host-ru",
+          "exitCode": 0,
+          "seconds": 8.32,
+          "results": [
+            {
+              "suite": "query-total-sections",
+              "locale": "ru",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-package-host-en",
+          "exitCode": 0,
+          "seconds": 5.46,
+          "results": [
+            {
+              "suite": "query-package",
+              "locale": "en",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-having-host-en",
+          "exitCode": 0,
+          "seconds": 6.06,
+          "results": [
+            {
+              "suite": "query-having",
+              "locale": "en",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-dcs-host-en",
+          "exitCode": 0,
+          "seconds": 6.32,
+          "results": [
+            {
+              "suite": "query-dcs",
+              "locale": "en",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-advanced-host-en",
+          "exitCode": 0,
+          "seconds": 6.38,
+          "results": [
+            {
+              "suite": "query-advanced",
+              "locale": "en",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-builder-host-en",
+          "exitCode": 0,
+          "seconds": 6.84,
+          "results": [
+            {
+              "suite": "query-builder",
+              "locale": "en",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-modal-normal-host-en",
+          "exitCode": 0,
+          "seconds": 8.38,
+          "results": [
+            {
+              "suite": "query-modal-normal",
+              "locale": "en",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-constructor-host-en",
+          "exitCode": 0,
+          "seconds": 11.31,
+          "results": [
+            {
+              "suite": "query-constructor",
+              "locale": "en",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-package-host-ru",
+          "exitCode": 0,
+          "seconds": 9.67,
+          "results": [
+            {
+              "suite": "query-package",
+              "locale": "ru",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-having-host-ru",
+          "exitCode": 0,
+          "seconds": 9.63,
+          "results": [
+            {
+              "suite": "query-having",
+              "locale": "ru",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-dcs-host-ru",
+          "exitCode": 0,
+          "seconds": 9.04,
+          "results": [
+            {
+              "suite": "query-dcs",
+              "locale": "ru",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-advanced-host-ru",
+          "exitCode": 0,
+          "seconds": 9.59,
+          "results": [
+            {
+              "suite": "query-advanced",
+              "locale": "ru",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-builder-host-ru",
+          "exitCode": 0,
+          "seconds": 9.66,
+          "results": [
+            {
+              "suite": "query-builder",
+              "locale": "ru",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-modal-normal-host-ru",
+          "exitCode": 0,
+          "seconds": 11.45,
+          "results": [
+            {
+              "suite": "query-modal-normal",
+              "locale": "ru",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-query-constructor-host-ru",
+          "exitCode": 0,
+          "seconds": 14.23,
+          "results": [
+            {
+              "suite": "query-constructor",
+              "locale": "ru",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    "buhmfoNative": {
+      "evidence": "t114-native-fixes-buhmfo-native-checks.json",
+      "passed": 4,
+      "failed": 0,
+      "retainedAttempts": 4,
+      "suites": [
+        {
+          "name": "t114-native-fixes-buhmfo-installed-en",
+          "exitCode": 0,
+          "seconds": 18.83,
+          "results": [
+            {
+              "suite": "query-installed-normal",
+              "locale": "en",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-buhmfo-readonly-en",
+          "exitCode": 0,
+          "seconds": 13.7,
+          "results": [
+            {
+              "suite": "support-locked-query",
+              "locale": "en",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-buhmfo-installed-ru",
+          "exitCode": 0,
+          "seconds": 17.76,
+          "results": [
+            {
+              "suite": "query-installed-normal",
+              "locale": "ru",
+              "passed": true
+            }
+          ]
+        },
+        {
+          "name": "t114-native-fixes-buhmfo-readonly-ru",
+          "exitCode": 0,
+          "seconds": 16.86,
+          "results": [
+            {
+              "suite": "support-locked-query",
+              "locale": "ru",
+              "passed": true
+            }
+          ]
+        }
+      ]
+    },
+    "attemptHistory": "The first ru totals run raced the native close acknowledgement; the harness now waits for panel disposal. Its successful rerun and all original attempts are retained",
+    "inputAnnotation": "The readonly input carries an older backendSha256 annotation. validate-buhmfo.py selects the current frozen backend through ESKA_TEST_BINARY and the generated workspace executable setting; the input annotation is not a fresh executable checksum"
+  },
+  "checks": {
+    "rust": {
+      "evidence": "t114-runtime-05-rust-checks.json",
+      "commands": [
+        "cargo fmt --check",
+        "cargo check",
+        "cargo clippy --all-targets --all-features -- -D warnings",
+        "RUSTDOCFLAGS='-D warnings' cargo doc --no-deps",
+        "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test"
+      ],
+      "results": [
+        {
+          "name": "fmt",
+          "exitCode": 0,
+          "seconds": 2.87
+        },
+        {
+          "name": "check",
+          "exitCode": 0,
+          "seconds": 0.5
+        },
+        {
+          "name": "clippy",
+          "exitCode": 0,
+          "seconds": 4.32
+        },
+        {
+          "name": "rustdoc",
+          "exitCode": 0,
+          "seconds": 5.05
+        },
+        {
+          "name": "test",
+          "exitCode": 0,
+          "seconds": 40.78
+        }
+      ],
+      "passed": 1125,
+      "failed": 0,
+      "ignored": 12,
+      "scope": "Root Cargo workspace; auxiliary analyzer crates unchanged"
+    },
+    "adapter": {
+      "evidence": "t114-native-fixes-adapter-checks.json",
+      "results": [
+        {
+          "name": "typescript",
+          "exitCode": 0,
+          "seconds": 0.58
+        },
+        {
+          "name": "node",
+          "exitCode": 0,
+          "seconds": 10.39
+        },
+        {
+          "name": "bun",
+          "exitCode": 0,
+          "seconds": 24.16
+        }
+      ],
+      "node": {
+        "passed": 303,
+        "failed": 0,
+        "skipped": 3
+      },
+      "bun": {
+        "passed": 303,
+        "failed": 0,
+        "skipped": 3
+      }
+    },
+    "bsl": {
+      "mode": "CLI fallback because workspace MCP is unavailable; platform reference MCP used for platform APIs",
+      "analyzer": "0.3.2",
+      "reports": [
+        {
+          "evidence": "platform/matrix-analyzer-final.jsonl",
+          "complete": true,
+          "files": 2,
+          "failedFiles": 0,
+          "findings": [
+            {
+              "code": "LineLength",
+              "severity": "Information"
+            }
+          ]
+        },
+        {
+          "evidence": "platform/extension-analyzer-accepted.jsonl",
+          "complete": true,
+          "files": 3,
+          "failedFiles": 0,
+          "findings": [
+            {
+              "code": "CommonModuleNameServerCall",
+              "severity": "Information"
+            },
+            {
+              "code": "UsageWriteLogEvent",
+              "severity": "Hint"
+            }
+          ]
+        }
+      ],
+      "parentContext": "Narrow CLI diagnostics do not provide full buhmfo context; native compilation and execution verify the applied parent configuration"
+    },
+    "documentation": "Final JSON structure, evidence paths, Markdown local links and diff whitespace checked before commit"
+  },
+  "artifacts": {
+    "backend": {
+      "path": "bin/eska-project-t114-native-fixes",
+      "sha256": "e954c93b102baae11561be81e4c7e79966366d7922d1a0e3ddbc93cc6ea238fd"
+    },
+    "vsix": {
+      "path": "query-t114-native-fixes.vsix",
+      "sha256": "7702c67b8ccc94e444d9bc76cea042c62bc56fd5ead89bb6bc124af662403e64"
+    }
+  },
+  "vsixFiles": 1325,
+  "manualStand": {
+    "standRelativeToCore": "../eska-playground/buhmfo-query-manual-d5inc0y_",
+    "backupRelativeToStand": "backups/before-native-syntax-20261025T101122120673Z",
+    "acceptedBundleSha256": "4be68664e32e8cdba2be87c35e3b432f6ba64ec482897e5b08762f6d97fcb0c3",
+    "metadataApi": "1.30",
+    "updated": [
+      "bin/eska-project",
+      "packages/eska-query.vsix",
+      "artifacts.json",
+      "stand.json",
+      "README.md"
+    ],
+    "sourcesAndNativeProfileTouched": false,
+    "liveWindowReloaded": false,
+    "artifactsVerified": true,
+    "platformQueriesExecuted": false
+  },
+  "platformStand": {
+    "runtime": {
+      "container": "eska-t114-postgres-nuun9c9e",
+      "containerId": "73fdabc9ef76d4e5f19a24ce9a4af316211b32f9b3e9e532a121fa21a9f31657",
+      "endpoint": "127.0.0.1:37569"
+    },
+    "ownerLabel": "org.eska.acceptance.task=T114",
+    "dataRelativeToStand": "platform/postgres/data",
+    "retainedForRepeat": true,
+    "nativeServerCleanup": {
+      "task": "T114",
+      "onlyOwnedData": "platform/pg-buhmfo/attempt04/data",
+      "stoppedServerPids": [
+        3825105
+      ],
+      "remainingOwnedServers": [],
+      "postgresRetained": true,
+      "userEditorTouched": false
+    }
+  },
+  "platformBlockers": [],
+  "remaining": [],
+  "unverifiedEnvironments": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ],
+  "limitations": [
+    "Accepted query runtime is platform 8.3.27.2325 only; other platform releases were not executed",
+    "The buhmfo copy has configuration metadata and all five extensions but no business records; acceptance does not cover business workflows, handlers, role restrictions or SLC business licensing",
+    "Two extension CFE builds still need an applied base context unsupported by the installed ESKA extension builder; successful native XML import/apply establishes their query metadata, not successful CFE packaging",
+    "Ordinary visual clauses containing DCS extensions remain read-only; characteristics and unknown extension positions retain exact opaque text",
+    "Sequential totals sections formerly accepted by the editor are not an executable platform feature; API 1.30 advertises one section with multiple grouping levels",
+    "Negotiation at API 1.28-1.29 preserves the prior capability DTO, but the native syntax guard applies to all clients",
+    "The manual editor stand does not execute platform queries; the separate native runner does",
+    "BSL diagnostics completed with zero errors/warnings, two Information findings and one Hint across the two owned fixture projects"
+  ],
+  "earlierAttemptEvidence": {
+    "previousReportGitCommit": "cc711cd",
+    "previousReportPath": "docs/measurements/t114-platform-acceptance.json",
+    "retainedInGit": true,
+    "standHistoryPreserved": true,
+    "supersededBlockers": [
+      "License activated by user",
+      "File-IB index key limit bypassed with an authorized isolated PostgreSQL fixture",
+      "Both context-dependent extension XML imports and applies succeeded in the full base"
+    ],
+    "failedPrototypes": [
+      "platform/run-buhmfo-http.py",
+      "platform/run-buhmfo.py",
+      "platform/prepare-http-runner.py"
+    ],
+    "acceptedRunner": "platform/run-buhmfo-extension.py"
+  },
+  "commitsBeforeThisReport": {
+    "eska": [
+      {
+        "hash": "33db433",
+        "subject": "docs(query): Определена очередь связанных схем и полного конструктора T109–T114"
+      },
+      {
+        "hash": "605c736",
+        "subject": "fix(query): Объединены связанные схемы базы и расширений в каталоге приложения"
+      },
+      {
+        "hash": "11ee17d",
+        "subject": "feat(query): Добавлены временные таблицы и проверяемые операции пакета"
+      },
+      {
+        "hash": "ad0cca8",
+        "subject": "feat(query): Добавлен типизированный отбор по агрегатам HAVING"
+      },
+      {
+        "hash": "aba0ba7",
+        "subject": "feat(query): Добавлены независимые последовательные секции итогов"
+      },
+      {
+        "hash": "f1256cd",
+        "subject": "feat(query): Добавлено типизированное редактирование конструкций СКД"
+      },
+      {
+        "hash": "430b4ec",
+        "subject": "fix(query): Сохранены исходные границы CASE в модели СКД"
+      },
+      {
+        "hash": "cc711cd",
+        "subject": "docs(query): Описаны проверки конструктора и ограничения запуска запросов 1С"
+      },
+      {
+        "hash": "02916a8",
+        "subject": "fix(query): Исправлен английский оператор удаления временных таблиц"
+      },
+      {
+        "hash": "22708a7",
+        "subject": "fix(query): Ограничены итоги синтаксисом реальной платформы 1С"
+      }
+    ],
+    "explorer": [
+      {
+        "hash": "5805d6e",
+        "subject": "feat(query): Добавлен интерфейс пакета и временных таблиц ESKA"
+      },
+      {
+        "hash": "7f34509",
+        "subject": "feat(query): Отделён агрегатный отбор в интерфейсе условий"
+      },
+      {
+        "hash": "3a487ca",
+        "subject": "feat(query): Добавлено управление секциями итогов через API ESKA"
+      },
+      {
+        "hash": "90d3a01",
+        "subject": "feat(query): Добавлен интерфейс типизированных конструкций СКД"
+      },
+      {
+        "hash": "0878006",
+        "subject": "fix(query): Устранён цикл фокуса при несохранённом XML-родителе"
+      },
+      {
+        "hash": "ccf2662",
+        "subject": "fix(lsp): Устранена блокировка подсказок при отложенном открытии модуля"
+      },
+      {
+        "hash": "197366d",
+        "subject": "test(query): Приёмка девяти вкладок ожидает готовности конструктора"
+      },
+      {
+        "hash": "4dc5ecb",
+        "subject": "fix(query): Учтены DROP и предел одной секции итогов в API 1.30"
+      }
+    ]
+  },
+  "vcsNote": "Both repositories remain on the user-selected codex/design-xml-analyzer branch. No push, history rewrite or user changes included. eska save cannot commit these Rust repositories without eska.toml; isolated system Git fallback is used for this documentation commit. Owned fixtures and PostgreSQL data remain in the sibling playground."
+}

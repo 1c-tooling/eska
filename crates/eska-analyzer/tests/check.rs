@@ -254,7 +254,7 @@ fn timeout_and_cancellation_reap_the_actual_child() {
 
 /// The published application, not a fake stream, supplies the actual diagnostics for all four kinds.
 #[test]
-#[ignore = "requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2"]
+#[ignore = "requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.4.0"]
 fn published_analyzer_checks_real_designer_modules_for_all_types() {
     let binary = std::env::var_os("ESKA_BSL_ANALYZER").expect("explicit analyzer");
     for kind in [
@@ -286,7 +286,7 @@ fn published_analyzer_checks_real_designer_modules_for_all_types() {
 
 /// The real CLI must use the selected base plus five extensions and EPF, including literal excludes.
 #[test]
-#[ignore = "requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.3.2"]
+#[ignore = "requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.4.0"]
 fn published_application_uses_exact_members_and_exclusions() {
     let directory = support::TestDir::new();
     for (name, kind) in [

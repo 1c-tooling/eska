@@ -4,6 +4,7 @@ mod context;
 mod graph;
 mod policy;
 mod settings;
+mod snapshot;
 
 pub use context::{AnalysisContext, ContextError, ContextSource, SourceRole, resolve};
 pub(crate) use policy::RawTools;
@@ -12,6 +13,7 @@ pub use settings::{
     AnalysisOptions, AnalysisSettings, Application, SettingsError, TargetPlatformVersion,
 };
 pub(crate) use settings::{RawAnalysis, RawApplication};
+pub use snapshot::{ContextSnapshot, resolve_snapshot};
 
 #[cfg(test)]
 mod tests;

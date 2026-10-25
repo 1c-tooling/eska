@@ -11,7 +11,7 @@ use crate::project::{
     metadata_parser::ParsedObject,
 };
 
-mod standard;
+pub mod standard;
 
 pub const DOMAIN: &str = "ChoiceParameterField";
 

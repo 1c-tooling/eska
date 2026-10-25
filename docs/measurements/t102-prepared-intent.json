@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-23",
+  "part": "Durable prepared intent and explicit source-session crash reconciliation in Metadata API 1.16",
+  "sourceParent": "c4a6d0fc3a369b68c90e1f58a8b505d6fc2b641f",
+  "explorerCommit": "39a2482e34ea0da9ce65c54c96a4723ac737180e",
+  "durablePreparedIntentBackendComplete": true,
+  "productionClientUsesSourceSessions": false,
+  "sessionModelMigrationComplete": false,
+  "sourceProtectionMigrationComplete": false,
+  "ownerLockAccepted": false,
+  "productionBslEditingEnabled": false,
+  "sourceSha256": {
+    "crates/eska-project-core/src/project/metadata_workspace/query/session.rs": "cfcc541cacf5f19277c7cd4f5690c83261c8212a78f62bc8f0cd1ddb8457b273",
+    "crates/eska-project-core/src/project/query/mod.rs": "12f37b4c888aba6e06539318ed980ef1a1c2444afe005d30fc30e0f348efd631",
+    "crates/eska-project-core/src/project/query/recovery/mod.rs": "0764e276817cb2c5087a02c4ca8e1468e0f34e1c5cf581fe957ddaaf1fbccd13",
+    "crates/eska-project-core/src/project/query/recovery/record.rs": "9d7830bffe09bcb18c426f910ae7e7eaec6fbf7d4599f67b926aa20b79a92001",
+    "crates/eska-project/src/ide/mod.rs": "adc354420a2e99e834eb671452dadf503f7e34f8151e0bbb588ce961af4ac558",
+    "crates/eska-project/src/ide/query/mod.rs": "8adde6e2f2d95f6f1994a413705df580c833d7853d9ddd3383e879e983b6b586",
+    "crates/eska-project/src/ide/query/recovery.rs": "1eff4a47fcd42ab5bf6be46a31d4bfb0fb7a35eedd59904767de353b16582abf",
+    "crates/eska-project/src/ide/query/sessions.rs": "23390308beb462da59ffe4484bfed6213aaad9b2e446d82cbd7ae86c45a3716c",
+    "crates/eska-project/src/ide/server.rs": "c4ee9a00780c8734e46ba0e51ce6dfbfea9e1f5c1400d25856608829fdb54f9a",
+    "crates/eska-project/tests/server/recovery/sessions.rs": "993e7a3b66117acf95d37218a67971abb3f86dc7abd526f3e1c5df0d3c24b69b",
+    "docs/ide-protocol.md": "fac65f0183f1995efc1a74beef7d2199f6155ada2951da496f888a4527719c09",
+    "docs/project-cli.md": "60b906108df3ccdd376625deb6f8e828d3f063f7553483cbf1fe2dca47d7a507",
+    "docs/roadmap/16-query-editing.md": "9e04c5c2439de567b907d4000e78711ec921b3124b87516399d8171e276a07f1",
+    "tests/project/metadata_workspace/ide.rs": "46a40cf553ee36987605ab1480df632356684aa8243dae0f7a495155edf8129f",
+    "tests/project/metadata_workspace/ide/picture.rs": "2cfa1af1d3638a8acc1e705478a3fc08bc791cdd69b5decd13250ddf6f97bc9d",
+    "tests/project/metadata_workspace/query/recovery.rs": "2d6e6646bc9085d7aa941fd1123e8e69a97be7f4e3176152f7db571d758c4ef0",
+    "tests/project/metadata_workspace/query/session.rs": "6ce243117024d0bd074d154848385a849eae186d75edd776f38095c48624c3b6",
+    "crates/eska-project-core/src/project/query/recovery/prepared.rs": "db0afa1ed8e885669aab72671ffb234f0a9f11dcf128ea142ecea12a6d2829c9",
+    "crates/eska-project/tests/server/recovery/sessions/prepared.rs": "ea8091738c9c377a24e1b6be9bc6268c38768de1b9bf7be57f9b8e45847459c2"
+  },
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1",
+  "backend": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1/bin/eska-project",
+    "sha256": "9a886ebd81034d375a2902eebcc85cee05c802a13a7054dae88253d0997f1391"
+  },
+  "installedVsix": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-recovery-adapter-k2v0xxqa/eska-query-recovery-api14-checked.vsix",
+    "sha256": "731501c67664d7075d3a7be4f986128529a2c9a81adb97aa191d4d9fbdededac",
+    "compiledRuntimeFilesCompared": 39,
+    "runtimeMatchesWorkingExplorer": true
+  },
+  "behavior": {
+    "apiMinor": 16,
+    "preparedStateDurable": true,
+    "preparedStorageVersion": 2,
+    "checkpointMetadataVersion": 1,
+    "preparation": "The exact full planned output and decoded applied query are persisted before the plan is returned. Original owner/base and latest draft remain separate; later draft uploads cannot erase the intent.",
+    "reconciliation": "A restored session is paused. Explicit resume accepts only the original owner or exact prepared output, with fresh source/descriptor/context/policy checks and native counters allowed to restart. No source edit is replayed.",
+    "partialSave": "An already applied dirty XML model can resume against the original disk even if the original plan asked the adapter to save. A clean model must match the exact on-disk output including its BOM.",
+    "cleanup": "Abort clears the intent with checkpoint CAS; close releases only memory and leaves recovery data. Default removal rejects pending_apply; API 1.16 discardPrepared:true explicitly discards the exact checkpoint revision.",
+    "readWithoutMetadata": "recoveryPreparedRead is bounded to 128 KiB UTF-8 chunks and remains available after initialize with an invalid manifest.",
+    "ownerExclusivity": "Opening a new source handle or restoring another checkpoint for the same known owner cannot bypass its unreconciled intent.",
+    "storage": "Ordinary checkpoints stay v1. Pending v2 envelopes use canonical base64 or validated local references to ordinary parts in the same record; no paths, cross-record or recursive references are allowed. Reads do not rewrite old files.",
+    "limits": "Existing 32 MiB retained-text, 8 MiB part and 64 MiB encoded scan/file limits remain unchanged. Shared copies do not inflate canonical files beyond the scan bound.",
+    "sourceFilesWrittenByBackend": false,
+    "newDependencies": false,
+    "compatibility": "Negotiated 1.15 retains documented memory-only prepare/abort and preparedStateDurable:false. Clients 1.14-1.15 are shown pending records as unsupported/damaged and preserve their files; ordinary v1 recovery remains available.",
+    "headlessBsl": "Core crash reconciliation also checks the normalized LF baseline against an exact CRLF draft and a caller-supplied new lock acknowledgement. This does not prove native BSL input prevention."
+  },
+  "validation": {
+    "cargoFmt": {
+      "command": "cargo fmt --check",
+      "exitCode": 0
+    },
+    "cargoCheck": {
+      "command": "cargo check",
+      "exitCode": 0
+    },
+    "cargoClippy": {
+      "command": "cargo clippy --all-targets --all-features -- -D warnings",
+      "exitCode": 0
+    },
+    "cargoTest": {
+      "command": "ESKA_TEST_ROOT=\"$(realpath ../eska-playground)\" cargo test",
+      "exitCode": 0,
+      "passed": 995,
+      "failed": 0,
+      "ignored": 12
+    },
+    "standalonePreparedScenarios": {
+      "processesKilled": true,
+      "nativeOwnerFacts": "Independent test client; clean disk saves are simulated fixture writes, not actual IDE execution.",
+      "crashBoundaries": [
+        "Before native edit",
+        "After dirty-owner edit",
+        "After clean-owner save",
+        "Between clean-owner edit and disk save"
+      ],
+      "newerDraftPreserved": true,
+      "wrongOutputRejected": true,
+      "falseCleanRejected": true,
+      "orphanIntentCannotBeBypassed": true,
+      "readWithBrokenManifest": true,
+      "genericUploadCannotForgeBinding": true,
+      "explicitDiscardWithoutMetadata": true
+    },
+    "storageScenarios": {
+      "privateV1Roundtrip": true,
+      "preparedV2ExactRoundtrip": true,
+      "malformedEnvelopePreserved": true,
+      "pendingOutputCountsTowardQuota": true,
+      "threeSharedSevenMiBOwnersRemainReadable": true
+    },
+    "node": {
+      "command": "node --test test/*.test.mjs",
+      "passed": 237,
+      "failed": 0,
+      "skipped": 3,
+      "backend": "bin/eska-project"
+    },
+    "bun": {
+      "command": "bun test test/*.test.mjs",
+      "passed": 237,
+      "failed": 0,
+      "skipped": 3,
+      "backend": "bin/eska-project"
+    },
+    "nativeScope": "Unchanged installed API 1.14 Explorer with the final API 1.16 backend verifies existing XML/recovery compatibility. It does not exercise a production API 1.16 session adapter, which is not yet implemented. Language-pack registration is warm-up only.",
+    "nativeEn": [
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRemove"
+        ]
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ],
+    "nativeRu": [
+      {
+        "passed": true,
+        "suite": "language-pack-registration",
+        "locale": "en"
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRemove"
+        ]
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ]
+  },
+  "evidence": {
+    "fmt-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1/fmt-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "check-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1/check-final.log",
+      "sha256": "472846af3ce4cb99a9490ff83406402f5946ac7f8acd83ab9b1a8cfd4d586db4"
+    },
+    "clippy-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1/clippy-final.log",
+      "sha256": "8e7592641e2f218c6fca8c907b7a44d2af3016480c0f0f50a75e367bc9ed1b00"
+    },
+    "test-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1/test-final.log",
+      "sha256": "c8bb37bf5228b31b7f410ea951c12db94aafe8603ee7f92f4ff39ddd2a60001c"
+    },
+    "project-build.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1/project-build.log",
+      "sha256": "8c233a54790c4800d3dd585436af679aa838da259bfdb129412e2d51cdb75cdc"
+    },
+    "node-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1/node-final.log",
+      "sha256": "90756d2c909a2485bc80c69a5fa74f04f78ae289cfa375eb9ead406c244534f3"
+    },
+    "bun-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1/bun-final.log",
+      "sha256": "f43cc5f86473736b3baca6f781e53b141f0731a6d079ed60d2b0a68ea57ce45b"
+    },
+    "native-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1/native-en-result.log",
+      "sha256": "cc75c2e4cf3f34de475f27600a3f60bbb88bbf27f7d960eac6a29a98d024ea54"
+    },
+    "native-ru-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-prepared-9n1ujwo1/native-ru-result.log",
+      "sha256": "1a06c4cd231f55b85c0b55ebdf337850db2e8660a3be7836b453c24250920475"
+    }
+  },
+  "environment": {
+    "os": "Linux",
+    "rust": "1.99.1",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "vscodium": "1.109.5",
+    "nativeNode": "22.21.1"
+  },
+  "remaining": [
+    "Move the production Explorer source-session lifecycle to API 1.16, including checkpoint queue rebasing after native receipts.",
+    "Complete common source-protection ownership and prove native BSL lock/release preserving prior user restrictions before enabling Apply/Cancel.",
+    "Continue T103, T104 and T105 after T102."
+  ],
+  "unverifiedEnvironments": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ]
+}

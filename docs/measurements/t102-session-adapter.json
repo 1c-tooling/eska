@@ -1,0 +1,372 @@
+{
+  "schemaVersion": 1,
+  "task": "T102",
+  "status": "IN-PROGRESS",
+  "date": "2026-10-24",
+  "part": "Production XML adapter uses common source sessions and durable apply intent",
+  "backendCommit": "f83dfd82956b28025749dba430647faf48ea6abe",
+  "explorerCommit": "d204c9da215bbe3d033b239090dac60352f7a996",
+  "productionClientUsesSourceSessions": true,
+  "xmlSessionModelMigrationComplete": true,
+  "sourceProtectionMigrationComplete": false,
+  "ownerLockAccepted": false,
+  "productionBslEditingEnabled": false,
+  "explorerSourceSha256": {
+    "README.md": "b2432d513a456d29828a030a01619f73d9a7652e72c7d1694e44987f31834498",
+    "docs/query-editing.md": "2e7f9ad4ed317ba43f6322e843666cfcf285f51078f256d3a79a1b3476fe4676",
+    "src/connection.ts": "ecdf8b43cf8c49ee834e2bd8975f7bda02d1472ddffdc50d24d778adec98dbc7",
+    "src/messages.ts": "2ff40efe088b43960a30063437bf248c66c7360be753990a28dbe5832a74fcb7",
+    "src/protocol.ts": "e463972f255dde89ad5cd583c0a115dd59bbec049a19d1dbeab646492443f3b2",
+    "src/query/client.ts": "178e74568d7fcc658f1fed7598bd05e15ff489b6fbd6df7e64a5200841296f34",
+    "src/query/owner.ts": "0017d40abd778cdc571f48942ca84a62bf6976c47d6fd301fbcbd1c855191c8a",
+    "src/query/recovery-protocol.ts": "40f268131db6dce1a705f32f1787f9223ba032b0ee0cc31fdbd70228c3145f25",
+    "src/query/recovery.ts": "602167d4c705aa6fca7cd8fb33f0c928a2f1ecfed73367e5e08683f88ff1d2c8",
+    "src/query/session-protocol.ts": "dc9df609bba7de8bfa5fa8434a39de85327551d1e6dcc2af63915552e8b7f56e",
+    "src/query/sessions.ts": "37bc97a90278c5778b072499be4264380f8cee6679f35b46297611d143ae40fa",
+    "src/query/tabs.ts": "2eb552393207a39dd7952809b93f926194d51269932e9bada59017ff48e5db72",
+    "test/fake-backend.mjs": "0d21035eb0b43d6c68e8860df1759f9d5171bbf1154f257319ebd80add7134fa",
+    "test/query-session-host.cjs": "39ddab022f4fa551311f36cde484cdefacc9cc0007266febe5065b0b980c5e3f",
+    "test/query-sessions.test.mjs": "ece110c7719873a72f97b433a52ae1f51bcdee92dbfe78e540da3e19f11a01b4",
+    "test/query-tabs-host.cjs": "e2699970c2c1994d97ec9633848adad5c690cd33b11b956e4f41b2d2020c7c71",
+    "test/run-host.mjs": "8da2b6a282a22bce63d2b253d123ef9fd769aec4ecc37c8e3e1c144c35ab7cc3",
+    "test/transport.test.mjs": "feb91591b7ce63b78697fcb667f3aac03292f8090260598f6547e185e86ff27f"
+  },
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc",
+  "backend": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/bin/eska-project",
+    "sha256": "9a886ebd81034d375a2902eebcc85cee05c802a13a7054dae88253d0997f1391"
+  },
+  "installedVsix": {
+    "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/eska-query-sessions-api16.vsix",
+    "sha256": "5cc166f3339be02880e9328189c1bba355927187bf9769b5ccdbe6c65b891abe",
+    "runtimeMatchesCommittedExplorer": true,
+    "comparedRuntimeFiles": 1284
+  },
+  "behavior": {
+    "apiMinor": 16,
+    "minimumSourceSessionApi": 16,
+    "minimumPrivateRecoveryApi": 14,
+    "lifecycle": "ESKA creates binding, owns owner/base/draft, checks disk/descriptor/context/policy and prepares durable plans. The adapter supplies native facts, performs one Undo edit and acknowledges exact native output.",
+    "newerInput": "Recovery serializes source transitions with draft uploads, then rebases pending native input onto the acknowledged owner/base. A native save of an earlier revision returns false while the newer query remains dirty.",
+    "interruptedReceipt": "After native XML save but before receipt, the v2 intent and latest draft remain. Explicit resume reconciles already applied output, clears intent with CAS and leaves the latest draft available for a separate explicit Save. No edit is replayed.",
+    "nativeDirty": "The public Tab.isDirty state is used for live text tabs because the extension-host document save notification can clear TextDocument.isDirty while a newer revision remains dirty. Identical TextEditor.edit restores saveable native working-copy state when the reconciled base differs from its current text.",
+    "nativeDirtyReference": "https://raw.githubusercontent.com/microsoft/vscode/1.109.5/src/vs/workbench/api/common/extHostDocuments.ts",
+    "backendReplacement": "Old handles cannot address a replacement process, even when opaque IDs repeat. Restoring is paused until explicit resume; private recovery remains usable with a broken manifest.",
+    "malformedPlan": "The durable header/revision is adopted before validating the native plan; malformed plan bytes cannot erase the retained intent or make later cleanup use an obsolete checkpoint revision.",
+    "compatibility": "Explicit maximum 1.12/1.13 uses that minor; maximum 1.14/1.15 negotiates 1.14 on the same process. Older tree, properties and BSL are retained without enabling unsafe non-durable source editing.",
+    "nativeReadOnlyBoundary": "Provider readonly facts are reported; XML code does not change the native user override. Native BSL owner lock and preservation of the prior override remain unaccepted.",
+    "writesSourceInBackend": false,
+    "newDependencies": false
+  },
+  "validation": {
+    "typecheck": {
+      "command": "npm run check",
+      "exitCode": 0
+    },
+    "compile": {
+      "command": "npm run compile",
+      "exitCode": 0
+    },
+    "node": {
+      "command": "node --test test/*.test.mjs",
+      "exitCode": 0,
+      "passed": 244,
+      "failed": 0,
+      "skipped": 3
+    },
+    "bun": {
+      "command": "bun test",
+      "exitCode": 0,
+      "passed": 244,
+      "failed": 0,
+      "skipped": 3
+    },
+    "sourceSdk": "Five tests including capability validation and real backend processes without any VS Code services; native model facts in these tests are synthetic.",
+    "nativeEn": [
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRead",
+          "query/recoveryRemove"
+        ],
+        "backendSourceSessions": true,
+        "sourceSessionMethods": [
+          "query/sessionApplied",
+          "query/sessionClose",
+          "query/sessionGet",
+          "query/sessionOpen",
+          "query/sessionPrepare",
+          "query/sessionResume"
+        ],
+        "legacyQueryPlans": 0
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ],
+    "nativeRu": [
+      {
+        "passed": true,
+        "suite": "language-pack-registration",
+        "locale": "en"
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "node": "v22.21.1",
+        "cleanXmlSave": true,
+        "dirtyXmlSave": true,
+        "wholePackage": true,
+        "ownerUndoRedo": true,
+        "noExtraXmlDiff": true,
+        "repeatedOpen": true,
+        "manualLists": 2,
+        "automaticListInvented": false,
+        "privateRecoveryRecords": 2,
+        "externalConflictRetainsDraft": true,
+        "analyzerRequired": false,
+        "shutdownWaitsForQueries": true,
+        "backendRecovery": true,
+        "recoveryMethods": [
+          "query/recoveryAppend",
+          "query/recoveryBegin",
+          "query/recoveryClose",
+          "query/recoveryCommit",
+          "query/recoveryRead",
+          "query/recoveryRemove"
+        ],
+        "backendSourceSessions": true,
+        "sourceSessionMethods": [
+          "query/sessionApplied",
+          "query/sessionClose",
+          "query/sessionGet",
+          "query/sessionOpen",
+          "query/sessionPrepare",
+          "query/sessionResume"
+        ],
+        "legacyQueryPlans": 0
+      },
+      {
+        "passed": true,
+        "suite": "query-tabs-cold-recovery",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "dirtyDraftRecovered": true,
+        "originalDirtyXmlSnapshotRetained": true,
+        "automaticApply": false,
+        "conflictRetainsDraft": true,
+        "explicitResumeUnderFreshEditorVersion": true,
+        "independentOwnerSave": true,
+        "backendRecovery": true,
+        "recoveryWithBrokenManifest": true,
+        "offlineInputReconciled": true,
+        "offlineCleanCloseRetainedUntilAcknowledged": true
+      }
+    ],
+    "nativeSessionEn": [
+      {
+        "passed": true,
+        "suite": "query-source-sessions",
+        "vscode": "1.109.5",
+        "locale": "en",
+        "backendSourceSessions": true,
+        "newerInputDuringReceipt": true,
+        "interruptedNativeReceipt": true,
+        "latestDraftPreserved": true,
+        "explicitReconciliation": true,
+        "cleanDraftMarkedDirty": true,
+        "noAutomaticReplay": true,
+        "cleanCloseReleasesCheckpoint": true,
+        "injectedErrors": [
+          {
+            "message": "Error: simulated interrupted native receipt"
+          }
+        ]
+      }
+    ],
+    "nativeSessionRu": [
+      {
+        "passed": true,
+        "suite": "language-pack-registration",
+        "locale": "en"
+      },
+      {
+        "passed": true,
+        "suite": "query-source-sessions",
+        "vscode": "1.109.5",
+        "locale": "ru",
+        "backendSourceSessions": true,
+        "newerInputDuringReceipt": true,
+        "interruptedNativeReceipt": true,
+        "latestDraftPreserved": true,
+        "explicitReconciliation": true,
+        "cleanDraftMarkedDirty": true,
+        "noAutomaticReplay": true,
+        "cleanCloseReleasesCheckpoint": true,
+        "injectedErrors": [
+          {
+            "message": "Error: simulated interrupted native receipt"
+          }
+        ]
+      }
+    ],
+    "nativeScope": "Installed current VSIX and private real backend, Linux/VSCodium 1.109.5; ordinary and cold XML suites plus concurrent input/interrupted native receipt. Language-pack registration is warm-up only.",
+    "rust": "No Rust code or build configuration changed in this part. Accepted f83dfd8 backend reused; its 995 passed / 0 failed / 12 ignored and final Rust gates are recorded in t102-prepared-intent.json. Rust gates were not repeated for documentation changes.",
+    "developmentFailures": [
+      {
+        "attempt": 1,
+        "reason": "Test incorrectly expected native Save to return true while a newer draft remained unsaved."
+      },
+      {
+        "attempt": 2,
+        "reason": "TextDocument.isDirty was false after Save even though the native tab was dirty."
+      },
+      {
+        "attempt": 3,
+        "reason": "A bounded wait confirmed the document flag did not become true later."
+      }
+    ],
+    "developmentResolution": "Public Tab.isDirty and TextEditor.edit were used; fourth development run and both installed native suites passed. No internal editor state or persistent readonly settings were accessed."
+  },
+  "evidence": {
+    "bun-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/bun-final.log",
+      "sha256": "0d442e5e0163d715520c8c402954cdef291516a77f854d7e90766668c74f1d4c"
+    },
+    "native-dev-first-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-dev-first-full.log",
+      "sha256": "41d1eb00b19f316f32b33381f4c05b3dd06c682f8d2507e194a7a2daf003f646"
+    },
+    "native-dev-first-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-dev-first-result.log",
+      "sha256": "87f2869926652fc43d301e8f9051a548115ae1bf0b870e1d37ba4c544e69bb30"
+    },
+    "native-installed-en-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-installed-en-full.log",
+      "sha256": "cac102df0b973c54bab7710d32b7f42dad4b359b435253e681ab63c14df622d1"
+    },
+    "native-installed-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-installed-en-result.log",
+      "sha256": "15d0ba2aa9d6cb12ec1b151c6b5b4f0e15cd32b9389965ed9ea3c68d3c9551af"
+    },
+    "native-installed-ru-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-installed-ru-full.log",
+      "sha256": "2a073880b7e23979e3233762fed7c74d18e8b86e98be7a0159c2dae90d2a4875"
+    },
+    "native-installed-ru-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-installed-ru-result.log",
+      "sha256": "6bd2e01b1f3ccdcfc4ed0d0962a78af1de74c97ba808760dfe53377364060ca6"
+    },
+    "native-session-dev-first-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-dev-first-full.log",
+      "sha256": "26d2ef7268c552c7804eaae95a3f01751502faed8eb2dd2bb15d8eee13c3f582"
+    },
+    "native-session-dev-first-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-dev-first-result.log",
+      "sha256": "ab03760d8f15f961e2d735b90a4e4c0a71d38822857f7860a01df774880a8a81"
+    },
+    "native-session-dev-fourth-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-dev-fourth-full.log",
+      "sha256": "8b91fec1bb20aba395338261dc9f099626aa4852dd6349eae6baa027156a77be"
+    },
+    "native-session-dev-fourth-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-dev-fourth-result.log",
+      "sha256": "cccbbbeef524a8c7e3bc4967e77b83ce43c84df3e7d9ff924053ac6af18f7734"
+    },
+    "native-session-dev-second-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-dev-second-full.log",
+      "sha256": "d8939c1026bb362db99243d839c16947313fd644c3f742b51d02416f2bc2294b"
+    },
+    "native-session-dev-second-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-dev-second-result.log",
+      "sha256": "d68538fad0754f6df88973f04f85a3d1af9dfdcae9e56541aad52634852b8816"
+    },
+    "native-session-dev-third-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-dev-third-full.log",
+      "sha256": "8c5f5131322c96d717c1d9b82ab97dcf1ac2470d8a5ac8a613eb5a59b9b1851b"
+    },
+    "native-session-dev-third-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-dev-third-result.log",
+      "sha256": "88b2709d669aa25b44e89d785650895950b27cefc531b50c7eda94a6fbff33df"
+    },
+    "native-session-installed-en-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-installed-en-full.log",
+      "sha256": "6aaaed54240c46757013ae630d4e68c2a3c369940fcd9ca3b8a01e1c2954ba8f"
+    },
+    "native-session-installed-en-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-installed-en-result.log",
+      "sha256": "dbc7f067316f07bcf8efc014446e1a14617a23858c83caf4324bdc26b4231efa"
+    },
+    "native-session-installed-ru-full.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-installed-ru-full.log",
+      "sha256": "e507516edc7d831d090fc12c4271f26493add747c2edbbce2f19624271b2d16c"
+    },
+    "native-session-installed-ru-result.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/native-session-installed-ru-result.log",
+      "sha256": "f74a0d4c64b3826193a14d84a82f2fe74654b9b8ca43a015ffd7b36c9c296d7b"
+    },
+    "node-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/node-final.log",
+      "sha256": "4976ebbfac128476fe0ed4c8a7512e57581afdabcd09fa74cce839fab808f540"
+    },
+    "node-first.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/node-first.log",
+      "sha256": "217c76b7587702bd562951c179e11acaed02f73835512f7cae1061f9e0914420"
+    },
+    "package.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/package.log",
+      "sha256": "e40954ba7fe7c5ec56265db9f390a09bdaed1ffd7934d9d5a93c6c4691820c6c"
+    },
+    "typecheck-final.log": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t102-session-adapter-58g4n1fc/typecheck-final.log",
+      "sha256": "5062faef2ef40eb366b4a0a37c2b49bd34f9990ce7448c0e7dcc53401761fba0"
+    }
+  },
+  "remaining": [
+    "Common source-protection ownership, snapshots and write fences shared by all adapters.",
+    "Prove native BSL owner freeze/release preserving prior restrictions, then implement Apply/Cancel before accepting T102.",
+    "T103, T104 and T105 in order after T102."
+  ],
+  "unverifiedEnvironments": [
+    "Windows",
+    "macOS",
+    "VS Code",
+    "Remote"
+  ]
+}

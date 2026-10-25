@@ -154,6 +154,10 @@ pub enum Error {
     InvalidIndex {
         path: PathBuf,
     },
+    NoMergeBase {
+        left: ObjectId,
+        right: ObjectId,
+    },
     Open(OpenError),
     Operation {
         operation: Operation,
@@ -162,7 +166,7 @@ pub enum Error {
 }
 
 impl Error {
-    pub(super) fn operation(
+    pub(crate) fn operation(
         operation: Operation,
         source: impl Into<Box<dyn std::error::Error + Send + Sync>>,
     ) -> Self {
