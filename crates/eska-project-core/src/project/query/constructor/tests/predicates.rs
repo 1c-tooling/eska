@@ -158,3 +158,62 @@ fn appending_after_or_keeps_the_old_group_parenthesized() {
         matches!(value.predicate(0,1),Some(Predicate::All{children}) if matches!(children[0],Predicate::Any{..}))
     );
 }
+
+/// A raw boolean leaf remains one child of its explicit group, including trailing comments.
+#[test]
+fn raw_predicate_children_preserve_grouping_and_comment_boundaries() {
+    for (source, raw) in [
+        ("SELECT 1 AS N\r\n", "A = 1 OR B = 2"),
+        ("ВЫБРАТЬ 1 КАК N\r\n", "A = 1 ИЛИ B = 2 // keep 😀"),
+    ] {
+        let mut value = constructor(source);
+        apply(
+            &mut value,
+            &Action::SetPredicate {
+                statement: 0,
+                clause: ClauseKind::Conditions,
+                selection: None,
+                predicate: Predicate::All {
+                    children: vec![
+                        Predicate::Raw {
+                            expression: raw.into(),
+                        },
+                        Predicate::Compare {
+                            left: "C".into(),
+                            comparison: Comparison::Equal,
+                            right: "3".into(),
+                        },
+                    ],
+                },
+            },
+        );
+        assert!(
+            matches!(value.predicate(0, 1), Some(Predicate::All { children })
+            if matches!(children[0], Predicate::Any { .. }) && children.len() == 2),
+            "{}",
+            value.text()
+        );
+        if raw.contains("//") {
+            assert!(value.text().contains("// keep 😀\r\n)"));
+        }
+        let before = value.text().to_owned();
+        let revision = value.revision();
+        let predicate = value.predicate(0, 1).unwrap();
+        assert!(
+            value
+                .apply(
+                    revision,
+                    &Action::SetPredicate {
+                        statement: 0,
+                        clause: ClauseKind::Conditions,
+                        selection: None,
+                        predicate,
+                    }
+                )
+                .unwrap()
+                .is_empty()
+        );
+        assert_eq!(value.text(), before);
+        assert_eq!(value.revision(), revision);
+    }
+}

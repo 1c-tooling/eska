@@ -313,7 +313,7 @@ pub(super) fn plan(value: &Constructor, action: &Action) -> Result<Option<EditPl
         owner.clauses.iter().find(|section| section.kind == *clause)
     };
     let input = value.text();
-    let text = render(predicate, owner.russian, 0, &mut 0)?;
+    let text = render(predicate, owner.russian, editing::newline(input), 0, &mut 0)?;
     if *clause == ClauseKind::Conditions && outer_aggregate(&text)? {
         return Err(Error::InvalidExpression);
     }
@@ -448,6 +448,7 @@ fn outer_aggregate(input: &str) -> Result<bool, Error> {
 fn render(
     value: &Predicate,
     russian: bool,
+    newline: &str,
     depth: usize,
     count: &mut usize,
 ) -> Result<String, Error> {
@@ -468,14 +469,14 @@ fn render(
             };
             let children = children
                 .iter()
-                .map(|child| render(child, russian, depth + 1, count))
+                .map(|child| render(child, russian, newline, depth + 1, count))
                 .collect::<Result<Vec<_>, _>>()?;
             format!("({})", children.join(separator))
         }
         Predicate::Not { child } => format!(
             "{} ({})",
             if russian { "НЕ" } else { "NOT" },
-            render(child, russian, depth + 1, count)?
+            render(child, russian, newline, depth + 1, count)?
         ),
         Predicate::Compare {
             left,
@@ -517,7 +518,14 @@ fn render(
         }
         Predicate::Raw { expression } => {
             editing::fragment(expression)?;
-            expression.clone()
+            // A raw leaf is one boolean child even when it contains OR; a trailing
+            // line comment must not consume the closing delimiter or the next child.
+            let line_comment = lex::tokens(expression)?.last().is_some_and(|token| {
+                token.kind == Kind::Comment
+                    && expression[token.range.clone()].starts_with("//")
+                    && !expression[token.range.end..].contains(['\r', '\n'])
+            });
+            format!("({expression}{})", if line_comment { newline } else { "" })
         }
     };
     if text.len() > 16_384 {
