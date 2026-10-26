@@ -1,12 +1,13 @@
 //! Constructor ownership and text transformations live in ESKA; a native adapter displays only these DTOs.
 
 mod presentation;
+mod text_view;
 use eska_project_core::project::metadata_edit::snapshot;
 use presentation::model;
 
 use std::path::PathBuf;
 
-use eska_project_core::project::query::constructor::{Action, ClauseKind};
+use eska_project_core::project::query::constructor::{Action, ClauseKind, MAX_ITEM_SET_ITEMS};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -32,6 +33,9 @@ pub(super) fn is_method(method: &str) -> bool {
             | "query/constructorPlan"
             | "query/constructorModel"
             | "query/constructorAction"
+            | "query/constructorPreview"
+            | "query/constructorText"
+            | "query/constructorLocate"
             | "query/constructorFinish"
             | "query/constructorCancel"
             | "query/constructorCatalog"
@@ -42,7 +46,9 @@ pub(super) fn is_method(method: &str) -> bool {
 pub(super) fn is_cleanup(method: &str) -> bool {
     matches!(
         method,
-        "query/constructorModel"
+        "query/constructorText"
+            | "query/constructorLocate"
+            | "query/constructorModel"
             | "query/constructorPlan"
             | "query/constructorCancel"
             | "query/sessionComments"
@@ -89,6 +95,25 @@ pub(super) fn capability(minor: u32) -> Value {
     if minor >= 29 {
         result["dcs"] = json!(true);
         result["maxDcsValues"] = json!(128);
+    }
+    if minor >= 31 {
+        result["bulkItems"] = json!(true);
+        result["maxBulkItems"] = json!(MAX_ITEM_SET_ITEMS);
+        result["addSourceFields"] = json!(true);
+    }
+    if minor >= 32 {
+        result["predicates"] = json!(true);
+        result["unionMatrix"] = json!(true);
+        result["actionPreview"] = json!(true);
+        result["packageTree"] = json!(true);
+        result["copyStatement"] = json!(true);
+        result["modifiers"] = json!(true);
+        result["maxTop"] = json!(u32::MAX);
+        result["maxLockSources"] = json!(64);
+        result["linkedText"] = json!(true);
+        result["textBuffer"] = json!(true);
+        result["maxTextBytes"] = json!(8_388_608);
+        result["textValidation"] = json!("structural");
     }
     result
 }
@@ -148,6 +173,8 @@ impl State {
         struct SessionId {
             query_session_id: String,
         }
+        let hydrated = self.constructor_text_args(key, method, args)?;
+        let args = hydrated.as_ref().unwrap_or(args);
         let input: SessionId = params::decode(args)?;
         let entry = self
             .sessions
@@ -161,6 +188,12 @@ impl State {
                 Some(&entry.stored.revision),
                 true,
             )?;
+        }
+        if let Some(output) = Self::constructor_text_read(entry, method, args)? {
+            return Ok(output);
+        }
+        if method == "query/constructorPreview" {
+            return self.constructor_preview(entry, args, minor);
         }
         if method == "query/sessionComments" {
             return source_comments(&entry.core, args);
@@ -188,19 +221,7 @@ impl State {
             return Ok(output);
         }
         if method == "query/constructorModel" {
-            let input: Id = params::decode(args)?;
-            let value = entry
-                .core
-                .constructor(params::counter(&input.constructor_id)?)
-                .map_err(session_error)?;
-            let mut output = sessions::header(&input.query_session_id, entry)?;
-            output["constructor"] = model(
-                value,
-                &input.constructor_id,
-                entry.core.constructor_writable(),
-                minor,
-            )?;
-            return Ok(output);
+            return read_model(entry, args, minor);
         }
         let mut core = entry.core.clone();
         let (id, plan, released) = transition(&mut core, method, args, minor)?;
@@ -239,6 +260,30 @@ impl State {
         Ok(output)
     }
 
+    /// Preview uses the same permissions, resource admission and action code, then discards the staged session.
+    fn constructor_preview(
+        &self,
+        entry: &sessions::Entry,
+        args: &Value,
+        minor: u32,
+    ) -> Result<Value, Value> {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Preview {
+            query_session_id: String,
+            constructor_id: String,
+            constructor_revision: String,
+        }
+        let input: Preview = params::decode(args)?;
+        let mut staged = entry.core.clone();
+        transition(&mut staged, "query/constructorAction", args, minor)?;
+        self.admit_change(entry.core.retained_bytes(), staged.retained_bytes())?;
+        let mut output = sessions::header(&input.query_session_id, entry)?;
+        output["preview"] = bound_model(&staged, &input.constructor_id, minor)?;
+        output["baseRevision"] = json!(input.constructor_revision);
+        Ok(output)
+    }
+
     /// Generic checkpoint removal cannot destroy a draft that a visual constructor currently owns.
     pub(super) fn constructor_record_guard(&self, id: &str) -> Result<(), Value> {
         if self
@@ -258,6 +303,14 @@ type Transition = (
     Option<eska_project_core::project::metadata_edit::EditPlan>,
     Option<bool>,
 );
+
+/// Return the same source header and bounded model without entering the mutation pipeline.
+fn read_model(entry: &sessions::Entry, args: &Value, minor: u32) -> Result<Value, Value> {
+    let input: Id = params::decode(args)?;
+    let mut output = sessions::header(&input.query_session_id, entry)?;
+    output["constructor"] = bound_model(&entry.core, &input.constructor_id, minor)?;
+    Ok(output)
+}
 
 /// Resolve an owned constructor before producing any transport model.
 fn bound_model(
@@ -366,7 +419,30 @@ fn check_compatibility(
 ) -> Result<(), Value> {
     let model = core.constructor(id).map_err(session_error)?.model();
     let statement = action.statement();
-    if (minor < 23 && model.requires_scopes(statement))
+    if (minor < 32
+        && (matches!(
+            action,
+            Action::SetText { .. }
+                | Action::SetModifiers { .. }
+                | Action::CopyStatement { .. }
+                | Action::AlignUnion { .. }
+                | Action::SetJoinKind { .. }
+                | Action::SetPredicate { .. }
+                | Action::MovePredicate { .. }
+        ) || (core
+            .constructor(id)
+            .map_err(session_error)?
+            .requires_predicates(statement)
+            || core
+                .constructor(id)
+                .map_err(session_error)?
+                .requires_modifiers(statement))))
+        || (minor < 31
+            && matches!(
+                action,
+                Action::EditItems { .. } | Action::AddSourceFields { .. }
+            ))
+        || (minor < 23 && model.requires_scopes(statement))
         || (minor < 26 && model.requires_packages(statement))
         || (minor < 27 && model.requires_having(statement))
         || (minor < 28 && model.requires_multiple_totals(statement))
@@ -417,4 +493,21 @@ fn source_comments(
         "lineStartsOnly":line_starts_only,
         "comments":comments,"positions":positions}),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Older clients retain their exact capability vocabulary, while item sets require an explicit bound.
+    #[test]
+    fn bulk_capabilities_require_minor_31() {
+        let old = capability(30);
+        assert!(old.get("bulkItems").is_none());
+        assert!(old.get("addSourceFields").is_none());
+        let current = capability(31);
+        assert_eq!(current["bulkItems"], true);
+        assert_eq!(current["addSourceFields"], true);
+        assert_eq!(current["maxBulkItems"], MAX_ITEM_SET_ITEMS);
+    }
 }

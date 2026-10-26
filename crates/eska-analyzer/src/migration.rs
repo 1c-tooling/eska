@@ -292,10 +292,19 @@ fn entries_match(root: &Path, old: &[toml::Value], expected: &[toml::Value]) -> 
     }
     for (entry, index) in old.iter().zip(matched) {
         if entry.as_table().is_some_and(|table| {
-            table
-                .keys()
-                .any(|key| !matches!(key.as_str(), "name" | "path" | "dependsOn" | "depends_on"))
+            table.keys().any(|key| {
+                !matches!(
+                    key.as_str(),
+                    "name" | "path" | "scope" | "dependsOn" | "depends_on"
+                )
+            })
         }) {
+            return false;
+        }
+        if entry
+            .get("scope")
+            .is_some_and(|scope| Some(scope) != expected[index].get("scope"))
+        {
             return false;
         }
         let old_depends = entry.get("dependsOn").or_else(|| entry.get("depends_on"));

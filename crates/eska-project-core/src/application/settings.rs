@@ -60,6 +60,8 @@ pub struct AnalysisOptions {
     target_platform_version: Option<TargetPlatformVersion>,
     #[serde(skip_serializing_if = "Option::is_none")]
     configuration: Option<ConfigurationReference>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    extension_scope: Option<ExtensionScope>,
 }
 
 impl AnalysisOptions {
@@ -69,6 +71,7 @@ impl AnalysisOptions {
         self.default_application.is_none()
             && self.target_platform_version.is_none()
             && self.configuration.is_none()
+            && self.extension_scope.is_none()
     }
 
     /// Return an explicitly selected default, never a guessed neighboring member.
@@ -87,6 +90,37 @@ impl AnalysisOptions {
     #[must_use]
     pub const fn configuration(&self) -> Option<&ConfigurationReference> {
         self.configuration.as_ref()
+    }
+
+    /// Return a standalone extension's declared installation scope, without guessing a deployment.
+    #[must_use]
+    pub const fn extension_scope(&self) -> Option<ExtensionScope> {
+        self.extension_scope
+    }
+}
+
+/// Installation scope belongs to the target deployment, not to exported XML metadata.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub enum ExtensionScope {
+    #[default]
+    InfoBase,
+    DataSeparation,
+}
+
+impl ExtensionScope {
+    /// Omit the ordinary deployment setting from the editable manifest.
+    #[must_use]
+    pub const fn is_default(&self) -> bool {
+        matches!(self, Self::InfoBase)
+    }
+
+    /// Preserve the platform's machine-facing spelling when generating analyzer declarations.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::InfoBase => "InfoBase",
+            Self::DataSeparation => "DataSeparation",
+        }
     }
 }
 
@@ -126,6 +160,8 @@ pub struct Application {
     external_objects: Vec<ProjectName>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     extension_dependencies: BTreeMap<ProjectName, Vec<ProjectName>>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    extension_scopes: BTreeMap<ProjectName, ExtensionScope>,
     #[serde(skip_serializing_if = "Option::is_none")]
     target_platform_version: Option<TargetPlatformVersion>,
 }
@@ -167,6 +203,12 @@ impl Application {
         &self.extension_dependencies
     }
 
+    /// A shared extension can have a different installation scope in each application.
+    #[must_use]
+    pub fn extension_scope(&self, member: &ProjectName) -> Option<ExtensionScope> {
+        self.extension_scopes.get(member).copied()
+    }
+
     /// Return the application's deliberate override of its main configuration's build version.
     #[must_use]
     pub const fn target_platform_version(&self) -> Option<&TargetPlatformVersion> {
@@ -190,13 +232,18 @@ impl Application {
                 .transpose()?,
             extensions: member_names(raw.extensions, "extensions")?,
             external_objects: member_names(raw.external_objects, "external_objects")?,
+            extension_scopes: raw
+                .extension_scopes
+                .into_iter()
+                .map(|(name, scope)| Ok((member_name(name, "extensions")?, scope)))
+                .collect::<Result<_, SettingsError>>()?,
             extension_dependencies: raw
                 .extension_dependencies
                 .into_iter()
                 .map(|(key, values)| {
                     Ok((
-                        member_name(key, "extension_dependencies")?,
-                        member_names(values, "extension_dependencies")?,
+                        member_name(key, "extensions")?,
+                        member_names(values, "extensions[].depends_on")?,
                     ))
                 })
                 .collect::<Result<_, SettingsError>>()?,
@@ -307,6 +354,9 @@ impl AnalysisSettings {
         names: &[ProjectName],
     ) -> Result<Self, SettingsError> {
         let raw = raw.unwrap_or_default();
+        if workspace && raw.extension_scope.is_some() {
+            return Err(SettingsError::ExtensionScopeLocation);
+        }
         if let Some(reference) = &raw.configuration {
             reference.validate()?;
             if workspace {
@@ -314,6 +364,7 @@ impl AnalysisSettings {
             }
         }
         let options = AnalysisOptions {
+            extension_scope: raw.extension_scope,
             configuration: raw.configuration,
             default_application: raw
                 .default_application
@@ -385,6 +436,7 @@ impl AnalysisSettings {
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RawAnalysis {
+    pub(crate) extension_scope: Option<ExtensionScope>,
     default_application: Option<String>,
     target_platform_version: Option<String>,
     configuration: Option<ConfigurationReference>,
@@ -398,10 +450,12 @@ pub enum RawConfiguration {
     Reference(ConfigurationReference),
 }
 
-/// An application has one required base and explicit optional members and dependency edges.
+/// Normalize path declarations into discovered identities for internal graph validation.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RawApplication {
+    #[serde(default)]
+    pub(crate) extension_scopes: BTreeMap<String, ExtensionScope>,
     pub(crate) configuration: Option<RawConfiguration>,
     #[serde(default)]
     pub(crate) extensions: Vec<String>,
@@ -415,6 +469,7 @@ pub struct RawApplication {
 /// Structured configuration errors contain machine-facing values, never localized sentences.
 #[derive(Debug, Eq, PartialEq)]
 pub enum SettingsError {
+    ExtensionScopeLocation,
     EmptyConfigurationSource,
     ConfigurationReferenceScope,
     ManagedAnalyzerField {

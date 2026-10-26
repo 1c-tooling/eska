@@ -1,0 +1,3921 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-26T20:31:57.012303+00:00",
+  "task": "T134-T142",
+  "independentAcceptance": "passed",
+  "fullT142": "in_progress",
+  "scope": "All parts independent of bsl-analyzer; performance optimization explicitly deferred by the user to T143",
+  "tasks": {
+    "T134": "DONE",
+    "T135": "DONE",
+    "T136": "IN-PROGRESS: field insertion done; language services/types pending",
+    "T137": "IN-PROGRESS: structural predicates/joins done; type-based suggestions pending",
+    "T138": "DONE",
+    "T139": "DONE",
+    "T140": "DONE",
+    "T141": "DONE",
+    "T142": "IN-PROGRESS: independent acceptance passed; semantic acceptance pending",
+    "T143": "PLANNED: separate performance task, do not implement automatically"
+  },
+  "architecture": {
+    "domainOwner": "ESKA",
+    "ideAdapter": "Explorer presentation, transport and native document lifecycle",
+    "secondResolver": false,
+    "metadataApi": "1.32",
+    "compatibilityVerified": "1.30"
+  },
+  "versions": {
+    "rust": "1.99.1",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "vscodium": "1.109.51242",
+    "platform": "8.3.27.2325",
+    "crate": "0.17.0",
+    "extension": "0.0.15",
+    "os": "Linux"
+  },
+  "artifacts": {
+    "stand": "/home/akalsin/Documents/Projects/eska-playground/t137-compact-j8hps_sr",
+    "backend": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t137-compact-j8hps_sr/eska-project-t141-final",
+      "sha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+      "sourceCommit": "b549ea83"
+    },
+    "vsix": {
+      "path": "/home/akalsin/Documents/Projects/eska-playground/t137-compact-j8hps_sr/t142-final.vsix",
+      "sha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+      "applicationSourceCommit": "e903ce3"
+    },
+    "baselineBackendSha256": "6930ae78c7c37a30352a7a1233b1b58b3da4a5df0497468172ca5bc33abd8ced",
+    "baselineVsixSha256": "38a7059732e4cfe5af2b85910e5ece6a280257b9d23abd3481ef9717d45df6b2",
+    "installation": "fresh owned editor profiles; global user installation unchanged",
+    "manualLauncher": "/home/akalsin/Documents/Projects/eska-playground/t137-compact-j8hps_sr/manual-constructor.sh"
+  },
+  "validation": {
+    "rust": {
+      "fmt": "passed",
+      "check": "passed",
+      "clippyAllTargetsAllFeaturesDenyWarnings": "passed",
+      "rustdocDenyWarnings": "passed",
+      "suites": 35,
+      "passed": 1168,
+      "failed": 0,
+      "ignored": 14,
+      "ignoredReason": "Existing manual/performance fixtures and external analyzer integration; see final-tests.log",
+      "testRoot": "/home/akalsin/Documents/Projects/eska-playground"
+    },
+    "typescript": "passed",
+    "node": {
+      "passed": 347,
+      "skipped": 3,
+      "failed": 0,
+      "serial": true
+    },
+    "bun": {
+      "passed": 347,
+      "skipped": 3,
+      "failed": 0
+    },
+    "native": [
+      {
+        "name": "query-package-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 5.57,
+        "log": "t142-final-query-package-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-package",
+          "locale": "en",
+          "accepted": [
+            "package_cancel_keeps_same_draft",
+            "temporary_catalog_projection_and_atomic_rename_preserve_explicit_alias",
+            "package_apply_native_undo_redo_and_parent_single_undo_preserve_disk"
+          ]
+        }
+      },
+      {
+        "name": "query-having-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 5.87,
+        "log": "t142-final-query-having-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-having",
+          "locale": "en",
+          "accepted": [
+            "separate_typed_where_having_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      },
+      {
+        "name": "query-total-sections-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 6.28,
+        "log": "t142-final-query-total-sections-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-total-sections",
+          "locale": "en",
+          "accepted": [
+            "single_native_total_section_group_levels_second_section_guard_cancel_apply_and_undo_redo"
+          ]
+        }
+      },
+      {
+        "name": "query-dcs-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 6.44,
+        "log": "t142-final-query-dcs-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-dcs",
+          "locale": "en",
+          "accepted": [
+            "typed_dcs_lists_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      },
+      {
+        "name": "query-advanced-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 6.52,
+        "log": "t142-final-query-advanced-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-advanced",
+          "locale": "en",
+          "accepted": [
+            "virtual_catalog_parameter_labels_positional_values_and_core_call_generation",
+            "same_panel_child_navigation_parent_hidden_and_current_derived_projection",
+            "union_duplicate_policy_scope_tail_order_overall_totals_and_period_fill",
+            "advanced_draft_one_undo_redo_unsaved_parent_apply_and_one_owner_undo"
+          ]
+        }
+      },
+      {
+        "name": "query-builder-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 6.42,
+        "log": "t142-final-query-builder-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-builder",
+          "locale": "en",
+          "accepted": [
+            "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+            "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+            "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+          ]
+        }
+      },
+      {
+        "name": "query-modal-normal-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 8.14,
+        "log": "t142-final-query-modal-normal-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-modal-normal",
+          "locale": "en",
+          "accepted": [
+            "native_cancel_preserves_dirty_parent_without_opening_child",
+            "explicit_native_save_precedes_source_capture_and_return",
+            "only_explicit_native_discard_can_revert_unsaved_parent",
+            "native_readonly_override_survives_modal_roundtrip"
+          ]
+        }
+      },
+      {
+        "name": "query-constructor-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 11.27,
+        "log": "t142-final-constructor-en-fixture.log",
+        "report": {
+          "passed": true,
+          "suite": "query-constructor",
+          "accepted": [
+            "all_editable_splits_replaced_by_constructor_and_core_draft_lock",
+            "late_webview_actions_previews_and_apply_reject_the_displayed_old_revision",
+            "comments_follow_nodes_explicit_keep_and_same_draft_single_undo_redo",
+            "constructor_result_uses_existing_explicit_bsl_apply_without_disk_save",
+            "opening_and_applying_without_operations_preserves_exact_draft_and_owner",
+            "cancel_discards_only_unaccepted_constructor_operations_and_releases_its_lock",
+            "six_clause_operations_preserve_opaque_package_and_readonly_constructor_cannot_grant_write_access",
+            "installed_webview_dom_eight_tabs_translated_labels_text_only_rendering_expression_submission_and_cancel",
+            "backend_crash_retains_checkpoint_discards_unaccepted_model_and_requires_explicit_resume",
+            "xml_constructor_keeps_private_dirty_draft_then_explicit_xml_save_places_source_comments_and_native_undo"
+          ],
+          "errors": [],
+          "locale": "en"
+        }
+      },
+      {
+        "name": "query-items-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 5.68,
+        "log": "t142-final-query-items-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-items",
+          "locale": "en",
+          "accepted": [
+            "select-copy-core-alias",
+            "move-core-focus",
+            "inline-cell",
+            "select-all-atomic-refusal",
+            "apply-native-undo-redo",
+            "owner-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-predicates-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 5.92,
+        "log": "t142-final-query-predicates-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-predicates",
+          "locale": "en",
+          "accepted": [
+            "group-kind-and-between-input",
+            "explicit-where-having-move",
+            "single-undo-redo",
+            "source-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-union-matrix-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 5.79,
+        "log": "t142-final-query-union-matrix-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-union-matrix",
+          "locale": "en",
+          "accepted": [
+            "matrix-read-noop",
+            "alignment-preview-cancel",
+            "alignment-explicit-accept",
+            "parent-inert",
+            "shared-output-alias",
+            "column-move-preview",
+            "native-undo",
+            "owner-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-package-tree-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 5.78,
+        "log": "t142-final-query-package-tree-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-package-tree",
+          "locale": "en",
+          "accepted": [
+            "copy-preview-fresh-destination",
+            "copy-focus",
+            "nested-package-tree",
+            "lifetime-bound-definition-link",
+            "scope-breadcrumb-and-return",
+            "original-consumer-unchanged",
+            "native-undo",
+            "source-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-modifiers-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 6.6,
+        "log": "t142-final-query-modifiers-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-modifiers",
+          "locale": "en",
+          "accepted": [
+            "typed-settings",
+            "preview-does-not-mutate",
+            "cancel-keeps-input",
+            "explicit-accept",
+            "native-undo-redo",
+            "source-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-text-host-en",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 6.08,
+        "log": "t142-final-query-text-host-en.log",
+        "report": {
+          "passed": true,
+          "suite": "query-text",
+          "locale": "en",
+          "accepted": [
+            "core-item-comment-and-unicode-ranges",
+            "invalid-buffer-kept-preview-cancel-parent-inert-accept-stale-button",
+            "opening-diff-private-cancel-native-undo-redo-owner-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-package-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 9.55,
+        "log": "t142-final-query-package-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-package",
+          "locale": "ru",
+          "accepted": [
+            "package_cancel_keeps_same_draft",
+            "temporary_catalog_projection_and_atomic_rename_preserve_explicit_alias",
+            "package_apply_native_undo_redo_and_parent_single_undo_preserve_disk"
+          ]
+        }
+      },
+      {
+        "name": "query-having-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 9.35,
+        "log": "t142-final-query-having-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-having",
+          "locale": "ru",
+          "accepted": [
+            "separate_typed_where_having_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      },
+      {
+        "name": "query-total-sections-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 9.45,
+        "log": "t142-final-query-total-sections-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-total-sections",
+          "locale": "ru",
+          "accepted": [
+            "single_native_total_section_group_levels_second_section_guard_cancel_apply_and_undo_redo"
+          ]
+        }
+      },
+      {
+        "name": "query-dcs-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 9.41,
+        "log": "t142-final-query-dcs-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-dcs",
+          "locale": "ru",
+          "accepted": [
+            "typed_dcs_lists_cancel_apply_undo_redo_and_unchanged_owner_bytes"
+          ]
+        }
+      },
+      {
+        "name": "query-advanced-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 9.77,
+        "log": "t142-final-query-advanced-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-advanced",
+          "locale": "ru",
+          "accepted": [
+            "virtual_catalog_parameter_labels_positional_values_and_core_call_generation",
+            "same_panel_child_navigation_parent_hidden_and_current_derived_projection",
+            "union_duplicate_policy_scope_tail_order_overall_totals_and_period_fill",
+            "advanced_draft_one_undo_redo_unsaved_parent_apply_and_one_owner_undo"
+          ]
+        }
+      },
+      {
+        "name": "query-builder-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 9.49,
+        "log": "t142-final-query-builder-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-builder",
+          "locale": "ru",
+          "accepted": [
+            "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+            "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+            "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+          ]
+        }
+      },
+      {
+        "name": "query-modal-normal-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 11.3,
+        "log": "t142-final-query-modal-normal-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-modal-normal",
+          "locale": "ru",
+          "accepted": [
+            "native_cancel_preserves_dirty_parent_without_opening_child",
+            "explicit_native_save_precedes_source_capture_and_return",
+            "only_explicit_native_discard_can_revert_unsaved_parent",
+            "native_readonly_override_survives_modal_roundtrip"
+          ]
+        }
+      },
+      {
+        "name": "query-constructor-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 13.81,
+        "log": "t142-final-query-constructor-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-constructor",
+          "accepted": [
+            "all_editable_splits_replaced_by_constructor_and_core_draft_lock",
+            "late_webview_actions_previews_and_apply_reject_the_displayed_old_revision",
+            "comments_follow_nodes_explicit_keep_and_same_draft_single_undo_redo",
+            "constructor_result_uses_existing_explicit_bsl_apply_without_disk_save",
+            "opening_and_applying_without_operations_preserves_exact_draft_and_owner",
+            "cancel_discards_only_unaccepted_constructor_operations_and_releases_its_lock",
+            "six_clause_operations_preserve_opaque_package_and_readonly_constructor_cannot_grant_write_access",
+            "installed_webview_dom_eight_tabs_translated_labels_text_only_rendering_expression_submission_and_cancel",
+            "backend_crash_retains_checkpoint_discards_unaccepted_model_and_requires_explicit_resume",
+            "xml_constructor_keeps_private_dirty_draft_then_explicit_xml_save_places_source_comments_and_native_undo"
+          ],
+          "errors": [],
+          "locale": "ru"
+        }
+      },
+      {
+        "name": "query-items-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 8.9,
+        "log": "t142-final-query-items-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-items",
+          "locale": "ru",
+          "accepted": [
+            "select-copy-core-alias",
+            "move-core-focus",
+            "inline-cell",
+            "select-all-atomic-refusal",
+            "apply-native-undo-redo",
+            "owner-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-predicates-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 8.72,
+        "log": "t142-final-query-predicates-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-predicates",
+          "locale": "ru",
+          "accepted": [
+            "group-kind-and-between-input",
+            "explicit-where-having-move",
+            "single-undo-redo",
+            "source-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-union-matrix-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 8.98,
+        "log": "t142-final-query-union-matrix-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-union-matrix",
+          "locale": "ru",
+          "accepted": [
+            "matrix-read-noop",
+            "alignment-preview-cancel",
+            "alignment-explicit-accept",
+            "parent-inert",
+            "shared-output-alias",
+            "column-move-preview",
+            "native-undo",
+            "owner-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-package-tree-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 9.01,
+        "log": "t142-final-query-package-tree-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-package-tree",
+          "locale": "ru",
+          "accepted": [
+            "copy-preview-fresh-destination",
+            "copy-focus",
+            "nested-package-tree",
+            "lifetime-bound-definition-link",
+            "scope-breadcrumb-and-return",
+            "original-consumer-unchanged",
+            "native-undo",
+            "source-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-modifiers-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 9.37,
+        "log": "t142-final-query-modifiers-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-modifiers",
+          "locale": "ru",
+          "accepted": [
+            "typed-settings",
+            "preview-does-not-mutate",
+            "cancel-keeps-input",
+            "explicit-accept",
+            "native-undo-redo",
+            "source-unchanged"
+          ]
+        }
+      },
+      {
+        "name": "query-text-host-ru",
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "exitCode": 0,
+        "seconds": 9.48,
+        "log": "t142-final-query-text-host-ru.log",
+        "report": {
+          "passed": true,
+          "suite": "query-text",
+          "locale": "ru",
+          "accepted": [
+            "core-item-comment-and-unicode-ranges",
+            "invalid-buffer-kept-preview-cancel-parent-inert-accept-stale-button",
+            "opening-diff-private-cancel-native-undo-redo-owner-unchanged"
+          ]
+        }
+      }
+    ],
+    "extra": [
+      {
+        "name": "buhmfo-en",
+        "exitCode": 0,
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "seconds": 12.67,
+        "log": "t142-extra-buhmfo-en.log",
+        "reports": [
+          {
+            "passed": true,
+            "suite": "query-buhmfo-constructor",
+            "locale": "en",
+            "analyzer": "configured-but-unavailable",
+            "accepted": [
+              "large-application-and-five-extensions",
+              "inherited-field-ui",
+              "core-field-edit",
+              "opening-diff",
+              "cancel-owner-unchanged"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "native-restart-en",
+        "exitCode": 0,
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "seconds": 8.12,
+        "log": "t142-extra-native-restart-en.log",
+        "reports": [
+          {
+            "passed": true,
+            "suite": "query-modal-native-recovery",
+            "run": "0",
+            "locale": "en",
+            "installedNormalProcesses": true
+          },
+          {
+            "passed": true,
+            "suite": "query-modal-native-recovery",
+            "run": "1",
+            "locale": "en",
+            "installedNormalProcesses": true
+          }
+        ]
+      },
+      {
+        "name": "api30-en",
+        "exitCode": 0,
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "6930ae78c7c37a30352a7a1233b1b58b3da4a5df0497468172ca5bc33abd8ced",
+        "seconds": 6.59,
+        "log": "t142-extra-api30-en.log",
+        "reports": [
+          {
+            "passed": true,
+            "suite": "query-builder",
+            "locale": "en",
+            "accepted": [
+              "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+              "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+              "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "baseline-layout-en",
+        "exitCode": 0,
+        "bundleSha256": "38a7059732e4cfe5af2b85910e5ece6a280257b9d23abd3481ef9717d45df6b2",
+        "backendSha256": "6930ae78c7c37a30352a7a1233b1b58b3da4a5df0497468172ca5bc33abd8ced",
+        "seconds": 11.28,
+        "log": "t142-extra-baseline-layout-en.log",
+        "reports": [
+          {
+            "passed": true,
+            "suite": "query-layout",
+            "locale": "en",
+            "baseline": true,
+            "openMs": 463.019814,
+            "samples": [
+              {
+                "theme": "dark",
+                "width": 1280,
+                "height": 800,
+                "zoom": 100,
+                "viewport": {
+                  "width": 1232,
+                  "height": 708
+                },
+                "body": {
+                  "width": 1232,
+                  "height": 643
+                },
+                "header": {
+                  "x": 38,
+                  "y": 14,
+                  "width": 1156,
+                  "height": 44.45000076293945
+                },
+                "row": {
+                  "x": 776.7374877929688,
+                  "y": 165.75,
+                  "width": 391.26251220703125,
+                  "height": 67.7125015258789
+                },
+                "visibleRows": 5,
+                "compact": false,
+                "buttons": [
+                  {
+                    "label": "Apply to draft",
+                    "x": 38,
+                    "y": 14,
+                    "width": 101.13750457763672,
+                    "height": 30.450000762939453
+                  },
+                  {
+                    "label": "Return to draft",
+                    "x": 145.1374969482422,
+                    "y": 14,
+                    "width": 106.0875015258789,
+                    "height": 30.450000762939453
+                  }
+                ]
+              },
+              {
+                "theme": "dark",
+                "width": 1280,
+                "height": 800,
+                "zoom": 150,
+                "viewport": {
+                  "width": 805,
+                  "height": 441
+                },
+                "body": {
+                  "width": 795,
+                  "height": 641
+                },
+                "header": {
+                  "x": 38.000003814697266,
+                  "y": 14.000000953674316,
+                  "width": 718.6666870117188,
+                  "height": 43.91666793823242
+                },
+                "row": {
+                  "x": 48.5333366394043,
+                  "y": 403.8000183105469,
+                  "width": 687.4666748046875,
+                  "height": 66.91667175292969
+                },
+                "visibleRows": 0,
+                "compact": false,
+                "buttons": [
+                  {
+                    "label": "Apply to draft",
+                    "x": 38.000003814697266,
+                    "y": 14.000000953674316,
+                    "width": 100.54167175292969,
+                    "height": 29.916667938232422
+                  },
+                  {
+                    "label": "Return to draft",
+                    "x": 144.5416717529297,
+                    "y": 14.000000953674316,
+                    "width": 105.49166870117188,
+                    "height": 29.916667938232422
+                  }
+                ]
+              },
+              {
+                "theme": "dark",
+                "width": 900,
+                "height": 650,
+                "zoom": 100,
+                "viewport": {
+                  "width": 852,
+                  "height": 558
+                },
+                "body": {
+                  "width": 837,
+                  "height": 598
+                },
+                "header": {
+                  "x": 38,
+                  "y": 14,
+                  "width": 760.7999877929688,
+                  "height": 44.45000076293945
+                },
+                "row": {
+                  "x": 530.4500122070312,
+                  "y": 180.9499969482422,
+                  "width": 242.33750915527344,
+                  "height": 108.3125
+                },
+                "visibleRows": 2,
+                "compact": false,
+                "buttons": [
+                  {
+                    "label": "Apply to draft",
+                    "x": 38,
+                    "y": 14,
+                    "width": 101.13750457763672,
+                    "height": 30.450000762939453
+                  },
+                  {
+                    "label": "Return to draft",
+                    "x": 145.1374969482422,
+                    "y": 14,
+                    "width": 106.0875015258789,
+                    "height": 30.450000762939453
+                  }
+                ]
+              },
+              {
+                "theme": "dark",
+                "width": 900,
+                "height": 650,
+                "zoom": 150,
+                "viewport": {
+                  "width": 552,
+                  "height": 341
+                },
+                "body": {
+                  "width": 542,
+                  "height": 591
+                },
+                "header": {
+                  "x": 38.000003814697266,
+                  "y": 14.000000953674316,
+                  "width": 465.86669921875,
+                  "height": 43.91666793823242
+                },
+                "row": {
+                  "x": 48.5333366394043,
+                  "y": 379.0166931152344,
+                  "width": 434.66668701171875,
+                  "height": 66.91667175292969
+                },
+                "visibleRows": 0,
+                "compact": false,
+                "buttons": [
+                  {
+                    "label": "Apply to draft",
+                    "x": 38.000003814697266,
+                    "y": 14.000000953674316,
+                    "width": 100.54167175292969,
+                    "height": 29.916667938232422
+                  },
+                  {
+                    "label": "Return to draft",
+                    "x": 144.5416717529297,
+                    "y": 14.000000953674316,
+                    "width": 105.49166870117188,
+                    "height": 29.916667938232422
+                  }
+                ]
+              }
+            ],
+            "sourceAndDraftUnchanged": true
+          }
+        ]
+      },
+      {
+        "name": "buhmfo-ru",
+        "exitCode": 0,
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "seconds": 15.62,
+        "log": "t142-extra-buhmfo-ru.log",
+        "reports": [
+          {
+            "passed": true,
+            "suite": "query-buhmfo-constructor",
+            "locale": "ru",
+            "analyzer": "configured-but-unavailable",
+            "accepted": [
+              "large-application-and-five-extensions",
+              "inherited-field-ui",
+              "core-field-edit",
+              "opening-diff",
+              "cancel-owner-unchanged"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "native-restart-ru",
+        "exitCode": 0,
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "8b230ca44df92b23c40a2fb0490712a4115ca1b9374277569d153a397d1aa6bf",
+        "seconds": 11.8,
+        "log": "t142-extra-native-restart-ru.log",
+        "reports": [
+          {
+            "passed": true,
+            "suite": "query-modal-native-recovery",
+            "run": "0",
+            "locale": "ru",
+            "installedNormalProcesses": true
+          },
+          {
+            "passed": true,
+            "suite": "query-modal-native-recovery",
+            "run": "1",
+            "locale": "ru",
+            "installedNormalProcesses": true
+          }
+        ]
+      },
+      {
+        "name": "api30-ru",
+        "exitCode": 0,
+        "bundleSha256": "fd0f9bddbaf3ef6ade84dd42b2984b315e76b40151469306e528c7a141eaa66c",
+        "backendSha256": "6930ae78c7c37a30352a7a1233b1b58b3da4a5df0497468172ca5bc33abd8ced",
+        "seconds": 9.64,
+        "log": "t142-extra-api30-ru.log",
+        "reports": [
+          {
+            "passed": true,
+            "suite": "query-builder",
+            "locale": "ru",
+            "accepted": [
+              "real_metadata_tables_fields_add_all_and_cancel_without_source_mutation",
+              "five_pages_generate_join_condition_group_aggregate_and_direction_through_eska",
+              "same_draft_native_undo_redo_modal_return_and_unsaved_owner_single_undo"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "baseline-layout-ru",
+        "exitCode": 0,
+        "bundleSha256": "38a7059732e4cfe5af2b85910e5ece6a280257b9d23abd3481ef9717d45df6b2",
+        "backendSha256": "6930ae78c7c37a30352a7a1233b1b58b3da4a5df0497468172ca5bc33abd8ced",
+        "seconds": 14.66,
+        "log": "t142-extra-baseline-layout-ru.log",
+        "reports": [
+          {
+            "passed": true,
+            "suite": "query-layout",
+            "locale": "ru",
+            "baseline": true,
+            "openMs": 442.6514599999998,
+            "samples": [
+              {
+                "theme": "dark",
+                "width": 1280,
+                "height": 800,
+                "zoom": 100,
+                "viewport": {
+                  "width": 1232,
+                  "height": 708
+                },
+                "body": {
+                  "width": 1232,
+                  "height": 643
+                },
+                "header": {
+                  "x": 38,
+                  "y": 14,
+                  "width": 1156,
+                  "height": 44.45000076293945
+                },
+                "row": {
+                  "x": 776.7374877929688,
+                  "y": 165.75,
+                  "width": 391.26251220703125,
+                  "height": 67.7125015258789
+                },
+                "visibleRows": 5,
+                "compact": false,
+                "buttons": [
+                  {
+                    "label": "Применить к черновику",
+                    "x": 38,
+                    "y": 14,
+                    "width": 171.60000610351562,
+                    "height": 30.450000762939453
+                  },
+                  {
+                    "label": "Вернуться к черновику",
+                    "x": 215.60000610351562,
+                    "y": 14,
+                    "width": 166.9875030517578,
+                    "height": 30.450000762939453
+                  }
+                ]
+              },
+              {
+                "theme": "dark",
+                "width": 1280,
+                "height": 800,
+                "zoom": 150,
+                "viewport": {
+                  "width": 805,
+                  "height": 441
+                },
+                "body": {
+                  "width": 795,
+                  "height": 641
+                },
+                "header": {
+                  "x": 38.000003814697266,
+                  "y": 14.000000953674316,
+                  "width": 718.6666870117188,
+                  "height": 43.91666793823242
+                },
+                "row": {
+                  "x": 48.5333366394043,
+                  "y": 403.8000183105469,
+                  "width": 687.4666748046875,
+                  "height": 66.91667175292969
+                },
+                "visibleRows": 0,
+                "compact": false,
+                "buttons": [
+                  {
+                    "label": "Применить к черновику",
+                    "x": 38.000003814697266,
+                    "y": 14.000000953674316,
+                    "width": 170.95834350585938,
+                    "height": 29.916667938232422
+                  },
+                  {
+                    "label": "Вернуться к черновику",
+                    "x": 214.95834350585938,
+                    "y": 14.000000953674316,
+                    "width": 166.35833740234375,
+                    "height": 29.916667938232422
+                  }
+                ]
+              },
+              {
+                "theme": "dark",
+                "width": 900,
+                "height": 650,
+                "zoom": 100,
+                "viewport": {
+                  "width": 852,
+                  "height": 558
+                },
+                "body": {
+                  "width": 837,
+                  "height": 598
+                },
+                "header": {
+                  "x": 38,
+                  "y": 14,
+                  "width": 760.7999877929688,
+                  "height": 44.45000076293945
+                },
+                "row": {
+                  "x": 530.4500122070312,
+                  "y": 180.9499969482422,
+                  "width": 242.33750915527344,
+                  "height": 108.3125
+                },
+                "visibleRows": 2,
+                "compact": false,
+                "buttons": [
+                  {
+                    "label": "Применить к черновику",
+                    "x": 38,
+                    "y": 14,
+                    "width": 171.60000610351562,
+                    "height": 30.450000762939453
+                  },
+                  {
+                    "label": "Вернуться к черновику",
+                    "x": 215.60000610351562,
+                    "y": 14,
+                    "width": 166.9875030517578,
+                    "height": 30.450000762939453
+                  }
+                ]
+              },
+              {
+                "theme": "dark",
+                "width": 900,
+                "height": 650,
+                "zoom": 150,
+                "viewport": {
+                  "width": 552,
+                  "height": 341
+                },
+                "body": {
+                  "width": 542,
+                  "height": 610
+                },
+                "header": {
+                  "x": 38.000003814697266,
+                  "y": 14.000000953674316,
+                  "width": 465.86669921875,
+                  "height": 62.76667022705078
+                },
+                "row": {
+                  "x": 48.5333366394043,
+                  "y": 397.86669921875,
+                  "width": 434.66668701171875,
+                  "height": 66.91667175292969
+                },
+                "visibleRows": 0,
+                "compact": false,
+                "buttons": [
+                  {
+                    "label": "Применить к черновику",
+                    "x": 38.000003814697266,
+                    "y": 14.000000953674316,
+                    "width": 108.8416748046875,
+                    "height": 48.76667022705078
+                  },
+                  {
+                    "label": "Вернуться к черновику",
+                    "x": 152.8416748046875,
+                    "y": 14.000000953674316,
+                    "width": 106.0916748046875,
+                    "height": 48.76667022705078
+                  }
+                ]
+              }
+            ],
+            "sourceAndDraftUnchanged": true
+          }
+        ]
+      }
+    ],
+    "layout": {
+      "combinations": 24,
+      "locales": [
+        "en",
+        "ru"
+      ],
+      "themes": [
+        "dark",
+        "light",
+        "contrast"
+      ],
+      "sizes": [
+        [
+          1280,
+          800
+        ],
+        [
+          900,
+          650
+        ]
+      ],
+      "scales": [
+        100,
+        150
+      ],
+      "samples": {
+        "en": [
+          {
+            "theme": "dark",
+            "width": 1280,
+            "height": 800,
+            "zoom": 100,
+            "viewport": {
+              "width": 1232,
+              "height": 708
+            },
+            "body": {
+              "width": 1232,
+              "height": 708
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 1216,
+              "height": 30
+            },
+            "row": {
+              "x": 829.4625244140625,
+              "y": 163.21250915527344,
+              "width": 372.5375061035156,
+              "height": 26
+            },
+            "visibleRows": 18,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 97.13750457763672,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Return to draft",
+                "x": 111.13750457763672,
+                "y": 8.425000190734863,
+                "width": 102.0875015258789,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Query settings",
+                "x": 505.2250061035156,
+                "y": 8.425000190734863,
+                "width": 103.48750305175781,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Edit full query text",
+                "x": 488.8999938964844,
+                "y": 40.57500076293945,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Changes since opening",
+                "x": 488.8999938964844,
+                "y": 69.7249984741211,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Comments",
+                "x": 488.8999938964844,
+                "y": 98.875,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Database",
+                "x": 659.7125244140625,
+                "y": 8.425000190734863,
+                "width": 71.73750305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "dark",
+            "width": 1280,
+            "height": 800,
+            "zoom": 150,
+            "viewport": {
+              "width": 805,
+              "height": 441
+            },
+            "body": {
+              "width": 805,
+              "height": 442
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 788.800048828125,
+              "height": 30.000001907348633
+            },
+            "row": {
+              "x": 411.933349609375,
+              "y": 161.35000610351562,
+              "width": 368.20001220703125,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 8,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 8.691667556762695,
+                "width": 96.54167175292969,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Return to draft",
+                "x": 110.54167175292969,
+                "y": 8.691667556762695,
+                "width": 101.49166870117188,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Query settings",
+                "x": 470.4000244140625,
+                "y": 8.691667556762695,
+                "width": 102.89167022705078,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Edit full query text",
+                "x": 452.9667053222656,
+                "y": 40.30833435058594,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Changes since opening",
+                "x": 452.9667053222656,
+                "y": 68.92500305175781,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Comments",
+                "x": 452.9667053222656,
+                "y": 97.54167175292969,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Database",
+                "x": 622.8833618164062,
+                "y": 8.691667556762695,
+                "width": 71.15834045410156,
+                "height": 24.616668701171875
+              }
+            ]
+          },
+          {
+            "theme": "dark",
+            "width": 900,
+            "height": 650,
+            "zoom": 100,
+            "viewport": {
+              "width": 852,
+              "height": 558
+            },
+            "body": {
+              "width": 852,
+              "height": 558
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 836,
+              "height": 30
+            },
+            "row": {
+              "x": 576.125,
+              "y": 178.41250610351562,
+              "width": 245.875,
+              "height": 26
+            },
+            "visibleRows": 12,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 97.13750457763672,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Return to draft",
+                "x": 111.13750457763672,
+                "y": 8.425000190734863,
+                "width": 102.0875015258789,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Query settings",
+                "x": 505.2250061035156,
+                "y": 8.425000190734863,
+                "width": 103.48750305175781,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Edit full query text",
+                "x": 488.8999938964844,
+                "y": 40.57500076293945,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Changes since opening",
+                "x": 488.8999938964844,
+                "y": 69.7249984741211,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Comments",
+                "x": 488.8999938964844,
+                "y": 98.875,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Database",
+                "x": 659.7125244140625,
+                "y": 8.425000190734863,
+                "width": 71.73750305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "dark",
+            "width": 900,
+            "height": 650,
+            "zoom": 150,
+            "viewport": {
+              "width": 552,
+              "height": 341
+            },
+            "body": {
+              "width": 552,
+              "height": 341
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 536,
+              "height": 56.16666793823242
+            },
+            "row": {
+              "x": 285.5333557128906,
+              "y": 197.65000915527344,
+              "width": 241.80001831054688,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 3,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 96.54167175292969,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Return to draft",
+                "x": 110.54167175292969,
+                "y": 6.000000476837158,
+                "width": 101.49166870117188,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Query settings",
+                "x": 294.0000305175781,
+                "y": 37.083335876464844,
+                "width": 102.89167022705078,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Edit full query text",
+                "x": 276.5666809082031,
+                "y": 68.70000457763672,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Changes since opening",
+                "x": 276.5666809082031,
+                "y": 97.3166732788086,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Comments",
+                "x": 276.5666809082031,
+                "y": 125.93334197998047,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Database",
+                "x": 446.4833679199219,
+                "y": 37.083335876464844,
+                "width": 71.15834045410156,
+                "height": 24.616668701171875
+              }
+            ]
+          },
+          {
+            "theme": "light",
+            "width": 1280,
+            "height": 800,
+            "zoom": 100,
+            "viewport": {
+              "width": 1232,
+              "height": 708
+            },
+            "body": {
+              "width": 1232,
+              "height": 708
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 1216,
+              "height": 30
+            },
+            "row": {
+              "x": 829.4625244140625,
+              "y": 163.21250915527344,
+              "width": 372.5375061035156,
+              "height": 26
+            },
+            "visibleRows": 18,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 97.13750457763672,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Return to draft",
+                "x": 111.13750457763672,
+                "y": 8.425000190734863,
+                "width": 102.0875015258789,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Query settings",
+                "x": 505.2250061035156,
+                "y": 8.425000190734863,
+                "width": 103.48750305175781,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Edit full query text",
+                "x": 488.8999938964844,
+                "y": 40.57500076293945,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Changes since opening",
+                "x": 488.8999938964844,
+                "y": 69.7249984741211,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Comments",
+                "x": 488.8999938964844,
+                "y": 98.875,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Database",
+                "x": 659.7125244140625,
+                "y": 8.425000190734863,
+                "width": 71.73750305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "light",
+            "width": 1280,
+            "height": 800,
+            "zoom": 150,
+            "viewport": {
+              "width": 805,
+              "height": 441
+            },
+            "body": {
+              "width": 805,
+              "height": 442
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 788.800048828125,
+              "height": 30.000001907348633
+            },
+            "row": {
+              "x": 411.933349609375,
+              "y": 161.35000610351562,
+              "width": 368.20001220703125,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 8,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 8.691667556762695,
+                "width": 96.54167175292969,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Return to draft",
+                "x": 110.54167175292969,
+                "y": 8.691667556762695,
+                "width": 101.49166870117188,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Query settings",
+                "x": 470.4000244140625,
+                "y": 8.691667556762695,
+                "width": 102.89167022705078,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Edit full query text",
+                "x": 452.9667053222656,
+                "y": 40.30833435058594,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Changes since opening",
+                "x": 452.9667053222656,
+                "y": 68.92500305175781,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Comments",
+                "x": 452.9667053222656,
+                "y": 97.54167175292969,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Database",
+                "x": 622.8833618164062,
+                "y": 8.691667556762695,
+                "width": 71.15834045410156,
+                "height": 24.616668701171875
+              }
+            ]
+          },
+          {
+            "theme": "light",
+            "width": 900,
+            "height": 650,
+            "zoom": 100,
+            "viewport": {
+              "width": 852,
+              "height": 558
+            },
+            "body": {
+              "width": 852,
+              "height": 558
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 836,
+              "height": 30
+            },
+            "row": {
+              "x": 576.125,
+              "y": 178.41250610351562,
+              "width": 245.875,
+              "height": 26
+            },
+            "visibleRows": 12,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 97.13750457763672,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Return to draft",
+                "x": 111.13750457763672,
+                "y": 8.425000190734863,
+                "width": 102.0875015258789,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Query settings",
+                "x": 505.2250061035156,
+                "y": 8.425000190734863,
+                "width": 103.48750305175781,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Edit full query text",
+                "x": 488.8999938964844,
+                "y": 40.57500076293945,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Changes since opening",
+                "x": 488.8999938964844,
+                "y": 69.7249984741211,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Comments",
+                "x": 488.8999938964844,
+                "y": 98.875,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Database",
+                "x": 659.7125244140625,
+                "y": 8.425000190734863,
+                "width": 71.73750305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "light",
+            "width": 900,
+            "height": 650,
+            "zoom": 150,
+            "viewport": {
+              "width": 552,
+              "height": 341
+            },
+            "body": {
+              "width": 552,
+              "height": 341
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 536,
+              "height": 56.16666793823242
+            },
+            "row": {
+              "x": 285.5333557128906,
+              "y": 197.65000915527344,
+              "width": 241.80001831054688,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 3,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 96.54167175292969,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Return to draft",
+                "x": 110.54167175292969,
+                "y": 6.000000476837158,
+                "width": 101.49166870117188,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Query settings",
+                "x": 294.0000305175781,
+                "y": 37.083335876464844,
+                "width": 102.89167022705078,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Edit full query text",
+                "x": 276.5666809082031,
+                "y": 68.70000457763672,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Changes since opening",
+                "x": 276.5666809082031,
+                "y": 97.3166732788086,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Comments",
+                "x": 276.5666809082031,
+                "y": 125.93334197998047,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Database",
+                "x": 446.4833679199219,
+                "y": 37.083335876464844,
+                "width": 71.15834045410156,
+                "height": 24.616668701171875
+              }
+            ]
+          },
+          {
+            "theme": "contrast",
+            "width": 1280,
+            "height": 800,
+            "zoom": 100,
+            "viewport": {
+              "width": 1232,
+              "height": 708
+            },
+            "body": {
+              "width": 1232,
+              "height": 708
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 1216,
+              "height": 30
+            },
+            "row": {
+              "x": 829.4625244140625,
+              "y": 163.21250915527344,
+              "width": 372.5375061035156,
+              "height": 26
+            },
+            "visibleRows": 18,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 97.13750457763672,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Return to draft",
+                "x": 111.13750457763672,
+                "y": 8.425000190734863,
+                "width": 102.0875015258789,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Query settings",
+                "x": 505.2250061035156,
+                "y": 8.425000190734863,
+                "width": 103.48750305175781,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Edit full query text",
+                "x": 488.8999938964844,
+                "y": 40.57500076293945,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Changes since opening",
+                "x": 488.8999938964844,
+                "y": 69.7249984741211,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Comments",
+                "x": 488.8999938964844,
+                "y": 98.875,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Database",
+                "x": 659.7125244140625,
+                "y": 8.425000190734863,
+                "width": 71.73750305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "contrast",
+            "width": 1280,
+            "height": 800,
+            "zoom": 150,
+            "viewport": {
+              "width": 805,
+              "height": 441
+            },
+            "body": {
+              "width": 805,
+              "height": 442
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 788.800048828125,
+              "height": 30.000001907348633
+            },
+            "row": {
+              "x": 411.933349609375,
+              "y": 161.35000610351562,
+              "width": 368.20001220703125,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 8,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 8.691667556762695,
+                "width": 96.54167175292969,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Return to draft",
+                "x": 110.54167175292969,
+                "y": 8.691667556762695,
+                "width": 101.49166870117188,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Query settings",
+                "x": 470.4000244140625,
+                "y": 8.691667556762695,
+                "width": 102.89167022705078,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Edit full query text",
+                "x": 452.9667053222656,
+                "y": 40.30833435058594,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Changes since opening",
+                "x": 452.9667053222656,
+                "y": 68.92500305175781,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Comments",
+                "x": 452.9667053222656,
+                "y": 97.54167175292969,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Database",
+                "x": 622.8833618164062,
+                "y": 8.691667556762695,
+                "width": 71.15834045410156,
+                "height": 24.616668701171875
+              }
+            ]
+          },
+          {
+            "theme": "contrast",
+            "width": 900,
+            "height": 650,
+            "zoom": 100,
+            "viewport": {
+              "width": 852,
+              "height": 558
+            },
+            "body": {
+              "width": 852,
+              "height": 558
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 836,
+              "height": 30
+            },
+            "row": {
+              "x": 576.125,
+              "y": 178.41250610351562,
+              "width": 245.875,
+              "height": 26
+            },
+            "visibleRows": 12,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 97.13750457763672,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Return to draft",
+                "x": 111.13750457763672,
+                "y": 8.425000190734863,
+                "width": 102.0875015258789,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Query settings",
+                "x": 505.2250061035156,
+                "y": 8.425000190734863,
+                "width": 103.48750305175781,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Edit full query text",
+                "x": 488.8999938964844,
+                "y": 40.57500076293945,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Changes since opening",
+                "x": 488.8999938964844,
+                "y": 69.7249984741211,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Comments",
+                "x": 488.8999938964844,
+                "y": 98.875,
+                "width": 158.0124969482422,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Database",
+                "x": 659.7125244140625,
+                "y": 8.425000190734863,
+                "width": 71.73750305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "contrast",
+            "width": 900,
+            "height": 650,
+            "zoom": 150,
+            "viewport": {
+              "width": 552,
+              "height": 341
+            },
+            "body": {
+              "width": 552,
+              "height": 341
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 536,
+              "height": 56.16666793823242
+            },
+            "row": {
+              "x": 285.5333557128906,
+              "y": 197.65000915527344,
+              "width": 241.80001831054688,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 3,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Apply to draft",
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 96.54167175292969,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Return to draft",
+                "x": 110.54167175292969,
+                "y": 6.000000476837158,
+                "width": 101.49166870117188,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Query settings",
+                "x": 294.0000305175781,
+                "y": 37.083335876464844,
+                "width": 102.89167022705078,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Edit full query text",
+                "x": 276.5666809082031,
+                "y": 68.70000457763672,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Changes since opening",
+                "x": 276.5666809082031,
+                "y": 97.3166732788086,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Comments",
+                "x": 276.5666809082031,
+                "y": 125.93334197998047,
+                "width": 157.3833465576172,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Database",
+                "x": 446.4833679199219,
+                "y": 37.083335876464844,
+                "width": 71.15834045410156,
+                "height": 24.616668701171875
+              }
+            ]
+          }
+        ],
+        "ru": [
+          {
+            "theme": "dark",
+            "width": 1280,
+            "height": 800,
+            "zoom": 100,
+            "viewport": {
+              "width": 1232,
+              "height": 708
+            },
+            "body": {
+              "width": 1232,
+              "height": 708
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 1216,
+              "height": 30
+            },
+            "row": {
+              "x": 829.4625244140625,
+              "y": 163.21250915527344,
+              "width": 372.5375061035156,
+              "height": 26
+            },
+            "visibleRows": 18,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 167.60000610351562,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 181.60000610351562,
+                "y": 8.425000190734863,
+                "width": 162.9875030517578,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 636.5875244140625,
+                "y": 8.425000190734863,
+                "width": 138.0625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 610.1500244140625,
+                "y": 40.57500076293945,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 610.1500244140625,
+                "y": 69.7249984741211,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Комментарии",
+                "x": 610.1500244140625,
+                "y": 98.875,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "База данных",
+                "x": 834.5750122070312,
+                "y": 8.425000190734863,
+                "width": 93.92500305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "dark",
+            "width": 1280,
+            "height": 800,
+            "zoom": 150,
+            "viewport": {
+              "width": 805,
+              "height": 441
+            },
+            "body": {
+              "width": 805,
+              "height": 442
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 788.800048828125,
+              "height": 30.000001907348633
+            },
+            "row": {
+              "x": 411.933349609375,
+              "y": 161.35000610351562,
+              "width": 368.20001220703125,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 8,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 8.691667556762695,
+                "width": 166.95834350585938,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 180.95834350585938,
+                "y": 8.691667556762695,
+                "width": 162.35833740234375,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 405.3166809082031,
+                "y": 8.691667556762695,
+                "width": 137.44168090820312,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 377.7750244140625,
+                "y": 40.30833435058594,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 377.7750244140625,
+                "y": 68.92500305175781,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Комментарии",
+                "x": 377.7750244140625,
+                "y": 97.54167175292969,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "База данных",
+                "x": 601.2750244140625,
+                "y": 8.691667556762695,
+                "width": 93.33333587646484,
+                "height": 24.616668701171875
+              }
+            ]
+          },
+          {
+            "theme": "dark",
+            "width": 900,
+            "height": 650,
+            "zoom": 100,
+            "viewport": {
+              "width": 852,
+              "height": 558
+            },
+            "body": {
+              "width": 852,
+              "height": 558
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 836,
+              "height": 30
+            },
+            "row": {
+              "x": 576.125,
+              "y": 178.41250610351562,
+              "width": 245.875,
+              "height": 26
+            },
+            "visibleRows": 12,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 167.60000610351562,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 181.60000610351562,
+                "y": 8.425000190734863,
+                "width": 162.9875030517578,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 429.8000183105469,
+                "y": 8.425000190734863,
+                "width": 138.0625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 403.3625183105469,
+                "y": 40.57500076293945,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 403.3625183105469,
+                "y": 69.7249984741211,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Комментарии",
+                "x": 403.3625183105469,
+                "y": 98.875,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "База данных",
+                "x": 627.7875366210938,
+                "y": 8.425000190734863,
+                "width": 93.92500305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "dark",
+            "width": 900,
+            "height": 650,
+            "zoom": 150,
+            "viewport": {
+              "width": 552,
+              "height": 341
+            },
+            "body": {
+              "width": 552,
+              "height": 341
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 536,
+              "height": 56.16666793823242
+            },
+            "row": {
+              "x": 285.5333557128906,
+              "y": 207.78334045410156,
+              "width": 241.80001831054688,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 2,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 140,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 154.00001525878906,
+                "y": 6.000000476837158,
+                "width": 162.35833740234375,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 254.70834350585938,
+                "y": 37.083335876464844,
+                "width": 137.44168090820312,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 227.1666717529297,
+                "y": 68.70000457763672,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 227.1666717529297,
+                "y": 97.3166732788086,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Комментарии",
+                "x": 227.1666717529297,
+                "y": 125.93334197998047,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "База данных",
+                "x": 450.66668701171875,
+                "y": 37.083335876464844,
+                "width": 93.33333587646484,
+                "height": 24.616668701171875
+              }
+            ]
+          },
+          {
+            "theme": "light",
+            "width": 1280,
+            "height": 800,
+            "zoom": 100,
+            "viewport": {
+              "width": 1232,
+              "height": 708
+            },
+            "body": {
+              "width": 1232,
+              "height": 708
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 1216,
+              "height": 30
+            },
+            "row": {
+              "x": 829.4625244140625,
+              "y": 163.21250915527344,
+              "width": 372.5375061035156,
+              "height": 26
+            },
+            "visibleRows": 18,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 167.60000610351562,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 181.60000610351562,
+                "y": 8.425000190734863,
+                "width": 162.9875030517578,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 636.5875244140625,
+                "y": 8.425000190734863,
+                "width": 138.0625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 610.1500244140625,
+                "y": 40.57500076293945,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 610.1500244140625,
+                "y": 69.7249984741211,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Комментарии",
+                "x": 610.1500244140625,
+                "y": 98.875,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "База данных",
+                "x": 834.5750122070312,
+                "y": 8.425000190734863,
+                "width": 93.92500305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "light",
+            "width": 1280,
+            "height": 800,
+            "zoom": 150,
+            "viewport": {
+              "width": 805,
+              "height": 441
+            },
+            "body": {
+              "width": 805,
+              "height": 442
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 788.800048828125,
+              "height": 30.000001907348633
+            },
+            "row": {
+              "x": 411.933349609375,
+              "y": 161.35000610351562,
+              "width": 368.20001220703125,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 8,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 8.691667556762695,
+                "width": 166.95834350585938,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 180.95834350585938,
+                "y": 8.691667556762695,
+                "width": 162.35833740234375,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 405.3166809082031,
+                "y": 8.691667556762695,
+                "width": 137.44168090820312,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 377.7750244140625,
+                "y": 40.30833435058594,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 377.7750244140625,
+                "y": 68.92500305175781,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Комментарии",
+                "x": 377.7750244140625,
+                "y": 97.54167175292969,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "База данных",
+                "x": 601.2750244140625,
+                "y": 8.691667556762695,
+                "width": 93.33333587646484,
+                "height": 24.616668701171875
+              }
+            ]
+          },
+          {
+            "theme": "light",
+            "width": 900,
+            "height": 650,
+            "zoom": 100,
+            "viewport": {
+              "width": 852,
+              "height": 558
+            },
+            "body": {
+              "width": 852,
+              "height": 558
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 836,
+              "height": 30
+            },
+            "row": {
+              "x": 576.125,
+              "y": 178.41250610351562,
+              "width": 245.875,
+              "height": 26
+            },
+            "visibleRows": 12,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 167.60000610351562,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 181.60000610351562,
+                "y": 8.425000190734863,
+                "width": 162.9875030517578,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 429.8000183105469,
+                "y": 8.425000190734863,
+                "width": 138.0625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 403.3625183105469,
+                "y": 40.57500076293945,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 403.3625183105469,
+                "y": 69.7249984741211,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Комментарии",
+                "x": 403.3625183105469,
+                "y": 98.875,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "База данных",
+                "x": 627.7875366210938,
+                "y": 8.425000190734863,
+                "width": 93.92500305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "light",
+            "width": 900,
+            "height": 650,
+            "zoom": 150,
+            "viewport": {
+              "width": 552,
+              "height": 341
+            },
+            "body": {
+              "width": 552,
+              "height": 341
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 536,
+              "height": 56.16666793823242
+            },
+            "row": {
+              "x": 285.5333557128906,
+              "y": 207.78334045410156,
+              "width": 241.80001831054688,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 2,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 140,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 154.00001525878906,
+                "y": 6.000000476837158,
+                "width": 162.35833740234375,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 254.70834350585938,
+                "y": 37.083335876464844,
+                "width": 137.44168090820312,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 227.1666717529297,
+                "y": 68.70000457763672,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 227.1666717529297,
+                "y": 97.3166732788086,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Комментарии",
+                "x": 227.1666717529297,
+                "y": 125.93334197998047,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "База данных",
+                "x": 450.66668701171875,
+                "y": 37.083335876464844,
+                "width": 93.33333587646484,
+                "height": 24.616668701171875
+              }
+            ]
+          },
+          {
+            "theme": "contrast",
+            "width": 1280,
+            "height": 800,
+            "zoom": 100,
+            "viewport": {
+              "width": 1232,
+              "height": 708
+            },
+            "body": {
+              "width": 1232,
+              "height": 708
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 1216,
+              "height": 30
+            },
+            "row": {
+              "x": 829.4625244140625,
+              "y": 163.21250915527344,
+              "width": 372.5375061035156,
+              "height": 26
+            },
+            "visibleRows": 18,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 167.60000610351562,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 181.60000610351562,
+                "y": 8.425000190734863,
+                "width": 162.9875030517578,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 636.5875244140625,
+                "y": 8.425000190734863,
+                "width": 138.0625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 610.1500244140625,
+                "y": 40.57500076293945,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 610.1500244140625,
+                "y": 69.7249984741211,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Комментарии",
+                "x": 610.1500244140625,
+                "y": 98.875,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "База данных",
+                "x": 834.5750122070312,
+                "y": 8.425000190734863,
+                "width": 93.92500305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "contrast",
+            "width": 1280,
+            "height": 800,
+            "zoom": 150,
+            "viewport": {
+              "width": 805,
+              "height": 441
+            },
+            "body": {
+              "width": 805,
+              "height": 442
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 788.800048828125,
+              "height": 30.000001907348633
+            },
+            "row": {
+              "x": 411.933349609375,
+              "y": 161.35000610351562,
+              "width": 368.20001220703125,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 8,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 8.691667556762695,
+                "width": 166.95834350585938,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 180.95834350585938,
+                "y": 8.691667556762695,
+                "width": 162.35833740234375,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 405.3166809082031,
+                "y": 8.691667556762695,
+                "width": 137.44168090820312,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 377.7750244140625,
+                "y": 40.30833435058594,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 377.7750244140625,
+                "y": 68.92500305175781,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Комментарии",
+                "x": 377.7750244140625,
+                "y": 97.54167175292969,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "База данных",
+                "x": 601.2750244140625,
+                "y": 8.691667556762695,
+                "width": 93.33333587646484,
+                "height": 24.616668701171875
+              }
+            ]
+          },
+          {
+            "theme": "contrast",
+            "width": 900,
+            "height": 650,
+            "zoom": 100,
+            "viewport": {
+              "width": 852,
+              "height": 558
+            },
+            "body": {
+              "width": 852,
+              "height": 558
+            },
+            "header": {
+              "x": 8,
+              "y": 6,
+              "width": 836,
+              "height": 30
+            },
+            "row": {
+              "x": 576.125,
+              "y": 178.41250610351562,
+              "width": 245.875,
+              "height": 26
+            },
+            "visibleRows": 12,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 8.425000190734863,
+                "width": 167.60000610351562,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 181.60000610351562,
+                "y": 8.425000190734863,
+                "width": 162.9875030517578,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 429.8000183105469,
+                "y": 8.425000190734863,
+                "width": 138.0625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 403.3625183105469,
+                "y": 40.57500076293945,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 403.3625183105469,
+                "y": 69.7249984741211,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "Комментарии",
+                "x": 403.3625183105469,
+                "y": 98.875,
+                "width": 211.625,
+                "height": 25.149999618530273
+              },
+              {
+                "label": "База данных",
+                "x": 627.7875366210938,
+                "y": 8.425000190734863,
+                "width": 93.92500305175781,
+                "height": 25.149999618530273
+              }
+            ]
+          },
+          {
+            "theme": "contrast",
+            "width": 900,
+            "height": 650,
+            "zoom": 150,
+            "viewport": {
+              "width": 552,
+              "height": 341
+            },
+            "body": {
+              "width": 552,
+              "height": 341
+            },
+            "header": {
+              "x": 8,
+              "y": 6.000000476837158,
+              "width": 536,
+              "height": 56.16666793823242
+            },
+            "row": {
+              "x": 285.5333557128906,
+              "y": 207.78334045410156,
+              "width": 241.80001831054688,
+              "height": 26.000001907348633
+            },
+            "visibleRows": 2,
+            "compact": true,
+            "buttons": [
+              {
+                "label": "Применить к черновику",
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 140,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Вернуться к черновику",
+                "x": 154.00001525878906,
+                "y": 6.000000476837158,
+                "width": 162.35833740234375,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Настройки запроса",
+                "x": 254.70834350585938,
+                "y": 37.083335876464844,
+                "width": 137.44168090820312,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Править полный текст запроса",
+                "x": 227.1666717529297,
+                "y": 68.70000457763672,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Изменения с открытия",
+                "x": 227.1666717529297,
+                "y": 97.3166732788086,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "Комментарии",
+                "x": 227.1666717529297,
+                "y": 125.93334197998047,
+                "width": 210.9666748046875,
+                "height": 24.616668701171875
+              },
+              {
+                "label": "База данных",
+                "x": 450.66668701171875,
+                "y": 37.083335876464844,
+                "width": 93.33333587646484,
+                "height": 24.616668701171875
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "platform": {
+      "passed": 29,
+      "failed": 0,
+      "generatedMinimal": {
+        "passed": true,
+        "input": "/home/akalsin/Documents/Projects/eska-playground/t137-compact-j8hps_sr/platform/generated-cases.json",
+        "caseCount": 26,
+        "queriesExecuted": 26,
+        "create": {
+          "exitCode": 0,
+          "seconds": 3.52
+        },
+        "client": {
+          "exitCode": 0,
+          "seconds": 1.57
+        },
+        "results": [
+          {
+            "name": "nested",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              1
+            ]
+          },
+          {
+            "name": "union",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 2,
+            "values": [
+              1,
+              2
+            ]
+          },
+          {
+            "name": "union_all",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 2,
+            "values": [
+              1,
+              2
+            ]
+          },
+          {
+            "name": "temporary_chain",
+            "mode": "batch",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "batchResults": 5,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              7
+            ],
+            "temporaryTablesDestroyed": true
+          },
+          {
+            "name": "having",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              1
+            ]
+          },
+          {
+            "name": "totals",
+            "mode": "totals",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 2,
+            "values": [
+              1,
+              1
+            ],
+            "totalValues": [
+              1
+            ],
+            "totalRecordTypes": [
+              "Grand total"
+            ]
+          },
+          {
+            "name": "totals_grouping_levels",
+            "mode": "totals",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 3,
+            "values": [
+              1,
+              1,
+              1
+            ],
+            "totalValues": [
+              1
+            ],
+            "totalRecordTypes": [
+              "Grand total"
+            ]
+          },
+          {
+            "name": "virtual_balance",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              11
+            ]
+          },
+          {
+            "name": "dcs_select",
+            "mode": "dcs",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "platformExpandedQueries": [
+              "SELECT\n\t1 AS N"
+            ],
+            "rows": 1,
+            "columns": [
+              "N"
+            ],
+            "values": [
+              1
+            ]
+          },
+          {
+            "name": "dcs_filters",
+            "mode": "dcs",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "platformExpandedQueries": [
+              "SELECT\n\tT.Ref AS N\nFROM\n\tCatalog.Товары AS T\nWHERE\n\tT.Ref = &Item\n\tAND T.Ref = &P"
+            ],
+            "rows": 1,
+            "columns": [
+              "N"
+            ],
+            "values": [
+              "Acceptance A"
+            ]
+          },
+          {
+            "name": "dcs_virtual_arguments",
+            "mode": "dcs",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "platformExpandedQueries": [
+              "SELECT\n\tS.QuantityBalance AS N\nFROM\n\tAccumulationRegister.Stock.Balance(&P, (Item) = &P2) AS S"
+            ],
+            "rows": 1,
+            "columns": [
+              "N"
+            ],
+            "values": [
+              7
+            ]
+          },
+          {
+            "name": "dcs_optional_join",
+            "mode": "dcs",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "platformExpandedQueries": [
+              "SELECT\n\t1 AS N\nFROM\n\tCatalog.Товары AS T"
+            ],
+            "rows": 2,
+            "columns": [
+              "N"
+            ],
+            "values": [
+              1,
+              1
+            ]
+          },
+          {
+            "name": "union_duplicates",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              1
+            ]
+          },
+          {
+            "name": "union_all_duplicates",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 2,
+            "values": [
+              1,
+              1
+            ]
+          },
+          {
+            "name": "virtual_balance_period",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              7
+            ]
+          },
+          {
+            "name": "dcs_optional_join_used",
+            "mode": "dcs",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "platformExpandedQueries": [
+              "SELECT\n\tU.Code AS N\nFROM\n\tCatalog.Товары AS T\n\t\tLEFT JOIN Catalog.Товары AS U\n\t\tON T.Ref = U.Ref"
+            ],
+            "rows": 2,
+            "columns": [
+              "N"
+            ],
+            "values": [
+              "A",
+              "B"
+            ]
+          },
+          {
+            "name": "compact_predicate_group",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              1
+            ]
+          },
+          {
+            "name": "compact_join_left",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 2,
+            "values": [
+              1,
+              1
+            ]
+          },
+          {
+            "name": "compact_join_right",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 2,
+            "values": [
+              1,
+              1
+            ]
+          },
+          {
+            "name": "compact_join_full",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 2,
+            "values": [
+              1,
+              1
+            ]
+          },
+          {
+            "name": "compact_union_align",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N",
+              "Other"
+            ],
+            "rows": 2,
+            "values": [
+              1,
+              3
+            ]
+          },
+          {
+            "name": "compact_union_move",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "Other",
+              "N"
+            ],
+            "rows": 2,
+            "values": [
+              1,
+              3
+            ]
+          },
+          {
+            "name": "compact_copy_producer",
+            "mode": "batch",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "batchResults": 5,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              7
+            ],
+            "temporaryTablesDestroyed": true
+          },
+          {
+            "name": "compact_modifiers",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              1
+            ]
+          },
+          {
+            "name": "compact_text_unicode",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              "😀 \"quoted\""
+            ]
+          },
+          {
+            "name": "compact_text_russian",
+            "mode": "query",
+            "passed": true,
+            "attempted": true,
+            "executed": true,
+            "columns": [
+              "N"
+            ],
+            "rows": 1,
+            "values": [
+              9
+            ]
+          }
+        ],
+        "directory": "/home/akalsin/Documents/Projects/eska-playground/t137-compact-j8hps_sr/platform/matrix-runs/20261026T192459483938Z"
+      },
+      "metadataOnlyBuhmfo": {
+        "directory": "/home/akalsin/Documents/Projects/eska-playground/t137-compact-j8hps_sr/platform/buhmfo-extension-runs/20261026T192837881494Z",
+        "seconds": 25.24,
+        "clientExitCode": 0,
+        "results": [
+          {
+            "name": "buhmfo_price_schema",
+            "attempted": true,
+            "executed": true,
+            "passed": true,
+            "platformExpandedQueries": [
+              "ВЫБРАТЬ\n\tСправочникНоменклатура.Ссылка КАК Номенклатура,\n\tЦеныНоменклатурыСрезПоследних.Цена КАК Цена\nИЗ\n\tСправочник.Номенклатура КАК СправочникНоменклатура\n\t\tЛЕВОЕ СОЕДИНЕНИЕ Справочник.ТипыЦенНоменклатуры КАК СправочникТипыЦен\n\t\tПО (ИСТИНА)\n\t\tЛЕВОЕ СОЕДИНЕНИЕ РегистрСведений.ЦеныНоменклатуры.СрезПоследних(, ) КАК ЦеныНоменклатурыСрезПоследних\n\t\tПО (СправочникТипыЦен.Ссылка = ЦеныНоменклатурыСрезПоследних.ТипЦен)\n\t\t\tИ (ЦеныНоменклатурыСрезПоследних.Номенклатура = СправочникНоменклатура.Ссылка)\nГДЕ\n\tНЕ СправочникНоменклатура.ЭтоГруппа"
+            ],
+            "rows": 0,
+            "columns": [
+              "Номенклатура",
+              "Цена"
+            ]
+          },
+          {
+            "name": "inherited_organization_field",
+            "attempted": true,
+            "executed": true,
+            "passed": true,
+            "platformExpandedQueries": [
+              "ВЫБРАТЬ\n\tR.ИНН КАК N\nИЗ\n\tСправочник.Организации КАК R"
+            ],
+            "rows": 0,
+            "columns": [
+              "N"
+            ]
+          },
+          {
+            "name": "related_accounting_chart_subconto",
+            "attempted": true,
+            "executed": true,
+            "passed": true,
+            "platformExpandedQueries": [
+              "ВЫБРАТЬ\n\tR.СубконтоДт1 КАК N\nИЗ\n\tРегистрБухгалтерии.Хозрасчетный.ДвиженияССубконто(, , , , ) КАК R"
+            ],
+            "rows": 0,
+            "columns": [
+              "N"
+            ]
+          }
+        ],
+        "passed": true
+      },
+      "businessData": "owned minimal fixtures; buhmfo contains metadata and five extensions without business records"
+    },
+    "documentation": {
+      "checked": 320,
+      "missing": [],
+      "unresolvedAnchors": []
+    },
+    "manualLauncherPreflight": "passed: bash -n and --check; no manual window launched"
+  },
+  "performance": {
+    "status": "measured; optimization deferred to T143 by user",
+    "agreedBudget": null,
+    "method": "7 rounds per variant in one new profile; first and six warm rounds separated; identical 48-field fixture, 1280x800, 100%, en, no analyzer",
+    "inputMetric": "input event through two animation frames; not end-to-end language-service latency",
+    "runs": [
+      {
+        "name": "baseline",
+        "rounds": 7,
+        "freshProfiles": 1,
+        "warmRounds": 6,
+        "timingsMs": {
+          "openMs": {
+            "first": 532.274,
+            "warmMedian": 176.653,
+            "warmMin": 167.292,
+            "warmMax": 213.228
+          },
+          "addFieldMs": {
+            "first": 33.444,
+            "warmMedian": 35.295,
+            "warmMin": 34.16,
+            "warmMax": 36.882
+          },
+          "inputFrameMs": {
+            "first": 15.7,
+            "warmMedian": 23.6,
+            "warmMin": 20.1,
+            "warmMax": 30.3
+          }
+        },
+        "rpcPerWarmOpen": {
+          "query/recoveryBegin": 1,
+          "query/recoveryCommit": 1,
+          "query/sessionGet": 1,
+          "query/constructorOpen": 1,
+          "query/constructorCatalog": 4
+        },
+        "rpcPerWarmAddField": {
+          "query/sessionGet": 1,
+          "query/constructorCatalog": 3,
+          "query/constructorAction": 1
+        },
+        "visibleRows": 5,
+        "viewport": [
+          1232,
+          708
+        ],
+        "focusAndCaretPreservedRounds": 0,
+        "finalMemory": {
+          "processes": {
+            "extensionHost": {
+              "pid": 983013,
+              "rssBytes": 213233664,
+              "pssBytes": 130772992
+            },
+            "backend": {
+              "pid": 983095,
+              "rssBytes": 16793600,
+              "pssBytes": 14914560
+            }
+          },
+          "extensionHeap": {
+            "rss": 212422656,
+            "heapTotal": 79069184,
+            "heapUsed": 61786900,
+            "external": 10273424,
+            "arrayBuffers": 0
+          },
+          "rendererHeap": {
+            "usedSize": 2003540,
+            "totalSize": 4718592,
+            "embedderHeapUsedSize": 15325288,
+            "backingStorageSize": 197322
+          }
+        },
+        "evidence": "perf-baseline.json"
+      },
+      {
+        "name": "current-api30",
+        "rounds": 7,
+        "freshProfiles": 1,
+        "warmRounds": 6,
+        "timingsMs": {
+          "openMs": {
+            "first": 317.247,
+            "warmMedian": 264.148,
+            "warmMin": 249.285,
+            "warmMax": 291.742
+          },
+          "addFieldMs": {
+            "first": 133.601,
+            "warmMedian": 124.038,
+            "warmMin": 117.445,
+            "warmMax": 135.403
+          },
+          "inputFrameMs": {
+            "first": 6.2,
+            "warmMedian": 11.65,
+            "warmMin": 4.5,
+            "warmMax": 13.5
+          }
+        },
+        "rpcPerWarmOpen": {
+          "query/recoveryBegin": 1,
+          "query/recoveryCommit": 1,
+          "query/sessionGet": 1,
+          "query/constructorOpen": 1,
+          "query/constructorCatalog": 4
+        },
+        "rpcPerWarmAddField": {
+          "query/sessionGet": 1,
+          "query/constructorCatalog": 3,
+          "query/constructorAction": 1
+        },
+        "visibleRows": 21,
+        "viewport": [
+          1232,
+          708
+        ],
+        "focusAndCaretPreservedRounds": 7,
+        "finalMemory": {
+          "processes": {
+            "extensionHost": {
+              "pid": 983780,
+              "rssBytes": 218681344,
+              "pssBytes": 136514560
+            },
+            "backend": {
+              "pid": 983878,
+              "rssBytes": 16719872,
+              "pssBytes": 14927872
+            }
+          },
+          "extensionHeap": {
+            "rss": 217624576,
+            "heapTotal": 89067520,
+            "heapUsed": 44807124,
+            "external": 5504536,
+            "arrayBuffers": 0
+          },
+          "rendererHeap": {
+            "usedSize": 1416560,
+            "totalSize": 6815744,
+            "embedderHeapUsedSize": 2535800,
+            "backingStorageSize": 265143
+          }
+        },
+        "evidence": "perf-current-api30.json"
+      },
+      {
+        "name": "current-api32",
+        "rounds": 7,
+        "freshProfiles": 1,
+        "warmRounds": 6,
+        "timingsMs": {
+          "openMs": {
+            "first": 1363.281,
+            "warmMedian": 1150.001,
+            "warmMin": 1079.626,
+            "warmMax": 1246.581
+          },
+          "addFieldMs": {
+            "first": 1110.922,
+            "warmMedian": 988.061,
+            "warmMin": 968.488,
+            "warmMax": 1074.916
+          },
+          "inputFrameMs": {
+            "first": 9,
+            "warmMedian": 14.15,
+            "warmMin": 10.5,
+            "warmMax": 18.7
+          }
+        },
+        "rpcPerWarmOpen": {
+          "query/recoveryBegin": 1,
+          "query/recoveryCommit": 1,
+          "query/sessionGet": 1,
+          "query/constructorOpen": 1,
+          "query/constructorCatalog": 4
+        },
+        "rpcPerWarmAddField": {
+          "query/sessionGet": 1,
+          "query/constructorCatalog": 3,
+          "query/constructorAction": 1
+        },
+        "visibleRows": 18,
+        "viewport": [
+          1232,
+          708
+        ],
+        "focusAndCaretPreservedRounds": 7,
+        "finalMemory": {
+          "processes": {
+            "extensionHost": {
+              "pid": 984568,
+              "rssBytes": 215400448,
+              "pssBytes": 134495232
+            },
+            "backend": {
+              "pid": 984648,
+              "rssBytes": 17371136,
+              "pssBytes": 15371264
+            }
+          },
+          "extensionHeap": {
+            "rss": 214016000,
+            "heapTotal": 81203200,
+            "heapUsed": 63921576,
+            "external": 10685414,
+            "arrayBuffers": 0
+          },
+          "rendererHeap": {
+            "usedSize": 3341172,
+            "totalSize": 7340032,
+            "embedderHeapUsedSize": 22000416,
+            "backingStorageSize": 274893
+          }
+        },
+        "evidence": "perf-current-api32.json"
+      }
+    ],
+    "rpcTraceMedianMs": {
+      "query/recoveryBegin": 0.515,
+      "query/recoveryCommit": 0.573,
+      "query/sessionGet": 0.423,
+      "query/constructorOpen": 3.188,
+      "query/constructorCatalog": 0.628,
+      "query/constructorAction": 3.54,
+      "query/constructorCancel": 0.487
+    },
+    "suspectedHotspot": "Explorer resources/query/layout.mjs mount: keyFor(node) inside this.inputs.find for every control; needs CPU profiling",
+    "evidence": "t142-perf-runs.json",
+    "userDecision": "Зафиксировать замеры и вынести оптимизацию в отдельную задачу"
+  },
+  "limits": [
+    "Full language services, types, typed reference expansion, parameter types and confirmed join suggestions require T116-T119; no local replacement resolver was added.",
+    "Partial semantic index acceptance remains pending the new analyzer contract.",
+    "Full-text validation is structural; identifiers, types and full query semantics require analyzer/platform validation.",
+    "The platform rejected DISTINCT + AUTOORDER without the required ordering fields in the projection. ESKA does not infer those fields; the final positive modifier case verifies ALLOWED/TOP/FOR UPDATE/AUTOORDER, while DISTINCT is covered separately.",
+    "At most one executable totals section; DROP is used for temporary-table deletion.",
+    "Windows, macOS, VS Code and Remote remain unverified.",
+    "Benchmark series use one profile per variant; memory values are process/target samples, not whole-system usage or proof of absence of long-term leaks."
+  ],
+  "diagnosticAttempts": {
+    "nativeFixtureFailures": 7,
+    "explanation": "Earlier XML tests relied on native dirty-close decisions, saved a source after workspace/open, or compared a BOM-bearing disk file directly to the native buffer. The final fixture is prepared before workspace/open; XML Save is tested as a separate explicit operation after constructor application. New form/table selectors were also adapted. No source safety checks were weakened.",
+    "platform": "Initial UNION move expectation read the named N column incorrectly; corrected expected values. DISTINCT/AUTOORDER failure retained as semantic evidence; PostgreSQL was initially stopped, then started only for the owned repeat and restored to exited state.",
+    "retainedEvidence": "/home/akalsin/Documents/Projects/eska-playground/t137-compact-j8hps_sr"
+  },
+  "resources": {
+    "postgresLifecycle": {
+      "container": "eska-t114-postgres-nuun9c9e",
+      "owner": "T114",
+      "initialState": "exited",
+      "startedFor": "T142",
+      "runnerExitCode": 0,
+      "restoreState": "exited"
+    },
+    "existingT114FixturePreserved": true,
+    "newBuhmfoCopy": "buhmfo/owner.json; designer-xml-3 workspace, source reused via copy/reflink",
+    "nativeProfiles": "unique explorer-host-* profiles cleaned by run-host.mjs",
+    "ownedEditorOrNativeServerProcessesRemaining": 0
+  },
+  "site": {
+    "branch": "main",
+    "modified": false,
+    "patch": "/home/akalsin/Documents/Projects/eska-playground/t137-compact-j8hps_sr/site-query-guide.patch",
+    "patchCheck": "git apply --check passed",
+    "note": "Prepared constructor guide patch only; site main was not edited or published",
+    "patchSha256": "91d8e5c30ef0fd929ebfe98301941aae4ce4b4119697ba399c5e71f75d4820e3"
+  },
+  "commits": {
+    "eska": [
+      {
+        "hash": "9b5873b6",
+        "subject": "docs(query): Подтверждена компактная компоновка конструктора на Linux"
+      },
+      {
+        "hash": "96e11526",
+        "subject": "feat(query): Добавлены атомарные операции над наборами строк конструктора"
+      },
+      {
+        "hash": "266f11b8",
+        "subject": "docs(query): Отделены готовая вставка полей и языковые зависимости редактора"
+      },
+      {
+        "hash": "f5ff016a",
+        "subject": "feat(query): Добавлены группы условий и независимое редактирование ON"
+      },
+      {
+        "hash": "c49dba90",
+        "subject": "feat(query): Добавлены матрица UNION и атомарное заполнение пропусков"
+      },
+      {
+        "hash": "90484932",
+        "subject": "feat(query): Добавлены копирование оператора и навигация по времени жизни таблиц"
+      },
+      {
+        "hash": "ab62472c",
+        "subject": "feat(query): Добавлены настройки SELECT и безопасные диапазоны хвостовых контролов"
+      },
+      {
+        "hash": "b549ea83",
+        "subject": "feat(query): Добавлены связанные диапазоны текста и атомарный буфер запроса"
+      }
+    ],
+    "explorer": [
+      {
+        "hash": "886cde9",
+        "subject": "feat(query): Добавлена компактная оболочка конструктора с сохранением состояния"
+      },
+      {
+        "hash": "2033a16",
+        "subject": "feat(query): Добавлены таблицы с выбором строк и общими действиями"
+      },
+      {
+        "hash": "ac276e8",
+        "subject": "feat(query): Добавлена вставка доступного поля в позицию курсора выражения"
+      },
+      {
+        "hash": "5a444a2",
+        "subject": "feat(query): Добавлены редактор групп условий и управление связями"
+      },
+      {
+        "hash": "e93666d",
+        "subject": "feat(query): Добавлены матрица объединений и просмотр действий до применения"
+      },
+      {
+        "hash": "141d625",
+        "subject": "feat(query): Добавлены дерево пакета и переходы к определениям таблиц"
+      },
+      {
+        "hash": "4bb81e4",
+        "subject": "feat(query): Добавлена форма настроек запроса с проверяемым preview"
+      },
+      {
+        "hash": "be5f1b6",
+        "subject": "feat(query): Добавлены переходы по тексту и отдельный буфер с просмотром изменений"
+      },
+      {
+        "hash": "e903ce3",
+        "subject": "fix(query): Сохранено место для строк конструктора в узком окне"
+      },
+      {
+        "hash": "604c646",
+        "subject": "test(query): Проверены компактный конструктор, старый API и buhmfo без анализатора"
+      }
+    ]
+  }
+}

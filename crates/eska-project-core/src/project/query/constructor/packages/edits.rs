@@ -14,6 +14,7 @@ pub(in super::super) fn plan(
     action: &Action,
 ) -> Result<Option<EditPlan>, Error> {
     let edits = match action {
+        Action::CopyStatement { statement } => copy_statement(input, model, *statement)?,
         Action::SetInto {
             statement,
             name,
@@ -81,6 +82,69 @@ pub(in super::super) fn plan(
     Ok(Some(
         EditPlan::from_replacements(input, edits).map_err(|_| Error::InvalidExpression)?,
     ))
+}
+
+/// Copy one complete root scope, allocating a fresh destination without redirecting the original consumers.
+fn copy_statement(input: &str, model: &Model, statement: usize) -> Result<Vec<Replacement>, Error> {
+    let scope = root(model, statement)?;
+    if scope
+        .branches
+        .iter()
+        .any(|&branch| model.statements[branch].unavailable.is_some())
+        || model.package_operation(statement) != Some(PackageOperation::Select)
+    {
+        return Err(Error::Unsupported);
+    }
+    let start = scope.range.start
+        + usize::from(input[scope.range.clone()].starts_with('\u{feff}')) * '\u{feff}'.len_utf8();
+    let body = &input[start..scope.range.end];
+    let copied =
+        if let Some(name) = model.temporary_destination(input, model.statements[statement].scope) {
+            let mut names = std::collections::BTreeSet::new();
+            for owner in &model.statements {
+                if let Some(name) = model.temporary_destination(input, owner.scope) {
+                    names.insert(name.to_lowercase());
+                }
+                for source in owner.source_bindings(input) {
+                    names.insert(source.table.to_lowercase());
+                }
+            }
+            let mut suffix = 2usize;
+            let mut alias = format!("{name}{suffix}");
+            while names.contains(&alias.to_lowercase()) {
+                suffix = suffix.checked_add(1).ok_or(Error::TooLarge)?;
+                alias = format!("{name}{suffix}");
+            }
+            let first = &model.statements[scope.branches[0]];
+            let item = first
+                .clauses
+                .iter()
+                .find(|clause| clause.kind == ClauseKind::Into)
+                .and_then(|clause| clause.items.first())
+                .ok_or(Error::Unsupported)?;
+            let tokens = lex::tokens(&input[item.range.clone()])?;
+            let token = tokens
+                .iter()
+                .find(|token| token.kind == Kind::Word)
+                .ok_or(Error::Unsupported)?;
+            let plan = EditPlan::from_replacements(
+                body,
+                vec![Replacement {
+                    range: item.range.start + token.range.start - start
+                        ..item.range.start + token.range.end - start,
+                    text: alias,
+                }],
+            )
+            .map_err(|_| Error::InvalidExpression)?;
+            plan.output().to_owned()
+        } else {
+            body.to_owned()
+        };
+    let newline = editing::newline(input);
+    Ok(vec![Replacement {
+        range: scope.range.end..scope.range.end,
+        text: format!("{newline};{newline}{copied}{newline}"),
+    }])
 }
 
 /// Select/destroy insertion uses the selected query's spelling and leaves existing package separators intact.
@@ -376,7 +440,7 @@ pub(in super::super) fn focus(before: &Model, after: &Model, action: &Action) ->
         .iter()
         .position(|s| s.branches.contains(&action.statement()))?;
     let at = match action {
-        Action::AddStatement { .. } => ordinal + 1,
+        Action::AddStatement { .. } | Action::CopyStatement { .. } => ordinal + 1,
         Action::RemoveStatement { .. } => ordinal.min(roots.len().saturating_sub(2)),
         Action::MoveStatement { to, .. } => *to,
         _ => return None,

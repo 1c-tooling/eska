@@ -1,0 +1,1859 @@
+{
+  "schemaVersion": 1,
+  "task": "T134",
+  "status": "DONE",
+  "date": "2026-10-26",
+  "target": "T142",
+  "targetComplete": false,
+  "next": "T135",
+  "scope": "Compact shell and adaptive layout; no semantic resolver, query operation or analyzer contract added",
+  "domainOwner": "ESKA; adapter stores only presentation preferences and unfinished form input",
+  "evidenceRootRelativeToCore": "../eska-playground/t134-compact-gyfg5lpk",
+  "baseline": {
+    "explorerCommit": "dd2379e1d6323b7db6956bed4c8add33ad70978f",
+    "source": "baseline-source",
+    "userWorkingCopyModified": false,
+    "backend": "eska-project-current"
+  },
+  "backend": {
+    "coreCommit": "f0a365359553e03396ec4266729ad86fa125a8f3",
+    "binary": "eska-project-current",
+    "sha256": "6930ae78c7c37a30352a7a1233b1b58b3da4a5df0497468172ca5bc33abd8ced",
+    "metadataApi": "1.30",
+    "build": "cargo build --profile dist -p eska-project",
+    "buildPassed": true
+  },
+  "environment": {
+    "editor": "VSCodium 1.109.51242",
+    "os": "Linux",
+    "node": "22.23.1",
+    "bun": "1.4.2",
+    "explorerVersion": "0.0.15",
+    "metadataApi": "1.30"
+  },
+  "implemented": [
+    "Single compact command bar, independently scrolling panes and compact rows",
+    "Pointer/keyboard pane dividers and query-text height control",
+    "Automatic narrow-window catalogue folding with an explicit toggle",
+    "Contextual optional sections through Add section",
+    "Per-scope/page scroll, horizontal tab scroll, expansion and view sizes",
+    "Unfinished form values and caret survive metadata publications; action focus survives an accepted text revision",
+    "Bounded webview preferences exclude canonical query text and native draft identity",
+    "Native query/session, read-only, cancel/apply and Undo/Redo contracts retained"
+  ],
+  "checks": {
+    "typescript": {
+      "command": "npm run check",
+      "exitCode": 0
+    },
+    "compile": {
+      "command": "npm run compile",
+      "exitCode": 0
+    },
+    "node": {
+      "command": "node --test test/*.test.mjs with current frozen backend and ESKA_TEST_ROOT",
+      "passed": 331,
+      "failed": 0,
+      "skipped": 3,
+      "evidence": "node-current-tests.log"
+    },
+    "bun": {
+      "command": "bun test with current frozen backend and ESKA_TEST_ROOT",
+      "passed": 331,
+      "failed": 0,
+      "skipped": 3,
+      "evidence": "bun-current-tests.log"
+    },
+    "nativeRegression": {
+      "evidence": "native-current.json",
+      "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+      "passed": 16,
+      "results": [
+        {
+          "name": "query-package-host-en",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 8.46
+        },
+        {
+          "name": "query-having-host-en",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 7.26
+        },
+        {
+          "name": "query-total-sections-host-en",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 7.76
+        },
+        {
+          "name": "query-dcs-host-en",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 9.76
+        },
+        {
+          "name": "query-advanced-host-en",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 8.62
+        },
+        {
+          "name": "query-builder-host-en",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 7.81
+        },
+        {
+          "name": "query-modal-normal-host-en",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 14.73
+        },
+        {
+          "name": "query-constructor-host-en",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 13.96
+        },
+        {
+          "name": "query-package-host-ru",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 9.35
+        },
+        {
+          "name": "query-having-host-ru",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 9.42
+        },
+        {
+          "name": "query-total-sections-host-ru",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 9.38
+        },
+        {
+          "name": "query-dcs-host-ru",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 11.13
+        },
+        {
+          "name": "query-advanced-host-ru",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 12.13
+        },
+        {
+          "name": "query-builder-host-ru",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 12.54
+        },
+        {
+          "name": "query-modal-normal-host-ru",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 14.09
+        },
+        {
+          "name": "query-constructor-host-ru",
+          "bundleSha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c",
+          "exitCode": 0,
+          "seconds": 17.28
+        }
+      ]
+    },
+    "layout": {
+      "acceptedCombinations": 24,
+      "baselineCombinations": 8,
+      "observations": [
+        {
+          "evidence": "screenshots/before-en.json",
+          "run": {
+            "name": "before-en",
+            "exitCode": 0,
+            "seconds": 12.12
+          },
+          "passed": true,
+          "suite": "query-layout",
+          "locale": "en",
+          "baseline": true,
+          "openMs": 403.384996,
+          "samples": [
+            {
+              "theme": "dark",
+              "width": 1280,
+              "height": 800,
+              "zoom": 100,
+              "viewport": {
+                "width": 932,
+                "height": 708
+              },
+              "body": {
+                "width": 932,
+                "height": 658
+              },
+              "header": {
+                "x": 38,
+                "y": 14,
+                "width": 856,
+                "height": 44.45000076293945
+              },
+              "row": {
+                "x": 589.7750244140625,
+                "y": 180.9499969482422,
+                "width": 278.2250061035156,
+                "height": 108.3125
+              },
+              "visibleRows": 3,
+              "compact": false,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 38,
+                  "y": 14,
+                  "width": 101.13750457763672,
+                  "height": 30.450000762939453
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 145.1374969482422,
+                  "y": 14,
+                  "width": 106.0875015258789,
+                  "height": 30.450000762939453
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 1280,
+              "height": 800,
+              "zoom": 150,
+              "viewport": {
+                "width": 505,
+                "height": 441
+              },
+              "body": {
+                "width": 495,
+                "height": 845
+              },
+              "header": {
+                "x": 28.000001907348633,
+                "y": 8,
+                "width": 439.4666748046875,
+                "height": 84.05000305175781
+              },
+              "row": {
+                "x": 38.5333366394043,
+                "y": 627.8500366210938,
+                "width": 408.2666931152344,
+                "height": 66.91667175292969
+              },
+              "visibleRows": 0,
+              "compact": false,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 28.000001907348633,
+                  "y": 8,
+                  "width": 100.54167175292969,
+                  "height": 29.916667938232422
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 134.5416717529297,
+                  "y": 8,
+                  "width": 105.49166870117188,
+                  "height": 29.916667938232422
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 900,
+              "height": 650,
+              "zoom": 100,
+              "viewport": {
+                "width": 552,
+                "height": 558
+              },
+              "body": {
+                "width": 537,
+                "height": 753
+              },
+              "header": {
+                "x": 38,
+                "y": 14,
+                "width": 460.8000183105469,
+                "height": 44.45000076293945
+              },
+              "row": {
+                "x": 48.79999923706055,
+                "y": 463.82501220703125,
+                "width": 424,
+                "height": 67.7125015258789
+              },
+              "visibleRows": 1,
+              "compact": false,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 38,
+                  "y": 14,
+                  "width": 101.13750457763672,
+                  "height": 30.450000762939453
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 145.1374969482422,
+                  "y": 14,
+                  "width": 106.0875015258789,
+                  "height": 30.450000762939453
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 900,
+              "height": 650,
+              "zoom": 150,
+              "viewport": {
+                "width": 252,
+                "height": 341
+              },
+              "body": {
+                "width": 242,
+                "height": 768
+              },
+              "header": {
+                "x": 28.000001907348633,
+                "y": 8,
+                "width": 186.1333465576172,
+                "height": 102.90000915527344
+              },
+              "row": {
+                "x": 38.5333366394043,
+                "y": 595.8500366210938,
+                "width": 154.93333435058594,
+                "height": 127.8166732788086
+              },
+              "visibleRows": 0,
+              "compact": false,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 28.000001907348633,
+                  "y": 8,
+                  "width": 87.9666748046875,
+                  "height": 48.76667022705078
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 121.9666748046875,
+                  "y": 8,
+                  "width": 92.16667175292969,
+                  "height": 48.76667022705078
+                }
+              ]
+            }
+          ],
+          "sourceAndDraftUnchanged": true
+        },
+        {
+          "evidence": "screenshots/before-ru.json",
+          "run": {
+            "name": "before-ru",
+            "exitCode": 0,
+            "seconds": 15.12
+          },
+          "passed": true,
+          "suite": "query-layout",
+          "locale": "ru",
+          "baseline": true,
+          "openMs": 455.1971020000001,
+          "samples": [
+            {
+              "theme": "dark",
+              "width": 1280,
+              "height": 800,
+              "zoom": 100,
+              "viewport": {
+                "width": 932,
+                "height": 708
+              },
+              "body": {
+                "width": 932,
+                "height": 658
+              },
+              "header": {
+                "x": 38,
+                "y": 14,
+                "width": 856,
+                "height": 44.45000076293945
+              },
+              "row": {
+                "x": 589.7750244140625,
+                "y": 180.9499969482422,
+                "width": 278.2250061035156,
+                "height": 108.3125
+              },
+              "visibleRows": 3,
+              "compact": false,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 38,
+                  "y": 14,
+                  "width": 171.60000610351562,
+                  "height": 30.450000762939453
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 215.60000610351562,
+                  "y": 14,
+                  "width": 166.9875030517578,
+                  "height": 30.450000762939453
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 1280,
+              "height": 800,
+              "zoom": 150,
+              "viewport": {
+                "width": 505,
+                "height": 441
+              },
+              "body": {
+                "width": 495,
+                "height": 845
+              },
+              "header": {
+                "x": 28.000001907348633,
+                "y": 8,
+                "width": 439.4666748046875,
+                "height": 84.05000305175781
+              },
+              "row": {
+                "x": 38.5333366394043,
+                "y": 627.8500366210938,
+                "width": 408.2666931152344,
+                "height": 66.91667175292969
+              },
+              "visibleRows": 0,
+              "compact": false,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 28.000001907348633,
+                  "y": 8,
+                  "width": 170.95834350585938,
+                  "height": 29.916667938232422
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 204.95834350585938,
+                  "y": 8,
+                  "width": 166.35833740234375,
+                  "height": 29.916667938232422
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 900,
+              "height": 650,
+              "zoom": 100,
+              "viewport": {
+                "width": 552,
+                "height": 558
+              },
+              "body": {
+                "width": 537,
+                "height": 772
+              },
+              "header": {
+                "x": 38,
+                "y": 14,
+                "width": 460.8000183105469,
+                "height": 63.29999923706055
+              },
+              "row": {
+                "x": 48.79999923706055,
+                "y": 482.6750183105469,
+                "width": 424,
+                "height": 67.7125015258789
+              },
+              "visibleRows": 1,
+              "compact": false,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 38,
+                  "y": 14,
+                  "width": 107.55000305175781,
+                  "height": 49.29999923706055
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 151.5500030517578,
+                  "y": 14,
+                  "width": 104.8499984741211,
+                  "height": 49.29999923706055
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 900,
+              "height": 650,
+              "zoom": 150,
+              "viewport": {
+                "width": 252,
+                "height": 341
+              },
+              "body": {
+                "width": 242,
+                "height": 787
+              },
+              "header": {
+                "x": 28.000001907348633,
+                "y": 8,
+                "width": 186.1333465576172,
+                "height": 121.75000762939453
+              },
+              "row": {
+                "x": 38.5333366394043,
+                "y": 622.4833374023438,
+                "width": 154.93333435058594,
+                "height": 154.90000915527344
+              },
+              "visibleRows": 0,
+              "compact": false,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 28.000001907348633,
+                  "y": 8,
+                  "width": 91.17500305175781,
+                  "height": 67.61666870117188
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 125.17500305175781,
+                  "y": 8,
+                  "width": 88.95833587646484,
+                  "height": 67.61666870117188
+                }
+              ]
+            }
+          ],
+          "sourceAndDraftUnchanged": true
+        },
+        {
+          "evidence": "screenshots/after-en.json",
+          "run": {
+            "name": "after-en",
+            "exitCode": 0,
+            "seconds": 17.13
+          },
+          "passed": true,
+          "suite": "query-layout",
+          "locale": "en",
+          "baseline": false,
+          "openMs": 337.12074899999993,
+          "samples": [
+            {
+              "theme": "dark",
+              "width": 1280,
+              "height": 800,
+              "zoom": 100,
+              "viewport": {
+                "width": 932,
+                "height": 708
+              },
+              "body": {
+                "width": 932,
+                "height": 708
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 916,
+                "height": 30
+              },
+              "row": {
+                "x": 629.4625244140625,
+                "y": 114.70000457763672,
+                "width": 272.5375061035156,
+                "height": 26
+              },
+              "visibleRows": 21,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 97.13750457763672,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 111.13750457763672,
+                  "y": 8.425000190734863,
+                  "width": 102.0875015258789,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Database",
+                  "x": 505.2250061035156,
+                  "y": 8.425000190734863,
+                  "width": 71.73750305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 1280,
+              "height": 800,
+              "zoom": 150,
+              "viewport": {
+                "width": 505,
+                "height": 441
+              },
+              "body": {
+                "width": 506,
+                "height": 442
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 489.60003662109375,
+                "height": 30.000001907348633
+              },
+              "row": {
+                "x": 262.3333435058594,
+                "y": 123.50000762939453,
+                "width": 218.60000610351562,
+                "height": 42.500003814697266
+              },
+              "visibleRows": 6,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 8.691667556762695,
+                  "width": 96.54167175292969,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 110.54167175292969,
+                  "y": 8.691667556762695,
+                  "width": 101.49166870117188,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Database",
+                  "x": 426.4416809082031,
+                  "y": 8.691667556762695,
+                  "width": 71.15834045410156,
+                  "height": 24.616668701171875
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 900,
+              "height": 650,
+              "zoom": 100,
+              "viewport": {
+                "width": 552,
+                "height": 558
+              },
+              "body": {
+                "width": 552,
+                "height": 558
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 536,
+                "height": 30
+              },
+              "row": {
+                "x": 285.8000183105469,
+                "y": 114.70000457763672,
+                "width": 236.1999969482422,
+                "height": 43.82500076293945
+              },
+              "visibleRows": 9,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 97.13750457763672,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 111.13750457763672,
+                  "y": 8.425000190734863,
+                  "width": 102.0875015258789,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Database",
+                  "x": 472.26251220703125,
+                  "y": 8.425000190734863,
+                  "width": 71.73750305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 900,
+              "height": 650,
+              "zoom": 150,
+              "viewport": {
+                "width": 252,
+                "height": 341
+              },
+              "body": {
+                "width": 252,
+                "height": 341
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 236.2666778564453,
+                "height": 55.23333740234375
+              },
+              "row": {
+                "x": 135.6666717529297,
+                "y": 159.2166748046875,
+                "width": 91.93333435058594,
+                "height": 62.48333740234375
+              },
+              "visibleRows": 2,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 6.000000476837158,
+                  "width": 96.54167175292969,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 110.54167175292969,
+                  "y": 6.000000476837158,
+                  "width": 101.49166870117188,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Database",
+                  "x": 173.10833740234375,
+                  "y": 36.616668701171875,
+                  "width": 71.15834045410156,
+                  "height": 24.616668701171875
+                }
+              ]
+            },
+            {
+              "theme": "light",
+              "width": 1280,
+              "height": 800,
+              "zoom": 100,
+              "viewport": {
+                "width": 932,
+                "height": 708
+              },
+              "body": {
+                "width": 932,
+                "height": 708
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 916,
+                "height": 30
+              },
+              "row": {
+                "x": 629.4625244140625,
+                "y": 114.70000457763672,
+                "width": 272.5375061035156,
+                "height": 26
+              },
+              "visibleRows": 21,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 97.13750457763672,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 111.13750457763672,
+                  "y": 8.425000190734863,
+                  "width": 102.0875015258789,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Database",
+                  "x": 505.2250061035156,
+                  "y": 8.425000190734863,
+                  "width": 71.73750305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "light",
+              "width": 1280,
+              "height": 800,
+              "zoom": 150,
+              "viewport": {
+                "width": 505,
+                "height": 441
+              },
+              "body": {
+                "width": 506,
+                "height": 442
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 489.60003662109375,
+                "height": 30.000001907348633
+              },
+              "row": {
+                "x": 262.3333435058594,
+                "y": 123.50000762939453,
+                "width": 218.60000610351562,
+                "height": 42.500003814697266
+              },
+              "visibleRows": 6,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 8.691667556762695,
+                  "width": 96.54167175292969,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 110.54167175292969,
+                  "y": 8.691667556762695,
+                  "width": 101.49166870117188,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Database",
+                  "x": 426.4416809082031,
+                  "y": 8.691667556762695,
+                  "width": 71.15834045410156,
+                  "height": 24.616668701171875
+                }
+              ]
+            },
+            {
+              "theme": "light",
+              "width": 900,
+              "height": 650,
+              "zoom": 100,
+              "viewport": {
+                "width": 552,
+                "height": 558
+              },
+              "body": {
+                "width": 552,
+                "height": 558
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 536,
+                "height": 30
+              },
+              "row": {
+                "x": 285.8000183105469,
+                "y": 114.70000457763672,
+                "width": 236.1999969482422,
+                "height": 43.82500076293945
+              },
+              "visibleRows": 9,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 97.13750457763672,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 111.13750457763672,
+                  "y": 8.425000190734863,
+                  "width": 102.0875015258789,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Database",
+                  "x": 472.26251220703125,
+                  "y": 8.425000190734863,
+                  "width": 71.73750305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "light",
+              "width": 900,
+              "height": 650,
+              "zoom": 150,
+              "viewport": {
+                "width": 252,
+                "height": 341
+              },
+              "body": {
+                "width": 252,
+                "height": 341
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 236.2666778564453,
+                "height": 55.23333740234375
+              },
+              "row": {
+                "x": 135.6666717529297,
+                "y": 159.2166748046875,
+                "width": 91.93333435058594,
+                "height": 62.48333740234375
+              },
+              "visibleRows": 2,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 6.000000476837158,
+                  "width": 96.54167175292969,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 110.54167175292969,
+                  "y": 6.000000476837158,
+                  "width": 101.49166870117188,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Database",
+                  "x": 173.10833740234375,
+                  "y": 36.616668701171875,
+                  "width": 71.15834045410156,
+                  "height": 24.616668701171875
+                }
+              ]
+            },
+            {
+              "theme": "contrast",
+              "width": 1280,
+              "height": 800,
+              "zoom": 100,
+              "viewport": {
+                "width": 932,
+                "height": 708
+              },
+              "body": {
+                "width": 932,
+                "height": 708
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 916,
+                "height": 30
+              },
+              "row": {
+                "x": 629.4625244140625,
+                "y": 114.70000457763672,
+                "width": 272.5375061035156,
+                "height": 26
+              },
+              "visibleRows": 21,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 97.13750457763672,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 111.13750457763672,
+                  "y": 8.425000190734863,
+                  "width": 102.0875015258789,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Database",
+                  "x": 505.2250061035156,
+                  "y": 8.425000190734863,
+                  "width": 71.73750305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "contrast",
+              "width": 1280,
+              "height": 800,
+              "zoom": 150,
+              "viewport": {
+                "width": 505,
+                "height": 441
+              },
+              "body": {
+                "width": 506,
+                "height": 442
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 489.60003662109375,
+                "height": 30.000001907348633
+              },
+              "row": {
+                "x": 262.3333435058594,
+                "y": 123.50000762939453,
+                "width": 218.60000610351562,
+                "height": 42.500003814697266
+              },
+              "visibleRows": 6,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 8.691667556762695,
+                  "width": 96.54167175292969,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 110.54167175292969,
+                  "y": 8.691667556762695,
+                  "width": 101.49166870117188,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Database",
+                  "x": 426.4416809082031,
+                  "y": 8.691667556762695,
+                  "width": 71.15834045410156,
+                  "height": 24.616668701171875
+                }
+              ]
+            },
+            {
+              "theme": "contrast",
+              "width": 900,
+              "height": 650,
+              "zoom": 100,
+              "viewport": {
+                "width": 552,
+                "height": 558
+              },
+              "body": {
+                "width": 552,
+                "height": 558
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 536,
+                "height": 30
+              },
+              "row": {
+                "x": 285.8000183105469,
+                "y": 114.70000457763672,
+                "width": 236.1999969482422,
+                "height": 43.82500076293945
+              },
+              "visibleRows": 9,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 97.13750457763672,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 111.13750457763672,
+                  "y": 8.425000190734863,
+                  "width": 102.0875015258789,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Database",
+                  "x": 472.26251220703125,
+                  "y": 8.425000190734863,
+                  "width": 71.73750305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "contrast",
+              "width": 900,
+              "height": 650,
+              "zoom": 150,
+              "viewport": {
+                "width": 252,
+                "height": 341
+              },
+              "body": {
+                "width": 252,
+                "height": 341
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 236.2666778564453,
+                "height": 55.23333740234375
+              },
+              "row": {
+                "x": 135.6666717529297,
+                "y": 159.2166748046875,
+                "width": 91.93333435058594,
+                "height": 62.48333740234375
+              },
+              "visibleRows": 2,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Apply to draft",
+                  "x": 8,
+                  "y": 6.000000476837158,
+                  "width": 96.54167175292969,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Return to draft",
+                  "x": 110.54167175292969,
+                  "y": 6.000000476837158,
+                  "width": 101.49166870117188,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Database",
+                  "x": 173.10833740234375,
+                  "y": 36.616668701171875,
+                  "width": 71.15834045410156,
+                  "height": 24.616668701171875
+                }
+              ]
+            }
+          ],
+          "sourceAndDraftUnchanged": true
+        },
+        {
+          "evidence": "screenshots/after-ru.json",
+          "run": {
+            "name": "after-ru",
+            "exitCode": 0,
+            "seconds": 22.44
+          },
+          "passed": true,
+          "suite": "query-layout",
+          "locale": "ru",
+          "baseline": false,
+          "openMs": 482.4480480000002,
+          "samples": [
+            {
+              "theme": "dark",
+              "width": 1280,
+              "height": 800,
+              "zoom": 100,
+              "viewport": {
+                "width": 932,
+                "height": 708
+              },
+              "body": {
+                "width": 932,
+                "height": 708
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 916,
+                "height": 30
+              },
+              "row": {
+                "x": 629.4625244140625,
+                "y": 114.70000457763672,
+                "width": 272.5375061035156,
+                "height": 26
+              },
+              "visibleRows": 21,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 167.60000610351562,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 181.60000610351562,
+                  "y": 8.425000190734863,
+                  "width": 162.9875030517578,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "База данных",
+                  "x": 636.5875244140625,
+                  "y": 8.425000190734863,
+                  "width": 93.92500305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 1280,
+              "height": 800,
+              "zoom": 150,
+              "viewport": {
+                "width": 505,
+                "height": 441
+              },
+              "body": {
+                "width": 506,
+                "height": 442
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 489.60003662109375,
+                "height": 30.000001907348633
+              },
+              "row": {
+                "x": 262.3333435058594,
+                "y": 123.50000762939453,
+                "width": 218.60000610351562,
+                "height": 42.500003814697266
+              },
+              "visibleRows": 6,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 8.691667556762695,
+                  "width": 140,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 154.00001525878906,
+                  "y": 8.691667556762695,
+                  "width": 162.35833740234375,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "База данных",
+                  "x": 404.2666931152344,
+                  "y": 8.691667556762695,
+                  "width": 93.33333587646484,
+                  "height": 24.616668701171875
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 900,
+              "height": 650,
+              "zoom": 100,
+              "viewport": {
+                "width": 552,
+                "height": 558
+              },
+              "body": {
+                "width": 552,
+                "height": 558
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 536,
+                "height": 30
+              },
+              "row": {
+                "x": 285.8000183105469,
+                "y": 129.90000915527344,
+                "width": 236.1999969482422,
+                "height": 43.82500076293945
+              },
+              "visibleRows": 8,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 140,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 154,
+                  "y": 8.425000190734863,
+                  "width": 162.9875030517578,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "База данных",
+                  "x": 450.07501220703125,
+                  "y": 8.425000190734863,
+                  "width": 93.92500305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "dark",
+              "width": 900,
+              "height": 650,
+              "zoom": 150,
+              "viewport": {
+                "width": 252,
+                "height": 341
+              },
+              "body": {
+                "width": 252,
+                "height": 341
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 236.2666778564453,
+                "height": 55.23333740234375
+              },
+              "row": {
+                "x": 135.6666717529297,
+                "y": 159.2166748046875,
+                "width": 91.93333435058594,
+                "height": 62.48333740234375
+              },
+              "visibleRows": 2,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 6.000000476837158,
+                  "width": 116.68334197998047,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 130.68333435058594,
+                  "y": 6.000000476837158,
+                  "width": 113.58333587646484,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "База данных",
+                  "x": 150.93333435058594,
+                  "y": 36.616668701171875,
+                  "width": 93.33333587646484,
+                  "height": 24.616668701171875
+                }
+              ]
+            },
+            {
+              "theme": "light",
+              "width": 1280,
+              "height": 800,
+              "zoom": 100,
+              "viewport": {
+                "width": 932,
+                "height": 708
+              },
+              "body": {
+                "width": 932,
+                "height": 708
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 916,
+                "height": 30
+              },
+              "row": {
+                "x": 629.4625244140625,
+                "y": 114.70000457763672,
+                "width": 272.5375061035156,
+                "height": 26
+              },
+              "visibleRows": 21,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 167.60000610351562,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 181.60000610351562,
+                  "y": 8.425000190734863,
+                  "width": 162.9875030517578,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "База данных",
+                  "x": 636.5875244140625,
+                  "y": 8.425000190734863,
+                  "width": 93.92500305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "light",
+              "width": 1280,
+              "height": 800,
+              "zoom": 150,
+              "viewport": {
+                "width": 505,
+                "height": 441
+              },
+              "body": {
+                "width": 506,
+                "height": 442
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 489.60003662109375,
+                "height": 30.000001907348633
+              },
+              "row": {
+                "x": 262.3333435058594,
+                "y": 123.50000762939453,
+                "width": 218.60000610351562,
+                "height": 42.500003814697266
+              },
+              "visibleRows": 6,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 8.691667556762695,
+                  "width": 140,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 154.00001525878906,
+                  "y": 8.691667556762695,
+                  "width": 162.35833740234375,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "База данных",
+                  "x": 404.2666931152344,
+                  "y": 8.691667556762695,
+                  "width": 93.33333587646484,
+                  "height": 24.616668701171875
+                }
+              ]
+            },
+            {
+              "theme": "light",
+              "width": 900,
+              "height": 650,
+              "zoom": 100,
+              "viewport": {
+                "width": 552,
+                "height": 558
+              },
+              "body": {
+                "width": 552,
+                "height": 558
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 536,
+                "height": 30
+              },
+              "row": {
+                "x": 285.8000183105469,
+                "y": 129.90000915527344,
+                "width": 236.1999969482422,
+                "height": 43.82500076293945
+              },
+              "visibleRows": 8,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 140,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 154,
+                  "y": 8.425000190734863,
+                  "width": 162.9875030517578,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "База данных",
+                  "x": 450.07501220703125,
+                  "y": 8.425000190734863,
+                  "width": 93.92500305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "light",
+              "width": 900,
+              "height": 650,
+              "zoom": 150,
+              "viewport": {
+                "width": 252,
+                "height": 341
+              },
+              "body": {
+                "width": 252,
+                "height": 341
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 236.2666778564453,
+                "height": 55.23333740234375
+              },
+              "row": {
+                "x": 135.6666717529297,
+                "y": 159.2166748046875,
+                "width": 91.93333435058594,
+                "height": 62.48333740234375
+              },
+              "visibleRows": 2,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 6.000000476837158,
+                  "width": 116.68334197998047,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 130.68333435058594,
+                  "y": 6.000000476837158,
+                  "width": 113.58333587646484,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "База данных",
+                  "x": 150.93333435058594,
+                  "y": 36.616668701171875,
+                  "width": 93.33333587646484,
+                  "height": 24.616668701171875
+                }
+              ]
+            },
+            {
+              "theme": "contrast",
+              "width": 1280,
+              "height": 800,
+              "zoom": 100,
+              "viewport": {
+                "width": 932,
+                "height": 708
+              },
+              "body": {
+                "width": 932,
+                "height": 708
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 916,
+                "height": 30
+              },
+              "row": {
+                "x": 629.4625244140625,
+                "y": 114.70000457763672,
+                "width": 272.5375061035156,
+                "height": 26
+              },
+              "visibleRows": 21,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 167.60000610351562,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 181.60000610351562,
+                  "y": 8.425000190734863,
+                  "width": 162.9875030517578,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "База данных",
+                  "x": 636.5875244140625,
+                  "y": 8.425000190734863,
+                  "width": 93.92500305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "contrast",
+              "width": 1280,
+              "height": 800,
+              "zoom": 150,
+              "viewport": {
+                "width": 505,
+                "height": 441
+              },
+              "body": {
+                "width": 506,
+                "height": 442
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 489.60003662109375,
+                "height": 30.000001907348633
+              },
+              "row": {
+                "x": 262.3333435058594,
+                "y": 123.50000762939453,
+                "width": 218.60000610351562,
+                "height": 42.500003814697266
+              },
+              "visibleRows": 6,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 8.691667556762695,
+                  "width": 140,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 154.00001525878906,
+                  "y": 8.691667556762695,
+                  "width": 162.35833740234375,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "База данных",
+                  "x": 404.2666931152344,
+                  "y": 8.691667556762695,
+                  "width": 93.33333587646484,
+                  "height": 24.616668701171875
+                }
+              ]
+            },
+            {
+              "theme": "contrast",
+              "width": 900,
+              "height": 650,
+              "zoom": 100,
+              "viewport": {
+                "width": 552,
+                "height": 558
+              },
+              "body": {
+                "width": 552,
+                "height": 558
+              },
+              "header": {
+                "x": 8,
+                "y": 6,
+                "width": 536,
+                "height": 30
+              },
+              "row": {
+                "x": 285.8000183105469,
+                "y": 129.90000915527344,
+                "width": 236.1999969482422,
+                "height": 43.82500076293945
+              },
+              "visibleRows": 8,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 8.425000190734863,
+                  "width": 140,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 154,
+                  "y": 8.425000190734863,
+                  "width": 162.9875030517578,
+                  "height": 25.149999618530273
+                },
+                {
+                  "label": "База данных",
+                  "x": 450.07501220703125,
+                  "y": 8.425000190734863,
+                  "width": 93.92500305175781,
+                  "height": 25.149999618530273
+                }
+              ]
+            },
+            {
+              "theme": "contrast",
+              "width": 900,
+              "height": 650,
+              "zoom": 150,
+              "viewport": {
+                "width": 252,
+                "height": 341
+              },
+              "body": {
+                "width": 252,
+                "height": 341
+              },
+              "header": {
+                "x": 8,
+                "y": 6.000000476837158,
+                "width": 236.2666778564453,
+                "height": 55.23333740234375
+              },
+              "row": {
+                "x": 135.6666717529297,
+                "y": 159.2166748046875,
+                "width": 91.93333435058594,
+                "height": 62.48333740234375
+              },
+              "visibleRows": 2,
+              "compact": true,
+              "buttons": [
+                {
+                  "label": "Применить к черновику",
+                  "x": 8,
+                  "y": 6.000000476837158,
+                  "width": 116.68334197998047,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "Вернуться к черновику",
+                  "x": 130.68333435058594,
+                  "y": 6.000000476837158,
+                  "width": 113.58333587646484,
+                  "height": 24.616668701171875
+                },
+                {
+                  "label": "База данных",
+                  "x": 150.93333435058594,
+                  "y": 36.616668701171875,
+                  "width": 93.33333587646484,
+                  "height": 24.616668701171875
+                }
+              ]
+            }
+          ],
+          "sourceAndDraftUnchanged": true
+        }
+      ],
+      "interactionCoverage": [
+        "Arrow-key and native CDP pointer resize",
+        "Preview open/height, pane scroll and tab state survive page changes",
+        "Field input/caret survives completed metadata search",
+        "Child navigation restores parent page and scroll",
+        "Accepted field addition retains action focus",
+        "Cancel preserves original draft and owner bytes"
+      ]
+    },
+    "coreRustGates": "Not run for this UI/documentation-only task; the current unmodified Rust backend was built with cargo build --profile dist -p eska-project",
+    "platformRuntime": "No query syntax changes in T134; execution acceptance remains T114 and the pending T142 scenarios"
+  },
+  "artifacts": {
+    "before": {
+      "path": "baseline-head.vsix",
+      "sha256": "38a7059732e4cfe5af2b85910e5ece6a280257b9d23abd3481ef9717d45df6b2"
+    },
+    "after": {
+      "path": "after.vsix",
+      "sha256": "b053f186185b8f6e616c73e93da7554fbba7cde165e6ad0500c1370e7e98068c"
+    },
+    "backend": {
+      "path": "eska-project-current",
+      "sha256": "6930ae78c7c37a30352a7a1233b1b58b3da4a5df0497468172ca5bc33abd8ced"
+    }
+  },
+  "regressionsFoundAndFixed": [
+    "New package operators retain the Package page; entering a new child defaults to Tables and fields and returning restores the parent",
+    "DCS checkbox name children cannot shadow DOM child traversal in the layout key",
+    "Preview state is captured synchronously before a fast tab change",
+    "Horizontal tab scrolling is retained without scrolling the whole page",
+    "Accepted revisions retain focus while stale form values are discarded"
+  ],
+  "limits": [
+    "Single openMs observations are recorded, not a statistically accepted performance budget; paired timing/memory and large-configuration acceptance remain in T142",
+    "The 24 layout combinations use isolated native editor profiles; window emulation dimensions and actual webview viewport sizes are recorded separately",
+    "Semantic diagnostics, typed fields, completion, hover, definition and signature help await the compatible external analyzer work",
+    "Only Linux/VSCodium was executed; Windows, macOS, VS Code and Remote are unverified"
+  ],
+  "userSourcesTouched": false,
+  "manualUserWindowReloaded": false,
+  "vcsNote": "eska save --dry-run rejects both plain Rust/TypeScript repositories because they have no eska.toml; use system Git for these commits, with no push or history rewrite.",
+  "explorerCommit": "886cde967a2801f70d1a9d30e4f6cd41947c0b74",
+  "explorerCommitSubject": "feat(query): Добавлена компактная оболочка конструктора с сохранением состояния"
+}

@@ -74,6 +74,9 @@ pub(super) fn model(
     if minor >= 28 {
         output["totalFocus"] = json!(value.total_focus());
     }
+    if minor >= 31 {
+        output["itemFocus"] = json!(value.item_focus());
+    }
     if minor >= 26
         && let Some(issues) = output["issues"].as_array_mut()
     {
@@ -105,7 +108,9 @@ impl View<'_> {
     /// Older negotiated adapters see composite queries as exact opaque text rather than unknown clause identifiers.
     fn statement(&self, index: usize, statement: &Statement) -> Value {
         let input = self.value.text();
-        let opaque = (self.minor < 23 && self.value.model().requires_scopes(index))
+        let opaque = (self.minor < 32
+            && (self.value.requires_predicates(index) || self.value.requires_modifiers(index)))
+            || (self.minor < 23 && self.value.model().requires_scopes(index))
             || (self.minor < 26 && self.value.model().requires_packages(index))
             || (self.minor < 27 && self.value.model().requires_having(index))
             || (self.minor < 28 && self.value.model().requires_multiple_totals(index));
@@ -137,22 +142,8 @@ impl View<'_> {
             statement.source_bindings(input)
         };
         let sources: Vec<_> = bindings
-            .into_iter()
-            .map(|source| {
-                let nested = source
-                    .derived
-                    .then(|| {
-                        self.value.model().source_scope(Selection {
-                            statement: index,
-                            clause: source.clause,
-                            item: source.item,
-                        })
-                    })
-                    .flatten();
-                let mut value = json!(source);
-                value["nestedScope"] = json!(nested);
-                value
-            })
+            .iter()
+            .map(|source| self.source(index, source))
             .collect();
         let first = self.value.model().scopes[statement.scope].branches[0];
         let columns: Vec<_> = self.value.model().statements[first]
@@ -169,6 +160,9 @@ impl View<'_> {
         let mut output = json!({"index":index,"range":bytes(&statement.range),"russian":statement.russian,"sources":sources,"scope":statement.scope,
             "branch":statement.branch,"result":statement.result,"nested":statement.nested,"columns":columns,
             "unavailable":if opaque {json!(if statement.clauses.iter().any(|c| c.kind==ClauseKind::Destroy) {"unsupported_statement"} else {"unsupported_construct"})} else {json!(statement.unavailable)},"preview":preview(&input[statement.range.clone()]),"clauses":clauses,"append":append});
+        if self.minor >= 32 {
+            self.compact(index, statement, &mut output);
+        }
         if self.minor >= 26 {
             let roots: Vec<_> = self
                 .value
@@ -188,20 +182,80 @@ impl View<'_> {
                 "moveDown":position.filter(|at|self.writable && statement.unavailable.is_none() && at+1<roots.len()).map(|at|at+1),
                 "setInto":self.writable && !statement.nested && self.value.model().package_operation(index)==Some(eska_project_core::project::query::constructor::PackageOperation::Select)});
         }
-        if self.minor >= 28 {
-            let sections = if opaque {
-                Vec::new()
-            } else {
-                statement.total_sections()
-            };
-            let allowed = self.writable
-                && !opaque
-                && statement.append_unavailable(ClauseKind::Totals).is_none();
-            output["addTotals"] = json!(allowed && sections.is_empty());
-            output["totalSections"] = json!(sections.iter().map(|section| json!({"index":section.index,"fields":section.fields,"groups":section.groups,"range":bytes(&section.range),"remove":allowed,
-                "moveUp":section.index.checked_sub(1).filter(|_|allowed), "moveDown":(allowed && section.index+1<sections.len()).then_some(section.index+1)})).collect::<Vec<_>>());
+        if self.minor >= 32 {
+            output["package"]["copy"]=json!(self.writable && !opaque && self.value.model().package_operation(index)==Some(eska_project_core::project::query::constructor::PackageOperation::Select));
         }
+        if self.minor >= 28 {
+            self.sections(statement, opaque, &mut output);
+        }
+
         output
+    }
+
+    /// Source navigation comes from the same revision's lexical scope and temporary-table lifetime.
+    fn source(
+        &self,
+        index: usize,
+        source: &eska_project_core::project::query::constructor::SourceBinding,
+    ) -> Value {
+        let input = self.value.text();
+        let nested = source
+            .derived
+            .then(|| {
+                self.value.model().source_scope(Selection {
+                    statement: index,
+                    clause: source.clause,
+                    item: source.item,
+                })
+            })
+            .flatten();
+        let mut value = json!(source);
+        value["nestedScope"] = json!(nested);
+        if self.minor >= 32 {
+            value["temporaryDefinition"] = json!(
+                (!source.derived)
+                    .then(|| self
+                        .value
+                        .model()
+                        .temporary_source(input, index, &source.table)
+                        .ok()
+                        .flatten()
+                        .map(|table| table.statement))
+                    .flatten()
+            );
+        }
+        value
+    }
+
+    /// Totals permissions remain shared with earlier clients and keep the native single-section limit.
+    fn sections(&self, statement: &Statement, opaque: bool, output: &mut Value) {
+        let sections = if opaque {
+            Vec::new()
+        } else {
+            statement.total_sections()
+        };
+        let allowed =
+            self.writable && !opaque && statement.append_unavailable(ClauseKind::Totals).is_none();
+        output["addTotals"] = json!(allowed && sections.is_empty());
+        output["totalSections"] = json!(sections.iter().map(|section| json!({"index":section.index,"fields":section.fields,"groups":section.groups,"range":bytes(&section.range),"remove":allowed,
+                "moveUp":section.index.checked_sub(1).filter(|_|allowed), "moveDown":(allowed && section.index+1<sections.len()).then_some(section.index+1)})).collect::<Vec<_>>());
+    }
+
+    /// Compact projections are additive and bounded independently of the old statement vocabulary.
+    fn compact(&self, index: usize, statement: &Statement, output: &mut Value) {
+        output["path"] = json!(self.value.statement_path(index));
+        output["modifiers"] = json!(self.value.modifiers(index).map(|mut view| {
+            view.editable &= self.writable;
+            view
+        }));
+        output["unionMatrix"] = if self.value.model().scopes[statement.scope].branches[0] == index {
+            json!(self.value.union_matrix(index).map(|mut matrix| {
+                matrix.can_align &= self.writable;
+                matrix
+            }))
+        } else {
+            Value::Null
+        };
     }
 
     /// Clause ordering and exact headers are supplied once by ESKA.
@@ -212,14 +266,19 @@ impl View<'_> {
             .enumerate()
             .map(|(item, value)| self.item(statement, index, item, value, clause))
             .collect();
-        json!({"index":index,"kind":clause.kind,"header":preview(self.value.text()[clause.range.start..clause.body.start].trim()),"items":items})
+        let mut output = json!({"index":index,"kind":clause.kind,"header":preview(self.value.text()[clause.range.start..clause.body.start].trim()),"items":items});
+        if self.minor >= 32 {
+            output["predicate"] = json!(self.value.predicate(statement, index));
+            output["join"] = json!(self.value.join_context(statement, index));
+        }
+        output
     }
 
     /// Each button receives its own domain permission, including fixed OVERALL placement and nested navigation.
     fn item(
         &self,
         statement: usize,
-        _clause: usize,
+        clause_index: usize,
         index: usize,
         item: &Item,
         clause: &Clause,
@@ -250,13 +309,27 @@ impl View<'_> {
             })
             .map(|(index, _)| index)
             .collect();
-        json!({"index":index,"range":bytes(&item.range),"preview":preview(&input[item.range.clone()]),
+        let mut output = json!({"index":index,"range":bytes(&item.range),"preview":preview(&input[item.range.clone()]),
             "visual":if too_large {None} else {visual},"expression":if too_large {None} else {Some(expression)},"comments":item.comments.len(),
             "removable":removable,"movable":up||down,"moveUp":up,"moveDown":down,"children":children,
             "unavailable":{"replace":if !self.writable {Some("read_only")} else if too_large {Some("expression_too_large")} else {None},
                 "remove":if !self.writable {Some("read_only")} else if !removable {Some("required_item")} else {None},
                 "move":if !self.writable {Some("read_only")} else if clause.kind==ClauseKind::Joins {Some("join_order_dependency")}
-                    else if clause.items.len()<2 {Some("single_item")} else if !up&&!down {Some("required_item")} else {None}}})
+                    else if clause.items.len()<2 {Some("single_item")} else if !up&&!down {Some("required_item")} else {None}}});
+        if self.minor >= 31 {
+            output["unavailable"]["copy"] = if !self.writable {
+                json!("read_only")
+            } else if too_large {
+                json!("expression_too_large")
+            } else {
+                json!(self.value.copy_unavailable(Selection {
+                    statement,
+                    clause: clause_index,
+                    item: index
+                }))
+            };
+        }
+        output
     }
 }
 

@@ -267,6 +267,9 @@ pub(crate) fn generate(
                 let mut extension = toml::Table::new();
                 extension.insert("name".into(), name.into());
                 extension.insert("path".into(), path.into());
+                if let Some(scope) = item.extension_scope() {
+                    extension.insert("scope".into(), scope.as_str().into());
+                }
                 let depends = item
                     .member()
                     .and_then(|member| context.extension_dependencies().get(member))

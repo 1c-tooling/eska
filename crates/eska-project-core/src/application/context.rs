@@ -14,7 +14,7 @@ use crate::project::{
 };
 
 use super::{
-    AnalysisSettings, AnalyzerPolicy, Application, CheckPolicy, SettingsError,
+    AnalysisSettings, AnalyzerPolicy, Application, CheckPolicy, ExtensionScope, SettingsError,
     TargetPlatformVersion, graph,
 };
 
@@ -49,9 +49,16 @@ pub struct ContextSource {
     metadata_name: String,
     uuid: String,
     compatibility_mode: Option<String>,
+    extension_scope: Option<ExtensionScope>,
 }
 
 impl ContextSource {
+    /// Extensions carry their effective deployment scope; other source roles have none.
+    #[must_use]
+    pub const fn extension_scope(&self) -> Option<ExtensionScope> {
+        self.extension_scope
+    }
+
     /// Reference XML supplies analysis context without a member manifest or writable project.
     #[must_use]
     pub const fn is_reference(&self) -> bool {
@@ -216,11 +223,20 @@ fn single(
     project: &Project,
     settings: &AnalysisSettings,
 ) -> Result<AnalysisContext, ContextError> {
-    let source = read_source(
+    let mut source = read_source(
         member,
         project,
         role(project.configuration().project_type()),
     )?;
+    source.extension_scope = settings.options().extension_scope();
+    if source.extension_scope.is_some() && source.role() != SourceRole::Extension {
+        return Err(ContextError::Settings(Box::new(
+            SettingsError::ExtensionScopeLocation,
+        )));
+    }
+    if source.role() == SourceRole::Extension {
+        source.extension_scope = Some(source.extension_scope.unwrap_or_default());
+    }
     let mut sources = vec![source];
     if let Some(reference) = settings.options().configuration() {
         if project.configuration().project_type() == ProjectType::Configuration {
@@ -296,11 +312,9 @@ fn application_context(
         .map_err(|error| ContextError::Settings(Box::new(error)))?
     {
         let member = member(workspace, name, &extension)?;
-        sources.push(read_source(
-            Some(member.name()),
-            member.project(),
-            SourceRole::Extension,
-        )?);
+        let mut source = read_source(Some(member.name()), member.project(), SourceRole::Extension)?;
+        source.extension_scope = application.extension_scope(&extension);
+        sources.push(source);
     }
     for external in application.external_objects() {
         let member = member(workspace, name, external)?;
@@ -397,6 +411,7 @@ fn read_source(
             .map_err(|error| ContextError::Source(Box::new(error)))?;
     let path = source.descriptor().to_owned();
     Ok(ContextSource {
+        extension_scope: None,
         reference: false,
         member: name.cloned(),
         role,

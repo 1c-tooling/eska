@@ -22,6 +22,9 @@ use eska_project_core::{
 mod support;
 use support::TestDir;
 
+#[path = "configuration/extension_scope.rs"]
+mod extension_scope;
+
 /// Create only source descriptors needed by context resolution and check-config.
 fn project(root: &Path, kind: ProjectType) {
     create::create(root, &ProjectConfig::new(kind)).unwrap();

@@ -2,12 +2,17 @@
 
 mod dcs;
 mod editing;
+mod items;
 pub(super) mod lex;
 mod model;
+mod modifiers;
 mod nested;
 mod packages;
+mod predicates;
 mod scopes;
+mod text;
 mod totals;
+mod union_matrix;
 mod unions;
 mod visual;
 
@@ -17,10 +22,26 @@ use crate::project::metadata_edit::{EditPlan, snapshot};
 
 pub use dcs::{DcsKind, DcsModel, DcsNode, DcsStatement, DcsValue};
 pub use model::{Clause, ClauseKind, Item, Model, Statement, Unavailable};
+pub use modifiers::{ModifierView, Modifiers};
 pub use packages::{PackageIssue, PackageIssueKind, PackageOperation, TemporaryTable};
+pub use predicates::{JoinContext, Predicate};
 pub use scopes::{QueryScope, Union};
+pub use text::{CommentPage, TextChange, TextComment, TextDiff, TextLocation, TextTarget};
 pub use totals::{Hierarchy, PeriodRange, PeriodUnit, TotalSection};
+pub use union_matrix::{UnionColumn, UnionMatrix};
 pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
+
+/// One set is bounded by the same maximum used for adding metadata fields.
+pub const MAX_ITEM_SET_ITEMS: usize = 512;
+
+/// Destinations are gaps in the immutable clause: zero precedes the first item, length follows the last.
+#[derive(Clone, Copy, Debug, serde::Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
+pub enum ItemSetOperation {
+    Remove,
+    Move { to: usize },
+    Copy { to: usize },
+}
 
 /// A selection is valid only with the exact constructor revision that supplied its indices.
 #[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
@@ -54,6 +75,47 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    SetText {
+        text: String,
+        #[serde(rename = "editorNormalized")]
+        editor_normalized: bool,
+    },
+    SetModifiers {
+        statement: usize,
+        modifiers: Modifiers,
+    },
+    CopyStatement {
+        statement: usize,
+    },
+    AlignUnion {
+        statement: usize,
+    },
+    SetJoinKind {
+        selection: Selection,
+        join: JoinKind,
+    },
+    MovePredicate {
+        selection: Selection,
+        target: ClauseKind,
+    },
+    SetPredicate {
+        statement: usize,
+        clause: ClauseKind,
+        selection: Option<Selection>,
+        predicate: Predicate,
+    },
+    EditItems {
+        statement: usize,
+        clause: usize,
+        items: Vec<usize>,
+        operation: ItemSetOperation,
+        comments: Option<CommentDecision>,
+    },
+    AddSourceFields {
+        statement: usize,
+        source: Expression,
+        fields: Vec<String>,
+    },
     SetDcs {
         statement: usize,
         node: Option<usize>,
@@ -153,7 +215,14 @@ impl Action {
     #[must_use]
     pub const fn statement(&self) -> usize {
         match self {
-            Self::SetDcs { statement, .. }
+            Self::SetText { .. } => 0,
+            Self::SetModifiers { statement, .. }
+            | Self::CopyStatement { statement }
+            | Self::AlignUnion { statement }
+            | Self::SetPredicate { statement, .. }
+            | Self::EditItems { statement, .. }
+            | Self::AddSourceFields { statement, .. }
+            | Self::SetDcs { statement, .. }
             | Self::AddTotals { statement, .. }
             | Self::RemoveTotals { statement, .. }
             | Self::MoveTotals { statement, .. }
@@ -169,7 +238,9 @@ impl Action {
             | Self::AppendFields { statement, .. }
             | Self::Compose { statement, .. }
             | Self::Append { statement, .. } => *statement,
-            Self::Replace { selection, .. }
+            Self::SetJoinKind { selection, .. }
+            | Self::MovePredicate { selection, .. }
+            | Self::Replace { selection, .. }
             | Self::Remove { selection, .. }
             | Self::Move { selection, .. } => selection.statement,
         }
@@ -201,6 +272,7 @@ pub struct Constructor {
     revision: u64,
     focus: Option<usize>,
     total_focus: Option<usize>,
+    item_focus: Vec<Selection>,
 }
 
 impl Constructor {
@@ -221,6 +293,7 @@ impl Constructor {
             revision: 1,
             focus,
             total_focus: None,
+            item_focus: Vec::new(),
         })
     }
 
@@ -262,6 +335,52 @@ impl Constructor {
         self.total_focus
     }
 
+    /// A grouped action returns its resulting selections without client-side index remapping.
+    #[must_use]
+    pub fn item_focus(&self) -> &[Selection] {
+        &self.item_focus
+    }
+
+    /// A negotiated old client cannot edit newly recognized boolean structures.
+    #[must_use]
+    pub fn requires_predicates(&self, statement: usize) -> bool {
+        self.model
+            .statements
+            .get(statement)
+            .is_some_and(|owner| predicates::complex(self.text(), owner))
+    }
+
+    /// Breadcrumbs use core scope edges; adapters never reconstruct nested SQL ownership.
+    #[must_use]
+    pub fn statement_path(&self, statement: usize) -> Vec<usize> {
+        let mut path = Vec::new();
+        let mut current = Some(statement);
+        while let Some(index) = current {
+            let Some(owner) = self.model.statements.get(index) else {
+                return Vec::new();
+            };
+            path.push(index);
+            current = self.model.scopes[owner.scope].parent;
+        }
+        path.reverse();
+        path
+    }
+
+    /// Earlier adapters cannot safely edit newly recognized trailing controls.
+    #[must_use]
+    pub fn requires_modifiers(&self, statement: usize) -> bool {
+        self.model
+            .statements
+            .get(statement)
+            .is_some_and(|owner| !owner.controls.is_empty())
+    }
+
+    /// Copy controls reflect recognized syntax and never infer permission from a field name.
+    #[must_use]
+    pub fn copy_unavailable(&self, selection: Selection) -> Option<Error> {
+        items::copy_unavailable(self, selection)
+    }
+
     /// A stable hash binds streamed preview bodies and final native text plans.
     #[must_use]
     pub fn snapshot(&self) -> String {
@@ -272,6 +391,7 @@ impl Constructor {
     #[must_use]
     pub fn retained_bytes(&self) -> usize {
         self.model.retained_bytes()
+            + self.item_focus.capacity() * std::mem::size_of::<Selection>()
             + if Arc::ptr_eq(&self.original, &self.working) {
                 0
             } else {
@@ -286,6 +406,26 @@ impl Constructor {
     pub fn apply(&mut self, expected: u64, action: &Action) -> Result<EditPlan, Error> {
         if expected != self.revision {
             return Err(Error::StaleRevision);
+        }
+        if let Action::SetText {
+            text,
+            editor_normalized,
+        } = action
+        {
+            return self.apply_text(action, text, *editor_normalized);
+        }
+        modifiers::guard(self, action)?;
+        if let Some(plan) = modifiers::plan(self, action)?.or(predicates::plan(self, action)?) {
+            return self.accept_structural(plan, action);
+        }
+        if let Some(staged) = items::stage(self, action)? {
+            let plan = super::minimal_text_plan(&self.working, staged.value.text())
+                .map_err(|_| Error::InvalidExpression)?;
+            let model = Model::parse(plan.output())?;
+            self.accept(&plan, model, action)?;
+            self.focus = Some(action.statement());
+            self.item_focus = staged.focus;
+            return Ok(plan);
         }
         if let Some(plan) = dcs::plan(&self.working, &self.model, action)? {
             let model = Model::parse(plan.output())?;
@@ -311,38 +451,7 @@ impl Constructor {
             return Ok(plan);
         }
         if let Action::AppendFields { statement, fields } = action {
-            if fields.len() > 512 {
-                return Err(Error::TooLarge);
-            }
-            let mut staged = self.clone();
-            for expression in fields {
-                let owner = staged
-                    .model
-                    .statements
-                    .get(*statement)
-                    .ok_or(Error::InvalidSelection)?;
-                let present = owner.clauses.iter().filter(|clause| clause.kind == ClauseKind::Fields)
-                    .flat_map(|clause| clause.items.iter().filter_map(|item| item.visual(&staged.working, clause)))
-                    .any(|field| matches!(field, Expression::Field { expression: existing, aggregate: None, .. } if existing.to_lowercase() == expression.to_lowercase()));
-                if !present {
-                    staged.apply(
-                        staged.revision,
-                        &Action::Compose {
-                            statement: *statement,
-                            selection: None,
-                            expression: Expression::Field {
-                                expression: expression.clone(),
-                                alias: String::new(),
-                                aggregate: None,
-                            },
-                        },
-                    )?;
-                }
-            }
-            let plan = super::minimal_text_plan(&self.working, &staged.working)
-                .map_err(|_| Error::InvalidExpression)?;
-            *self = staged;
-            return Ok(plan);
+            return self.append_fields(*statement, fields);
         }
         if let Some(actions) = unions::field_actions(&self.working, &self.model, action)? {
             let mut replacements = Vec::new();
@@ -403,6 +512,56 @@ impl Constructor {
         Ok((plan, action.clone()))
     }
 
+    /// The existing add-all operation stages every field before replacing its caller's snapshot.
+    fn append_fields(&mut self, statement: usize, fields: &[String]) -> Result<EditPlan, Error> {
+        if fields.len() > 512 {
+            return Err(Error::TooLarge);
+        }
+        let mut staged = self.clone();
+        for expression in fields {
+            let owner = staged
+                .model
+                .statements
+                .get(statement)
+                .ok_or(Error::InvalidSelection)?;
+            let present = owner.clauses.iter().filter(|clause| clause.kind == ClauseKind::Fields)
+                    .flat_map(|clause| clause.items.iter().filter_map(|item| item.visual(&staged.working, clause)))
+                    .any(|field| matches!(field, Expression::Field { expression: existing, aggregate: None, .. } if existing.to_lowercase() == expression.to_lowercase()));
+            if !present {
+                staged.apply(
+                    staged.revision,
+                    &Action::Compose {
+                        statement,
+                        selection: None,
+                        expression: Expression::Field {
+                            expression: expression.clone(),
+                            alias: String::new(),
+                            aggregate: None,
+                        },
+                    },
+                )?;
+            }
+        }
+        let plan = super::minimal_text_plan(&self.working, &staged.working)
+            .map_err(|_| Error::InvalidExpression)?;
+        *self = staged;
+        Ok(plan)
+    }
+
+    /// A structural predicate cannot turn its selected operator into an opaque or missing statement.
+    fn accept_structural(&mut self, plan: EditPlan, action: &Action) -> Result<EditPlan, Error> {
+        let model = Model::parse(plan.output())?;
+        if model
+            .statements
+            .get(action.statement())
+            .is_none_or(|owner| owner.unavailable.is_some())
+        {
+            return Err(Error::Unsupported);
+        }
+        self.accept(&plan, model, action)?;
+        Ok(plan)
+    }
+
     /// All multi-part operations share one checked publication and one revision increment.
     fn accept(&mut self, plan: &EditPlan, model: Model, action: &Action) -> Result<(), Error> {
         if plan.output().len() > super::MAX_SNAPSHOT_BYTES {
@@ -419,6 +578,7 @@ impl Constructor {
         }
         self.focus = focus;
         self.total_focus = total_focus;
+        self.item_focus.clear();
         Ok(())
     }
 

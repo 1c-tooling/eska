@@ -3,7 +3,7 @@
 Корневой `eska.toml` задаёт состав и настройки анализа один раз. В workspace
 участники перечисляются по ролям в `workspace.members.<приложение>`.
 Отдельного списка путей `workspace.members = [...]` и секции `applications` нет.
-Это схема `designer-xml-2`; старый формат не принимается. Все компоненты ESKA
+Это схема `designer-xml-3`; старый формат не принимается. Все компоненты ESKA
 и Explorer должны поддерживать эту схему.
 
 ## Состав workspace
@@ -11,9 +11,11 @@
 ```toml
 [workspace.members.accounting]
 configuration = "src/main"
-extensions = ["src/integration", "src/reports"]
+extensions = [
+    { path = "src/integration" },
+    { path = "src/reports", depends_on = ["integration"], scope = "DataSeparation" },
+]
 external_objects = ["src/data-import", "src/external-report"]
-extension_dependencies = { reports = ["integration"] }
 
 [build]
 platform_version = "8.3.27.2325"
@@ -22,7 +24,7 @@ platform_version = "8.3.27.2325"
 LineLength = false
 ```
 
-`configuration`, `extensions` и `external_objects` содержат **пути к проектам**
+`configuration`, `extensions[].path` и `external_objects` содержат **пути к проектам**
 от корневого манифеста. Каждый такой каталог содержит собственный `eska.toml`
 с уникальным `project.name`, соответствующим `project.type` и своим `source`.
 Каталог XML берётся из этого `source`; `/src` автоматически не дописывается.
@@ -31,9 +33,10 @@ LineLength = false
 | Поле | Содержимое |
 |---|---|
 | `configuration` | Один проект типа `configuration` либо ссылка на XML базы для анализа |
-| `extensions` | Пути к проектам типа `extension` |
+| `extensions` | Записи расширений: обязательный `path`, необязательные `scope` и `depends_on` |
 | `external_objects` | Пути к проектам типа `processing` или `report` |
-| `extension_dependencies` | Зависимости расширений по их `project.name`, например `reports = ["integration"]` |
+| `extensions[].depends_on` | Имена `project.name` расширений, API которых использует это расширение; по умолчанию `[]` |
+| `extensions[].scope` | `InfoBase` по умолчанию; `DataSeparation` для установки в области данных |
 | `target_platform_version` | Необязательное переопределение версии анализа из трёх или четырёх числовых компонентов |
 
 Основная конфигурация необязательна: workspace может содержать только расширение
@@ -44,6 +47,51 @@ LineLength = false
 
 Источники анализа идут в порядке: основная конфигурация, расширения после их
 зависимостей, внешние объекты. Состав независимых приложений не объединяется.
+
+## Область установки расширений
+
+`InfoBase` означает установку для всей информационной базы, `DataSeparation` —
+для области данных. ESKA принимает `InfoBase` как значение по умолчанию для
+расширений workspace и отдельных проектов. Это правило конфигурации ESKA;
+XML и расположение каталогов не определяют фактическую установку.
+
+Путь, область и зависимости задаются **в одной записи расширения**:
+
+```toml
+[workspace.members.accounting]
+configuration = "src/main"
+extensions = [
+    { path = "src/integration" },
+    { path = "src/client-fixes", scope = "DataSeparation", depends_on = ["integration"] },
+]
+```
+
+Один проект может иметь разные параметры в разных приложениях. `depends_on`
+содержит имена `project.name`, а не пути или имена XML. Дубли зависимостей,
+ссылки за пределы выбранного приложения и циклы отклоняются. Внешним отчётам
+и обработкам область установки расширения не назначается.
+Строковые элементы `extensions` и отдельные таблицы `extension_scopes` /
+`extension_dependencies` больше не принимаются; совместимого второго формата нет.
+
+Для отдельного проекта расширения переопределение задаётся так:
+
+```toml
+[project]
+type = "extension"
+source = "src"
+
+[analysis]
+extension_scope = "DataSeparation"
+```
+
+`analysis.extension_scope` недопустим в корневом workspace и у проектов других
+типов. `new/init` добавляют `{ path = "…" }` в выбранное приложение и сохраняют
+настройки, зависимости и комментарии существующих расширений. При отсутствии
+`scope` новое расширение сразу использует `InfoBase`.
+
+ESKA всегда записывает эффективный `scope` в соответствующее расширение
+производного `bsl-analyzer.toml`. Изменение `scope`, пути или зависимостей
+меняет fingerprint контекста и пересоздаёт конфиг при следующей подготовке.
 
 ## База с БСП в другом каталоге
 

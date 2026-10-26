@@ -1,7 +1,7 @@
 //! Structured controls share one formatter and conservative projection across IDEs.
 
 mod edits;
-pub(super) use edits::{augment, path_references, source_prefixes};
+pub(super) use edits::{augment, join_header, path_references, source_prefixes};
 
 use super::{
     Action, Clause, ClauseKind, Error, Item, JoinKind, Model, Selection,
@@ -284,7 +284,7 @@ impl Aggregate {
 
 impl Comparison {
     /// Keep localized query syntax outside the renderer.
-    const fn keyword(self, russian: bool) -> &'static str {
+    pub(super) const fn keyword(self, russian: bool) -> &'static str {
         match self {
             Self::Equal => "=",
             Self::NotEqual => "<>",
@@ -857,6 +857,11 @@ fn split_aggregate(text: &str) -> (String, Option<Aggregate>) {
 /// Complex predicates remain exact expressions instead of being guessed into a binary condition.
 pub(super) fn comparison(text: &str) -> Option<(String, Comparison, String)> {
     let tokens = lex::tokens(text).ok()?;
+    if tokens.iter().any(|token| {
+        token.depth == 0 && token.keyword(text, &["AND", "И", "OR", "ИЛИ", "BETWEEN", "МЕЖДУ"])
+    }) {
+        return None;
+    }
     for (index, token) in tokens.iter().enumerate() {
         if token.depth != 0 {
             continue;

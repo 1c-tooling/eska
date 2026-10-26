@@ -20,6 +20,7 @@ use super::{
 };
 
 mod composition;
+mod extension_scope;
 
 /// Plain editor context does not depend on a derived config or unrelated module contents.
 #[test]
@@ -190,7 +191,11 @@ fn workspace(root: &Path, members: &[&str], application: &str) {
                             app.get(*key)
                                 .and_then(toml::Value::as_array)
                                 .is_some_and(|values| {
-                                    values.iter().any(|value| value.as_str() == Some(path))
+                                    values.iter().any(|value| {
+                                        value.as_str() == Some(path)
+                                            || value.get("path").and_then(toml::Value::as_str)
+                                                == Some(path)
+                                    })
                                 })
                         })
                 })
@@ -202,7 +207,7 @@ fn workspace(root: &Path, members: &[&str], application: &str) {
         let name = config.name().unwrap().as_str();
         let role = match config.configuration().project_type() {
             ProjectType::Configuration => format!("configuration = {path:?}"),
-            ProjectType::Extension => format!("extensions = [{path:?}]"),
+            ProjectType::Extension => format!("extensions = [{{path = {path:?}}}]"),
             _ => format!("external_objects = [{path:?}]"),
         };
         write!(text, "\n[workspace.members.{name}]\n{role}\n").unwrap();
@@ -355,7 +360,7 @@ fn workspace_resolves_one_base_five_extensions_and_explicit_external_objects() {
             fs::write(path, "not XML").unwrap();
         }
     }
-    let declaration = "[analysis]\ndefault_application = 'accounting'\n[workspace.members.accounting]\nconfiguration = 'main'\nextensions = ['ext-5', 'ext-4', 'ext-3', 'ext-2', 'ext-1']\nexternal_objects = ['processing', 'report']\nextension_dependencies = { ext-5 = ['ext-4'], ext-4 = ['ext-3'], ext-3 = ['ext-2'], ext-2 = ['ext-1'] }\n";
+    let declaration = "[analysis]\ndefault_application = 'accounting'\n[workspace.members.accounting]\nconfiguration = 'main'\nextensions = [{path='ext-5',depends_on=['ext-4']}, {path='ext-4',depends_on=['ext-3']}, {path='ext-3',depends_on=['ext-2']}, {path='ext-2',depends_on=['ext-1']}, {path='ext-1'}]\nexternal_objects = ['processing', 'report']\n";
     workspace(&fixture.0, &names, declaration);
     let before = snapshot(&fixture.0);
     let context = resolve(&fixture.0, None).unwrap();
@@ -466,7 +471,10 @@ fn graph_and_root_selection_are_strict() {
         settings_error("[workspace.members.Main]\nconfiguration = 'main'"),
         SettingsError::InvalidName { .. }
     ));
-    for extra in ["extensions = ['one', 'one']", "extensions = ['main']"] {
+    for extra in [
+        "extensions = [{path='one'}, {path='one'}]",
+        "extensions = [{path='main'}]",
+    ] {
         assert!(matches!(
             settings_error(&format!(
                 "[workspace.members.app]\nconfiguration = 'main'\n{extra}"
@@ -474,18 +482,19 @@ fn graph_and_root_selection_are_strict() {
             SettingsError::DuplicateMember { .. }
         ));
     }
-    for edges in ["{ one = ['two'] }", "{ two = ['one'] }"] {
+    assert!(matches!(
+        settings_error(
+            "[workspace.members.app]\nconfiguration='main'\nextensions=[{path='one',depends_on=['two']}]"
+        ),
+        SettingsError::DependencyOutsideApplication { .. }
+    ));
+    for extensions in [
+        "[{path='one',depends_on=['one']},{path='two'}]",
+        "[{path='one',depends_on=['two']},{path='two',depends_on=['one']}]",
+    ] {
         assert!(matches!(
             settings_error(&format!(
-                "[workspace.members.app]\nconfiguration = 'main'\nextensions = ['one']\nextension_dependencies = {edges}"
-            )),
-            SettingsError::DependencyOutsideApplication { .. }
-        ));
-    }
-    for edges in ["{ one = ['one'] }", "{ one = ['two'], two = ['one'] }"] {
-        assert!(matches!(
-            settings_error(&format!(
-                "[workspace.members.app]\nconfiguration = 'main'\nextensions = ['one', 'two']\nextension_dependencies = {edges}"
+                "[workspace.members.app]\nconfiguration='main'\nextensions={extensions}"
             )),
             SettingsError::DependencyCycle { .. }
         ));
@@ -552,7 +561,7 @@ fn missing_members_wrong_roles_and_member_settings_are_rejected() {
     workspace(
         &fixture.0,
         &["main", "ext"],
-        "[workspace.members.app]\nconfiguration = 'main'\nextensions = ['ext']",
+        "[workspace.members.app]\nconfiguration = 'main'\nextensions = [{path='ext'}]",
     );
     assert!(resolve(&fixture.0, None).is_err());
 }
@@ -724,7 +733,8 @@ fn target_platform_follows_the_main_configuration_until_explicitly_overridden() 
         Some("ext"),
         Some("8.5.1.1234"),
     );
-    let declaration = "[workspace.members.app]\nconfiguration = 'main'\nextensions = ['ext']\n";
+    let declaration =
+        "[workspace.members.app]\nconfiguration = 'main'\nextensions = [{path='ext'}]\n";
     workspace(&fixture.0, &["main", "ext"], declaration);
     let context = resolve(&fixture.0, None).unwrap();
     assert_eq!(
@@ -752,7 +762,7 @@ fn dependency_order_is_deterministic_for_unrelated_extensions() {
     for name in ["third", "first", "second"] {
         project(&fixture.0.join(name), "extension", Some(name), None);
     }
-    fs::write(fixture.0.join("eska.toml"), "[workspace.members.app]\nconfiguration = 'main'\nextensions = ['third', 'first', 'second']\nextension_dependencies = {third = ['first']}\n").unwrap();
+    fs::write(fixture.0.join("eska.toml"), "[workspace.members.app]\nconfiguration = 'main'\nextensions = [{path='third',depends_on=['first']}, {path='first'}, {path='second'}]\n").unwrap();
     let context = resolve(&fixture.0, None).unwrap();
     let ordered = context
         .sources()

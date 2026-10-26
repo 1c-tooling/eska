@@ -1,5 +1,5 @@
 use super::*;
-use crate::backend::project::query::constructor::{Action, ClauseKind, JoinKind};
+use crate::backend::project::query::constructor::{Action, ClauseKind, ItemSetOperation, JoinKind};
 
 /// The common session owns the draft lock; a second adapter cannot update or apply the canonical text behind it.
 #[test]
@@ -133,6 +133,20 @@ fn constructor_read_only_view_cannot_change_the_draft() {
                 clause: ClauseKind::Fields,
                 text: "B".to_owned(),
                 join: JoinKind::Inner
+            }
+        ),
+        Err(QuerySessionError::UserReadOnly)
+    ));
+    assert!(matches!(
+        session.constructor_action(
+            token,
+            1,
+            &Action::EditItems {
+                statement: 0,
+                clause: 0,
+                items: vec![0],
+                operation: ItemSetOperation::Copy { to: 1 },
+                comments: None,
             }
         ),
         Err(QuerySessionError::UserReadOnly)
