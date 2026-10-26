@@ -793,6 +793,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "eska-fmt"
+version = "0.18.0"
+dependencies = [
+ "eska-project-core",
+ "serde_json",
+]
+
+[[package]]
 name = "eska-presentation"
 version = "0.18.0"
 dependencies = [

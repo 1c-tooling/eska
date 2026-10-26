@@ -16,6 +16,8 @@ use serde::{Deserialize, Serialize};
 pub struct Error {
     pub code: String,
     pub field: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offset: Option<usize>,
 }
 
 impl Error {
@@ -25,7 +27,15 @@ impl Error {
         Self {
             code: code.into(),
             field: field.into(),
+            offset: None,
         }
+    }
+
+    /// Attach a UTF-8 source position when a concrete syntax unit is available.
+    #[must_use]
+    pub const fn at(mut self, offset: usize) -> Self {
+        self.offset = Some(offset);
+        self
     }
 }
 

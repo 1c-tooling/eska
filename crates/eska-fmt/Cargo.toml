@@ -1,0 +1,21 @@
+[package]
+name = "eska-fmt"
+version.workspace = true
+edition = "2024"
+publish = true
+description = "Configurable standalone formatter for 1C BSL and SDBL sources"
+license = "Apache-2.0"
+repository = "https://github.com/1c-tooling/eska"
+readme = "../../README.md"
+keywords = ["1c-enterprise", "formatter", "bsl", "sdbl"]
+categories = ["development-tools", "command-line-utilities"]
+authors = ["Aleksey Kalsin <aleksey@kalsin.pro>"]
+
+[lints]
+workspace = true
+
+[dependencies]
+eska-project-core = { workspace = true }
+
+[dev-dependencies]
+serde_json = "1.0.154"
