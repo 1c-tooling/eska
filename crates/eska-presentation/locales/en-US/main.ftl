@@ -74,15 +74,14 @@ analysis-name-invalid = Invalid name "{ $value }" in { $field }. Expected: [a-z0
 analysis-platform-invalid = Invalid target platform "{ $value }". Use three or four numeric components.
 analysis-managed-field = Analyzer field { $field } is owned by the project context; remove it from tools.bsl-analyzer.
 analysis-policy-invalid = Cannot serialize the analyzer policy.
-analysis-workspace-required = The applications table is only supported in the root workspace manifest.
-analysis-default-unknown = Default application "{ $name }" is not declared in applications.
+analysis-default-unknown = Default application "{ $name }" is not declared in workspace.members.
 analysis-member-duplicate = Member "{ $member }" occurs more than once in application "{ $application }".
 analysis-dependency-outside = Dependency "{ $member }" of application "{ $application }" is not in its extensions.
 analysis-dependency-cycle = Extension dependencies of application "{ $application }" contain a cycle.
 analysis-member-unknown = Application "{ $application }" refers to missing member "{ $member }".
 analysis-member-type = Member "{ $member }" in application "{ $application }" requires project.type = { $expected }, found { $actual }.
 analysis-member-settings = Analysis settings for member "{ $member }" belong in the root workspace manifest.
-analysis-platform-scope = Set the application target in applications.<name>.target_platform_version; remove the shared analysis.target_platform_version.
+analysis-platform-scope = Set the application target in workspace.members.<name>.target_platform_version; remove the shared analysis.target_platform_version.
 project-serve-about = Run the standalone project Metadata API server over stdio
 project-tool-about = Designer XML project operations
 project-new-about = Create a Designer XML project without initializing Git
@@ -104,7 +103,6 @@ project-context-ready = Application context resolved at { $path }.
 project-context-limited = Limited context: no base configuration was declared.
 project-application-unknown = Unknown application: { $name }.
 project-application-ambiguous = Select an application with --application or analysis.default_application.
-project-application-required = Declare applications in eska.toml before selecting an analysis context for multiple members.
 project-empty-workspace = The workspace contains no projects to validate or analyze.
 project-validated = Manifest and Designer XML root descriptor validated: { $path }.
 cli-usage = Usage
@@ -1018,3 +1016,12 @@ component-failed = The component exited with an error.
 component-rejected = Component { $tool } rejected the operation: { $code }.
 
 component-incompatible = Component { $tool } has an incompatible installation receipt: { $receipt }. Check the selected component installation.
+
+analysis-reference-empty = Set a nonempty configuration.source path to the base configuration XML.
+analysis-reference-scope = Attach configuration.source only as a separate context for an extension or external object; its directory must not overlap writable projects.
+
+workspace-onboarding-application-help = Application in workspace.members for the new member; required when several applications exist.
+workspace-onboarding-application-required = Specify --application. Available applications: { $names }.
+workspace-onboarding-application-invalid = Invalid application name "{ $name }".
+workspace-onboarding-configuration-set = Application "{ $name }" already has a base configuration. Select another --application.
+workspace-onboarding-application-only = --application is only valid when adding a project to a workspace.

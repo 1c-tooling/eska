@@ -386,7 +386,7 @@ fn keeps_projects_distinct_and_payloads_unread() {
     }
     fs::write(
         directory.0.join("eska.toml"),
-        "[workspace]\nmembers=['first','second']\n",
+        "[workspace]\n[workspace.members.app]\nexternal_objects=['first','second']\n",
     )
     .unwrap();
     let before = bytes(&directory.0);

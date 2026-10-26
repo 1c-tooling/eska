@@ -222,7 +222,7 @@ fn workspace_switch_restores_all_repository_paths() {
     let processing = root.join("src/processing");
     fs::create_dir_all(&report).unwrap();
     fs::create_dir_all(&processing).unwrap();
-    fs::write(root.join("eska.toml"), "[workspace]\nmembers = ['src/report', 'src/processing']\n[vcs.workflow]\npreset = 'trunk'\n").unwrap();
+    fs::write(root.join("eska.toml"), "[workspace]\n[workspace.members.app]\nexternal_objects=['src/report', 'src/processing']\n[vcs.workflow]\npreset = 'trunk'\n").unwrap();
     for (path, kind) in [(&report, "report"), (&processing, "processing")] {
         fs::write(
             path.join("eska.toml"),

@@ -364,7 +364,7 @@ fn opens_only_selected_workspace_root_descriptors() {
     write(
         &directory.0,
         "eska.toml",
-        "[workspace]\nmembers=['first','second']\n",
+        "[workspace]\n[workspace.members.first]\nconfiguration='first'\n[workspace.members.second]\nconfiguration='second'\n",
     );
     for name in ["first", "second"] {
         write(

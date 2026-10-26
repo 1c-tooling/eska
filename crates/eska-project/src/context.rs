@@ -91,11 +91,6 @@ pub fn failure(error: &ContextError, start: &Path, localizer: &Localizer) -> Fai
             json!({"available":available}),
             localizer.text("project-application-ambiguous"),
         ),
-        ContextError::ApplicationDeclarationsMissing { members } => Failure::new(
-            "application_declarations_missing",
-            json!({"members":members}),
-            localizer.text("project-application-required"),
-        ),
         ContextError::EmptyWorkspace => Failure::new(
             "no_projects",
             json!({}),

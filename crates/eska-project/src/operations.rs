@@ -109,8 +109,17 @@ pub fn new(start: &Path, args: &NewArgs, localizer: &Localizer) -> ExitCode {
             Err(error) => return error.emit(args.format),
         };
         create::inspect_workspace_member::<Infallible>(workspace, name)
+            .map(|plan| plan.with_application(args.application.as_deref()))
             .and_then(|plan| create::create_member_configured(&plan, &config, None, || Ok(())))
     } else {
+        if args.application.is_some() {
+            return Failure::new(
+                "application_requires_workspace",
+                json!({}),
+                localizer.text("workspace-onboarding-application-only"),
+            )
+            .emit(args.format);
+        }
         create::create(&cli::command_path(start, &args.path), &config)
     };
     match result {
@@ -152,6 +161,7 @@ pub fn init(start: &Path, args: &InitArgs, localizer: &Localizer) -> ExitCode {
             Err(error) => return error.emit(args.format),
         };
         init::prepare_workspace_member::<Infallible>(plan, workspace, name).and_then(|plan| {
+            let plan = plan.with_application(args.application.as_deref());
             let plan = match settings {
                 Some(settings) => plan.with_build_settings(settings),
                 None => plan,
@@ -159,6 +169,14 @@ pub fn init(start: &Path, args: &InitArgs, localizer: &Localizer) -> ExitCode {
             init::apply_workspace_member(&plan, || Ok(()))
         })
     } else {
+        if args.application.is_some() {
+            return Failure::new(
+                "application_requires_workspace",
+                json!({}),
+                localizer.text("workspace-onboarding-application-only"),
+            )
+            .emit(args.format);
+        }
         if args.name.is_some() {
             return Failure::new(
                 "workspace_required",

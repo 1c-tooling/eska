@@ -6,7 +6,7 @@ T97 — `DONE` для принятой Linux-матрицы; остальные 
 других executables, сети, локализации и native probes:
 
 ```json
-{"schema_version":2,"tool":"eska-project","target":"x86_64-unknown-linux-gnu","version":"0.14.3","config_schema":"designer-xml-1","bridge_schema":1,"metadata_api":{"major":1,"minor":12}}
+{"schema_version":2,"tool":"eska-project","target":"x86_64-unknown-linux-gnu","version":"0.14.3","config_schema":"designer-xml-2","bridge_schema":1,"metadata_api":{"major":1,"minor":12}}
 ```
 
 У остальных четырёх инструментов `metadata_api: null`. `config_schema` обозначает

@@ -251,7 +251,7 @@ fn workspace_selector_limits_project_checks_and_reports_its_name() {
         fixture.0.join("eska.toml"),
         concat!(
             "[workspace]\n",
-            "members = ['src/report', 'src/processing']\n\n",
+            "[workspace.members.app]\nexternal_objects=['src/report', 'src/processing']\n\n",
             "[vcs.workflow]\n",
             "preset = 'trunk'\n",
         ),

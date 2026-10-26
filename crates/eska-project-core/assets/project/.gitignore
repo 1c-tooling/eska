@@ -3,4 +3,7 @@
 ConfigDumpInfo.xml
 DumpFilesIndex.txt
 
-/.eska/cache/
+.eska/
+.bsl-analyzer/
+/bsl-analyzer.toml
+/bsl-analyzer.toml.eska-original-*

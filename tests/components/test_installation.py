@@ -29,7 +29,7 @@ TARGET = ("aarch64" if platform.machine().lower() in ("arm64", "aarch64") else "
 def capabilities(tool="eska-project", release="1.0.0"):
     """Process fixtures declare the same public installation schemas as actual binaries."""
     return {"schema_version": 2, "tool": tool, "version": release, "target": TARGET,
-            "config_schema": "designer-xml-1", "bridge_schema": 1,
+            "config_schema": "designer-xml-2", "bridge_schema": 1,
             "metadata_api": {"major": 1, "minor": 12} if tool == "eska-project" else None}
 
 
@@ -138,7 +138,7 @@ class InstallationTests(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
             manifest = json.loads(archive.read("package.json"))
             payloads = {name: archive.read(name) for name in archive.namelist() if name != "package.json"}
-        for key, value in [("config_schema", "designer-xml-2"), ("bridge_schema", 2), ("metadata_api", {"major": 2, "minor": 12})]:
+        for key, value in [("config_schema", "designer-xml-1"), ("bridge_schema", 2), ("metadata_api", {"major": 2, "minor": 12})]:
             changed = json.loads(json.dumps(manifest))
             changed["contract"][key] = value
             bad, sha = zipped(changed, payloads)

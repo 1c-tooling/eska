@@ -12,6 +12,89 @@ use serde_json::Value;
 mod support;
 use support::TestDir;
 
+/// New/init share role-aware enrollment and reject ambiguous changes before creating files.
+#[test]
+fn workspace_application_selection_preserves_other_members_and_ignores_generated_files() {
+    let fixture = TestDir::new();
+    fs::write(
+        fixture.0.join("eska.toml"),
+        "[workspace]\n[build]\nplatform_version='8.3.27.2325'\n",
+    )
+    .unwrap();
+    fs::write(fixture.0.join(".gitignore"), "# keep\n*.log\n").unwrap();
+    for name in ["first", "second"] {
+        success(
+            &command(&fixture.0, "en")
+                .args(["new", name, "--type", "configuration", "--format", "json"])
+                .output()
+                .unwrap(),
+        );
+        export(
+            &fixture.0.join("src").join(name).join("src"),
+            "configuration",
+        );
+    }
+    let before = fs::read(fixture.0.join("eska.toml")).unwrap();
+    for language in ["ru", "en"] {
+        let output = command(&fixture.0, language)
+            .args(["new", "fixes", "--type", "extension", "--format", "json"])
+            .output()
+            .unwrap();
+        assert!(!output.status.success());
+        assert!(!fixture.0.join("src/fixes").exists());
+        assert_eq!(fs::read(fixture.0.join("eska.toml")).unwrap(), before);
+    }
+    success(
+        &command(&fixture.0, "ru")
+            .args([
+                "new",
+                "fixes",
+                "--type",
+                "extension",
+                "--application",
+                "first",
+                "--format",
+                "json",
+            ])
+            .output()
+            .unwrap(),
+    );
+    export(&fixture.0.join("src/fixes/src"), "extension");
+    let processing = fixture.0.join("src/tools");
+    export(&processing.join("src"), "processing");
+    success(
+        &command(&processing, "en")
+            .args(["init", "--application", "second", "--format", "json"])
+            .output()
+            .unwrap(),
+    );
+    for (application, member, role) in [
+        ("first", "fixes", "extension"),
+        ("second", "tools", "external_object"),
+    ] {
+        let value = success(
+            &command(&fixture.0, "en")
+                .args(["context", "--application", application, "--format", "json"])
+                .output()
+                .unwrap(),
+        );
+        assert_eq!(value["context"]["sources"].as_array().unwrap().len(), 2);
+        assert_eq!(value["context"]["sources"][1]["member"], member);
+        assert_eq!(value["context"]["sources"][1]["role"], role);
+    }
+    let ignore = fs::read_to_string(fixture.0.join(".gitignore")).unwrap();
+    assert!(ignore.starts_with("# keep\n*.log\n"));
+    for rule in [
+        "ConfigDumpInfo.xml",
+        "DumpFilesIndex.txt",
+        "/bsl-analyzer.toml",
+        ".eska/",
+    ] {
+        assert!(ignore.lines().any(|line| line == rule));
+    }
+    assert!(!processing.join(".gitignore").exists());
+}
+
 /// Protocol failures before and after directory claiming cannot publish incomplete onboarding.
 #[cfg(unix)]
 #[test]
@@ -244,7 +327,7 @@ fn init_keeps_bom_crlf_and_opaque_payloads() {
 #[test]
 fn workspace_new_init_and_application_selection_share_core_rules() {
     let fixture = TestDir::new();
-    fs::write(fixture.0.join("eska.toml"),"# root preserved\n[workspace]\nmembers=[] # members preserved\n[build]\nplatform_version=\"8.3.27.2325\"\nartifacts_directory=\"artifacts\"\n").unwrap();
+    fs::write(fixture.0.join("eska.toml"),"# root preserved\n[workspace]\nmembers={} # members preserved\n[build]\nplatform_version=\"8.3.27.2325\"\nartifacts_directory=\"artifacts\"\n").unwrap();
     success(
         &command(&fixture.0, "en")
             .args(["new", "base", "--type", "configuration", "--format", "json"])
@@ -271,25 +354,11 @@ fn workspace_new_init_and_application_selection_share_core_rules() {
         assert!(!config.contains("artifacts_directory"));
         assert!(!config.contains("platform_version"));
     }
-    let mut root = fs::read_to_string(fixture.0.join("eska.toml")).unwrap();
+    let root = fs::read_to_string(fixture.0.join("eska.toml")).unwrap();
     assert!(root.contains("# root preserved") && root.contains("# members preserved"));
-    let en = failure(
-        command(&fixture.0, "en")
-            .args(["context", "--format", "json"])
-            .output()
-            .unwrap(),
-        "application_declarations_missing",
-    );
-    let ru = failure(
-        command(&fixture.0, "ru")
-            .args(["context", "--format", "json"])
-            .output()
-            .unwrap(),
-        "application_declarations_missing",
-    );
-    assert_eq!(en, ru);
-    root.push_str("\n[applications.main]\nconfiguration=\"base\"\nextensions=[\"ext\"]\n");
-    fs::write(fixture.0.join("eska.toml"), root).unwrap();
+    assert!(root.contains("[workspace.members.base]"));
+    assert!(root.contains("configuration = \"src/base\""));
+    assert!(root.contains("extensions = [\"src/ext\"]"));
     let en = success(
         &command(&fixture.0, "en")
             .args(["context", "--format", "json"])
@@ -369,7 +438,7 @@ fn preflight_rejects_invalid_input_before_writing() {
 #[test]
 fn invalid_root_and_empty_workspace_fail_in_both_languages() {
     let fixture = TestDir::new();
-    fs::write(fixture.0.join("eska.toml"), "[workspace]\nmembers=[]\n").unwrap();
+    fs::write(fixture.0.join("eska.toml"), "[workspace]\nmembers={}\n").unwrap();
     for lang in ["en", "ru"] {
         failure(
             command(&fixture.0, lang)

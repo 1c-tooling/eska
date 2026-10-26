@@ -97,7 +97,7 @@ pub(crate) fn build(
     digest_input(&mut hash, Path::new("eska.toml"), &manifest)?;
     for source in context.sources() {
         let member_manifest = source.project().root().join("eska.toml");
-        if member_manifest != root.join("eska.toml") {
+        if !source.is_reference() && member_manifest != root.join("eska.toml") {
             digest_input(
                 &mut hash,
                 relative(root, &member_manifest)?,
@@ -105,10 +105,15 @@ pub(crate) fn build(
             )?;
         }
         let descriptor = source.project().source().join(source.descriptor());
+        let source_root = if source.is_reference() {
+            source.project().source()
+        } else {
+            root
+        };
         digest_input(
             &mut hash,
-            relative(root, &descriptor)?,
-            &read(root, &descriptor)?,
+            context_path(root, &descriptor, source.is_reference())?,
+            &read(source_root, &descriptor)?,
         )?;
     }
     hash.update(body.as_bytes());
@@ -243,7 +248,11 @@ pub(crate) fn generate(
     let mut extensions = Vec::new();
     let mut externals = Vec::new();
     for item in context.sources() {
-        let path = portable(relative(context.root(), item.project().source())?)?;
+        let path = portable(context_path(
+            context.root(),
+            item.project().source(),
+            item.is_reference(),
+        )?)?;
         match item.role() {
             SourceRole::Configuration => {
                 source.insert("root".into(), path.into());
@@ -344,8 +353,29 @@ fn relative<'a>(root: &Path, path: &'a Path) -> Result<&'a Path, Error> {
     })
 }
 
-/// TOML uses forward slashes; reject non-UTF8 paths rather than losing native bytes.
+/// Only explicitly resolved references may use absolute paths outside the owning workspace.
+fn context_path<'a>(root: &Path, path: &'a Path, reference: bool) -> Result<&'a Path, Error> {
+    if reference && !path.starts_with(root) {
+        Ok(path)
+    } else {
+        relative(root, path)
+    }
+}
+
+/// Normalize native separators only; Unix backslashes remain literal filename characters.
 fn portable(path: &Path) -> Result<String, Error> {
+    if path.is_absolute() {
+        return path
+            .to_str()
+            .map(|path| {
+                if cfg!(windows) {
+                    path.replace('\\', "/")
+                } else {
+                    path.into()
+                }
+            })
+            .ok_or_else(|| Error::NonPortablePath { path: path.into() });
+    }
     let mut components = Vec::new();
     for component in path.components() {
         match component {

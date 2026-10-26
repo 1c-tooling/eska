@@ -37,9 +37,16 @@ pub struct WorkspaceCreationPlan {
     create_parent: bool,
     name: ProjectName,
     enrollment: WorkspaceMemberEnrollment,
+    application: Option<String>,
 }
 
 impl WorkspaceCreationPlan {
+    /// Carry a deliberate application selection into role-aware enrollment.
+    #[must_use]
+    pub fn with_application(mut self, application: Option<&str>) -> Self {
+        self.application = application.map(str::to_owned);
+        self
+    }
     #[must_use]
     pub fn destination(&self) -> &Path {
         &self.destination
@@ -139,6 +146,7 @@ pub fn inspect_workspace_member<E>(
         create_parent,
         name,
         enrollment,
+        application: None,
     })
 }
 
@@ -181,6 +189,14 @@ pub fn create_member_configured<E>(
     verify().map_err(CreationError::Operation)?;
     let config = config.clone().with_name(plan.name.clone());
     let config = &config;
+    let enrollment = plan
+        .enrollment
+        .clone()
+        .for_project(
+            config.configuration().project_type(),
+            plan.application.as_deref(),
+        )
+        .map_err(CreationError::Workspace)?;
     let template = Template::workspace_config(config).map_err(CreationError::Template)?;
     let owns_parent = if plan.create_parent {
         fs::create_dir(&plan.parent).map_err(|source| CreationError::Io {
@@ -213,11 +229,9 @@ pub fn create_member_configured<E>(
             install_sources(&plan.destination, config.source(), sources)?;
         }
         verify().map_err(CreationError::Operation)?;
-        plan.enrollment
-            .publish()
-            .map_err(CreationError::Workspace)?;
+        enrollment.publish().map_err(CreationError::Workspace)?;
         manifest_published = true;
-        let context = discovery::discover_context(plan.enrollment.workspace_root())
+        let context = discovery::discover_context(enrollment.workspace_root())
             .map_err(|error| CreationError::WorkspaceValidation(Box::new(error)))?;
         let DiscoveryContext::Workspace { workspace, .. } = context else {
             return Err(CreationError::WorkspaceMemberMissing {
@@ -238,7 +252,7 @@ pub fn create_member_configured<E>(
     }
     let original = result.expect_err("handled successful result");
     let mut paths = Vec::new();
-    if manifest_published && plan.enrollment.restore().is_err() {
+    if manifest_published && enrollment.restore().is_err() {
         paths.push(
             plan.enrollment
                 .workspace_root()

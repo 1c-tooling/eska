@@ -6,6 +6,7 @@ pub mod create;
 pub mod designer_source;
 pub mod designer_xml;
 pub mod discovery;
+mod ignore;
 pub mod init;
 pub mod metadata;
 mod metadata_disk_cache;

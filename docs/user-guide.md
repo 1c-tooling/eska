@@ -743,6 +743,18 @@ eska-project analyzer-config migrate --apply --preview-token TOKEN --analyzer /p
 ```
 
 Оригинал сохраняется в `bsl-analyzer.toml.eska-original-<hash>`.
+После миграции настройки меняются только в `eska.toml`, например
+`[tools.bsl-analyzer.diagnostics.parameters] LineLength = false`.
+Explorer подготавливает изменённый конфиг перед запуском языкового сервиса;
+вне редактора выполните `eska-project analyzer-config prepare`.
+
+`new/init` добавляют в корневой `.gitignore` производный `bsl-analyzer.toml`,
+резервную копию миграции, `.eska/`, `.bsl-analyzer/`, каталог сборки и
+`ConfigDumpInfo.xml` / `DumpFilesIndex.txt` на любой глубине. Существующие
+пользовательские правила сохраняются. Если файл уже отслеживается Git,
+его нужно отдельно убрать из индекса, сохранив на диске; правило игнорирования
+само по себе не прекращает отслеживание.
+
 Ручные изменения уже сгенерированного файла вызывают конфликт вместо перезаписи.
 
 В строке состояния `ESKA v…` относится к project, а `BSL Analyzer v…` —
@@ -776,20 +788,15 @@ solution/
 Пример корневого `eska.toml`:
 
 ```toml
-[workspace]
-members = ["src/main", "src/integration", "src/data-import"]
+[workspace.members.accounting]
+configuration = "src/main"
+extensions = ["src/integration"]
+external_objects = ["src/data-import"]
 
 [build]
 platform_version = "8.3.27.2325"
 artifacts_directory = "build"
 
-[analysis]
-default_application = "accounting"
-
-[applications.accounting]
-configuration = "main"
-extensions = ["integration"]
-external_objects = ["data-import"]
 ```
 
 В `src/main/eska.toml`, если XML лежит в том же каталоге:
@@ -805,7 +812,10 @@ source = "."
 `type = "extension"` и `name = "data-import"`, `type = "processing"`.
 Выбирайте `source` по фактическому расположению XML, без автоматического
 добавления `/src`. При подключении существующих выгрузок `eska-project init`
-из workspace обновляет список members; `new` создаёт участника в `src/<name>`.
+из workspace записывает путь в соответствующую роль; `new` создаёт участника
+в `src/<name>`. При нескольких приложениях обеим командам передают
+`--application accounting`. При единственном приложении расширение или внешний
+объект добавляется в него автоматически.
 
 ```sh
 eska-project validate --workspace
@@ -813,12 +823,25 @@ eska-project context --application accounting --format json
 eska-project analyzer-config prepare --application accounting --analyzer /path/to/bsl-analyzer-app
 ```
 
-Ссылки в `applications` — **имена members**, не имена XML и не пути.
-Для зависимых расширений существует `extension_dependencies`.
-Несколько независимых конфигураций не объединяются в один контекст.
-Без `applications` один member даёт собственный контекст, несколько требуют
-явного приложения. Соседняя конфигурация или БСП не подключается по совпадению
-имён или версии; базу нужно включить в состав приложения явно.
+Пути в `workspace.members.accounting` задаются один раз. Имена в
+`extension_dependencies` — это `project.name` расширений. Старая структура
+`members = [...]` вместе с `[applications]` не поддерживается: нужна сборка
+ESKA и Explorer с контрактом `designer-xml-2`.
+
+Для внешней обработки, использующей БСП из другой базы:
+
+```toml
+[workspace.members.tools]
+configuration = { source = "/data/bases/bsp/src" }
+external_objects = ["src/my-processing"]
+```
+
+Ссылка `source` ведёт непосредственно к XML базы, без требования её `eska.toml`.
+Она может быть относительной, например `../bsp/src`. База участвует в анализе,
+но не становится рабочим участником workspace. Для обычного проекта EPF/ERF
+или расширения аналогичная ссылка задаётся в `[analysis.configuration]` через
+`source = "../bsp/src"`. Без основной конфигурации доступен ограниченный контекст.
+[Полная схема и правила добавления проектов](application-context.md).
 
 **Выбрать контекст анализа** в палитре Explorer выбирает объявленное приложение.
 Один корень использует один сгенерированный конфиг. Перед сменой контекста
@@ -1049,7 +1072,7 @@ eska-build build --base-configuration ../base.cf --recreate-infobase
 
 При изменении базового CF пересоздайте служебную ИБ, чтобы сборка использовала
 новую базу. Этот параметр относится к native-сборке. Контекст BSL Analyzer
-задаётся отдельно через `applications` и исходники базовой конфигурации;
+задаётся ролями в `workspace.members.<приложение>` и исходниками базовой конфигурации;
 передача CF сборщику сама по себе не добавляет БСП или базу в анализатор.
 
 ### Выбор установки 1С и Distrobox

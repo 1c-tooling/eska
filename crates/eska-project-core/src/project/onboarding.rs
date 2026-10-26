@@ -10,11 +10,15 @@ use toml_edit::DocumentMut;
 
 use crate::config::{FILE_NAME, WorkspaceConfig, WorkspaceConfigError};
 
-use super::{ProjectName, Workspace, discovery::ContextDiscoveryError};
+use super::{ProjectName, ProjectType, Workspace, discovery::ContextDiscoveryError};
+
+mod composition;
 
 /// A validated root-manifest change prepared before project files are written.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct WorkspaceMemberEnrollment {
+    ignore: super::ignore::IgnorePlan,
+    name: ProjectName,
     workspace_root: PathBuf,
     member_root: PathBuf,
     member_path: PathBuf,
@@ -24,6 +28,36 @@ pub struct WorkspaceMemberEnrollment {
 }
 
 impl WorkspaceMemberEnrollment {
+    /// Bind an inspected destination to its actual role before creating any member files.
+    ///
+    /// # Errors
+    /// Requires an explicit application when several compositions could own the new member.
+    pub fn for_project(
+        mut self,
+        kind: ProjectType,
+        application: Option<&str>,
+    ) -> Result<Self, WorkspaceEnrollmentError> {
+        let input = std::str::from_utf8(&self.original_manifest).map_err(|source| {
+            WorkspaceEnrollmentError::Io {
+                path: self.manifest.clone(),
+                source: io::Error::new(io::ErrorKind::InvalidData, source),
+            }
+        })?;
+        let mut document = input
+            .parse::<DocumentMut>()
+            .map_err(WorkspaceEnrollmentError::TomlEdit)?;
+        composition::append(
+            &mut document,
+            &self.member_path,
+            &self.name,
+            kind,
+            application,
+        )?;
+        let updated = document.to_string();
+        WorkspaceConfig::from_toml(&updated).map_err(WorkspaceEnrollmentError::Config)?;
+        self.updated_manifest = updated.into_bytes();
+        Ok(self)
+    }
     #[must_use]
     pub fn workspace_root(&self) -> &Path {
         &self.workspace_root
@@ -49,7 +83,16 @@ impl WorkspaceMemberEnrollment {
             &self.manifest,
             &self.original_manifest,
             &self.updated_manifest,
-        )
+        )?;
+        if let Err(error) = self.ignore.publish() {
+            replace_exact(
+                &self.manifest,
+                &self.updated_manifest,
+                &self.original_manifest,
+            )?;
+            return Err(error);
+        }
+        Ok(())
     }
 
     /// Restores the exact original bytes after a failed enrollment validation.
@@ -61,7 +104,8 @@ impl WorkspaceMemberEnrollment {
             &self.manifest,
             &self.updated_manifest,
             &self.original_manifest,
-        )
+        )?;
+        self.ignore.restore()
     }
 }
 
@@ -81,7 +125,7 @@ pub fn find_workspace(start: &Path) -> Result<Option<Workspace>, ContextDiscover
     }
 }
 
-/// Prepares an append-only edit of `workspace.members` without writing files.
+/// Snapshot a destination before its project type and application are selected.
 ///
 /// `member_root` must be resolved against the canonical workspace root. Existing
 /// member names and directory boundaries are checked before any mutation.
@@ -106,28 +150,14 @@ pub fn prepare(
             source: io::Error::new(io::ErrorKind::InvalidData, source),
         })?;
     WorkspaceConfig::from_toml(input).map_err(WorkspaceEnrollmentError::Config)?;
-    let mut document = input
-        .parse::<DocumentMut>()
-        .map_err(WorkspaceEnrollmentError::TomlEdit)?;
-    let members = document["workspace"]["members"]
-        .as_array_mut()
-        .ok_or(WorkspaceEnrollmentError::MembersNotArray)?;
-    let member =
-        member_path
-            .to_str()
-            .ok_or_else(|| WorkspaceEnrollmentError::NonUtf8MemberPath {
-                path: member_path.clone(),
-            })?;
-    members.push(member);
-    let updated_manifest = document.to_string().into_bytes();
-    let updated =
-        std::str::from_utf8(&updated_manifest).map_err(|source| WorkspaceEnrollmentError::Io {
-            path: manifest.clone(),
-            source: io::Error::new(io::ErrorKind::InvalidData, source),
-        })?;
-    WorkspaceConfig::from_toml(updated).map_err(WorkspaceEnrollmentError::Config)?;
+    let updated_manifest = original_manifest.clone();
 
     Ok(WorkspaceMemberEnrollment {
+        ignore: super::ignore::IgnorePlan::inspect(
+            workspace.root(),
+            Some(workspace.build_settings().artifacts_directory()),
+        )?,
+        name: name.clone(),
         workspace_root: workspace.root().to_path_buf(),
         member_root,
         member_path,
@@ -179,7 +209,7 @@ fn validate_member_path(
     Ok(())
 }
 
-fn replace_exact(
+pub(super) fn replace_exact(
     path: &Path,
     expected: &[u8],
     replacement: &[u8],
@@ -281,10 +311,13 @@ fn replace_published(temporary: &Path, path: &Path) -> io::Result<()> {
 /// Structured workspace-member enrollment failures; localization belongs to CLI.
 #[derive(Debug)]
 pub enum WorkspaceEnrollmentError {
+    ApplicationRequired { available: Vec<String> },
+    InvalidApplication { name: String },
+    ConfigurationAlreadySet { application: String },
     Io { path: PathBuf, source: io::Error },
     Config(WorkspaceConfigError),
     TomlEdit(toml_edit::TomlError),
-    MembersNotArray,
+    InvalidComposition,
     NonUtf8MemberPath { path: PathBuf },
     OutsideWorkspace { workspace: PathBuf, member: PathBuf },
     DuplicateMember { path: PathBuf },
@@ -309,7 +342,7 @@ mod tests {
     /// Builds a valid empty workspace with formatting worth preserving.
     fn workspace() -> (TestDir, crate::project::Workspace, Vec<u8>) {
         let fixture = TestDir::new();
-        let original = b"# keep this comment\n[workspace]\nmembers = [] # members comment\n\n[build]\nplatform_version = \"\"\n"
+        let original = b"# keep this comment\n[workspace]\nmembers = {} # members comment\n\n[build]\nplatform_version = \"\"\n"
             .to_vec();
         fs::write(fixture.0.join("eska.toml"), &original).unwrap();
         let context = discover_context(&fixture.0).unwrap();
@@ -329,6 +362,8 @@ mod tests {
             PathBuf::from("src/my-orders"),
             &name,
         )
+        .unwrap()
+        .for_project(crate::project::ProjectType::Processing, None)
         .unwrap();
         plan.publish().unwrap();
         let updated = fs::read_to_string(fixture.0.join("eska.toml")).unwrap();

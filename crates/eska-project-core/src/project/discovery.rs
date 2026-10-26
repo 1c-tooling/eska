@@ -157,18 +157,19 @@ fn load_workspace(
         members.push(member);
     }
 
-    config
-        .validate_applications(&members)
-        .map_err(|source| ContextDiscoveryError::Manifest {
-            path: root.join(FILE_NAME),
-            source: ManifestConfigError::Workspace(source),
-        })?;
+    let analysis =
+        config
+            .resolve_analysis(&members)
+            .map_err(|source| ContextDiscoveryError::Manifest {
+                path: root.join(FILE_NAME),
+                source: ManifestConfigError::Workspace(source),
+            })?;
     Ok(Workspace::new(
         root.to_path_buf(),
         config.build_settings().clone(),
         config.workflow_settings().cloned(),
         members,
-        config.analysis_settings().clone(),
+        analysis,
     ))
 }
 

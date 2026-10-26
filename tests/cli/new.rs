@@ -42,7 +42,7 @@ fn empty_workspace() -> TestDir {
     let fixture = TestDir::new();
     fs::write(
         fixture.0.join("eska.toml"),
-        "# root comment\n[workspace]\nmembers = [] # keep members comment\n\n[build]\nplatform_version = \"8.3.27.2325\"\n\n[vcs.workflow]\npreset = \"trunk\"\n",
+        "# root comment\n[workspace]\nmembers = {} # keep members comment\n\n[build]\nplatform_version = \"8.3.27.2325\"\n\n[vcs.workflow]\npreset = \"trunk\"\n",
     )
     .expect("workspace manifest");
     fixture
@@ -116,8 +116,8 @@ fn workspace_new_from_member_creates_a_sibling() {
     assert_eq!(
         config.members(),
         &[
-            std::path::PathBuf::from("src/first"),
-            std::path::PathBuf::from("src/second")
+            std::path::PathBuf::from("src/second"),
+            std::path::PathBuf::from("src/first")
         ]
     );
 }

@@ -243,9 +243,7 @@ pub fn error_document(error: &Error) -> Value {
             eska_project_core::application::ContextError::AmbiguousApplication { available } => {
                 json!({"reason":"ambiguous_application","available":available})
             }
-            eska_project_core::application::ContextError::ApplicationDeclarationsMissing {
-                members,
-            } => json!({"reason":"application_declarations_missing","members":members}),
+
             _ => json!({}),
         },
         Error::Rollback { paths, original } => {

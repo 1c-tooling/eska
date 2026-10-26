@@ -94,7 +94,7 @@ fn workspace() -> (TestDir, PathBuf, PathBuf) {
         root.join("eska.toml"),
         concat!(
             "[workspace]\n",
-            "members = ['src/sales-report', 'src/import-orders']\n\n",
+            "[workspace.members.app]\nexternal_objects=['src/sales-report', 'src/import-orders']\n\n",
             "[vcs.workflow]\n",
             "preset = 'trunk'\n",
         ),

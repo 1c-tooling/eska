@@ -37,7 +37,7 @@ fn application_declarations_are_validated_without_runtime_dependencies() {
     member(&fixture.0, "base", "configuration");
     member(&fixture.0, "ext", "extension");
     member(&fixture.0, "external", "report");
-    let input = "[workspace]\nmembers = ['base', 'ext', 'external']\n[analysis]\ndefault_application = 'accounting'\n[applications.accounting]\nconfiguration = 'base'\nextensions = ['ext']\nexternal_objects = ['external']\ntarget_platform_version = '8.3.27'\n";
+    let input = "[workspace]\n[analysis]\ndefault_application = 'accounting'\n[workspace.members.accounting]\nconfiguration = 'base'\nextensions = ['ext']\nexternal_objects = ['external']\ntarget_platform_version = '8.3.27'\n";
     fs::write(fixture.0.join("eska.toml"), input).unwrap();
     for language in ["ru", "en"] {
         let output = validate(&fixture.0, language);
@@ -60,7 +60,7 @@ fn invalid_context_relationships_have_localized_errors() {
     member(&fixture.0, "ext", "extension");
     for (fields, russian, english) in [
         (
-            "[applications.App]\nconfiguration = 'base'",
+            "[workspace.members.App]\nconfiguration = 'base'",
             "некорректное имя",
             "Invalid name",
         ),
@@ -75,37 +75,37 @@ fn invalid_context_relationships_have_localized_errors() {
             "Invalid target platform",
         ),
         (
-            "[applications.app]\nconfiguration = 'base'\nextensions = ['ext', 'ext']",
+            "[workspace.members.app]\nconfiguration = 'base'\nextensions = ['ext', 'ext']",
             "несколько раз",
             "more than once",
         ),
         (
-            "[applications.app]\nconfiguration = 'base'\nextensions = ['ext']\nextension_dependencies = {ext = ['ext']}",
+            "[workspace.members.app]\nconfiguration = 'base'\nextensions = ['ext']\nextension_dependencies = {ext = ['ext']}",
             "содержат цикл",
             "contain a cycle",
         ),
         (
-            "[applications.app]\nconfiguration = 'base'\nextensions = ['ext']\nextension_dependencies = {ext = ['missing']}",
+            "[workspace.members.app]\nconfiguration = 'base'\nextensions = ['ext']\nextension_dependencies = {ext = ['missing']}",
             "не входит",
             "is not in",
         ),
         (
-            "[applications.app]\nconfiguration = 'missing'",
-            "отсутствующий member",
-            "missing member",
+            "[workspace.members.app]\nconfiguration = 'missing'",
+            "missing",
+            "missing",
         ),
         (
-            "[applications.app]\nconfiguration = 'ext'",
+            "[workspace.members.app]\nconfiguration = 'ext'",
             "получено extension",
             "found extension",
         ),
         (
-            "[analysis]\ntarget_platform_version = '8.3.27'\n[applications.app]\nconfiguration = 'base'",
+            "[analysis]\ntarget_platform_version = '8.3.27'\n[workspace.members.app]\nconfiguration = 'base'",
             "удалите общий",
             "remove the shared",
         ),
     ] {
-        let input = format!("[workspace]\nmembers = ['base', 'ext']\n{fields}\n");
+        let input = format!("[workspace]\n{fields}\n");
         fs::write(fixture.0.join("eska.toml"), &input).unwrap();
         for (language, expected) in [("ru", russian), ("en", english)] {
             let output = validate(&fixture.0, language);
@@ -131,13 +131,10 @@ fn application_settings_reject_the_wrong_manifest_scope() {
     fs::create_dir(fixture.0.join("src")).unwrap();
     fs::write(
         fixture.0.join("eska.toml"),
-        "[project]\ntype = 'report'\n[applications.app]\nconfiguration = 'base'",
+        "[project]\ntype = 'report'\n[workspace.members.app]\nconfiguration = 'base'",
     )
     .unwrap();
-    for (language, expected) in [
-        ("ru", "только в корневом манифесте workspace"),
-        ("en", "only supported in the root workspace manifest"),
-    ] {
+    for (language, expected) in [("ru", "[project]"), ("en", "[project]")] {
         let output = validate(&fixture.0, language);
         assert_eq!(output.status.code(), Some(1));
         assert!(String::from_utf8(output.stderr).unwrap().contains(expected));
@@ -151,7 +148,7 @@ fn application_settings_reject_the_wrong_manifest_scope() {
     .unwrap();
     fs::write(
         fixture.0.join("eska.toml"),
-        "[workspace]\nmembers = ['base']",
+        "[workspace]\n[workspace.members.app]\nexternal_objects=['base']\n",
     )
     .unwrap();
     for (language, expected) in [

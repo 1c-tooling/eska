@@ -306,7 +306,7 @@ fn workspace() -> (TestDir, PathBuf, PathBuf, PathBuf) {
     fs::create_dir_all(&processing).expect("processing member");
     fs::write(
         root.join("eska.toml"),
-        "[workspace]\nmembers = ['src/sales-report', 'src/import-orders']\n",
+        "[workspace]\n[workspace.members.app]\nexternal_objects=['src/sales-report', 'src/import-orders']\n",
     )
     .expect("workspace config");
     fs::write(

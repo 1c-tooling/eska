@@ -34,7 +34,7 @@ pub fn resolve_snapshot(
     input(&mut hash, &manifest)?;
     for source in context.sources() {
         let member = source.project().root().join("eska.toml");
-        if member != manifest {
+        if !source.is_reference() && member != manifest {
             input(&mut hash, &member)?;
         }
         field(
