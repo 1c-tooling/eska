@@ -17,6 +17,7 @@ pub(super) struct Staged {
 /// All indices belong to the supplied snapshot; intermediate revisions are private implementation details.
 pub(super) fn stage(value: &Constructor, action: &Action) -> Result<Option<Staged>, Error> {
     match action {
+        Action::AlignUnion { statement } => super::union_matrix::align(value, *statement).map(Some),
         Action::MovePredicate { selection, target } => {
             super::predicates::move_stage(value, *selection, *target).map(Some)
         }

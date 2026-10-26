@@ -173,6 +173,9 @@ impl View<'_> {
         let mut output = json!({"index":index,"range":bytes(&statement.range),"russian":statement.russian,"sources":sources,"scope":statement.scope,
             "branch":statement.branch,"result":statement.result,"nested":statement.nested,"columns":columns,
             "unavailable":if opaque {json!(if statement.clauses.iter().any(|c| c.kind==ClauseKind::Destroy) {"unsupported_statement"} else {"unsupported_construct"})} else {json!(statement.unavailable)},"preview":preview(&input[statement.range.clone()]),"clauses":clauses,"append":append});
+        if self.minor >= 32 {
+            self.compact(index, statement, &mut output);
+        }
         if self.minor >= 26 {
             let roots: Vec<_> = self
                 .value
@@ -193,19 +196,36 @@ impl View<'_> {
                 "setInto":self.writable && !statement.nested && self.value.model().package_operation(index)==Some(eska_project_core::project::query::constructor::PackageOperation::Select)});
         }
         if self.minor >= 28 {
-            let sections = if opaque {
-                Vec::new()
-            } else {
-                statement.total_sections()
-            };
-            let allowed = self.writable
-                && !opaque
-                && statement.append_unavailable(ClauseKind::Totals).is_none();
-            output["addTotals"] = json!(allowed && sections.is_empty());
-            output["totalSections"] = json!(sections.iter().map(|section| json!({"index":section.index,"fields":section.fields,"groups":section.groups,"range":bytes(&section.range),"remove":allowed,
-                "moveUp":section.index.checked_sub(1).filter(|_|allowed), "moveDown":(allowed && section.index+1<sections.len()).then_some(section.index+1)})).collect::<Vec<_>>());
+            self.sections(statement, opaque, &mut output);
         }
+
         output
+    }
+
+    /// Totals permissions remain shared with earlier clients and keep the native single-section limit.
+    fn sections(&self, statement: &Statement, opaque: bool, output: &mut Value) {
+        let sections = if opaque {
+            Vec::new()
+        } else {
+            statement.total_sections()
+        };
+        let allowed =
+            self.writable && !opaque && statement.append_unavailable(ClauseKind::Totals).is_none();
+        output["addTotals"] = json!(allowed && sections.is_empty());
+        output["totalSections"] = json!(sections.iter().map(|section| json!({"index":section.index,"fields":section.fields,"groups":section.groups,"range":bytes(&section.range),"remove":allowed,
+                "moveUp":section.index.checked_sub(1).filter(|_|allowed), "moveDown":(allowed && section.index+1<sections.len()).then_some(section.index+1)})).collect::<Vec<_>>());
+    }
+
+    /// Compact projections are additive and bounded independently of the old statement vocabulary.
+    fn compact(&self, index: usize, statement: &Statement, output: &mut Value) {
+        output["unionMatrix"] = if self.value.model().scopes[statement.scope].branches[0] == index {
+            json!(self.value.union_matrix(index).map(|mut matrix| {
+                matrix.can_align &= self.writable;
+                matrix
+            }))
+        } else {
+            Value::Null
+        };
     }
 
     /// Clause ordering and exact headers are supplied once by ESKA.

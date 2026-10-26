@@ -518,7 +518,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T135 | DONE | Табличное редактирование и групповые действия | [24-compact-query-constructor.md](24-compact-query-constructor.md#t135--табличное-редактирование-и-групповые-действия) |
 | T136 | IN-PROGRESS | Контекстный редактор выражений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t136--контекстный-редактор-выражений) |
 | T137 | IN-PROGRESS | Связи и сложные условия | [24-compact-query-constructor.md](24-compact-query-constructor.md#t137--связи-и-сложные-условия) |
-| T138 | PLANNED | Матрица объединений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t138--матрица-объединений) |
+| T138 | DONE | Матрица объединений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t138--матрица-объединений) |
 | T139 | PLANNED | Дерево пакета, временные и виртуальные таблицы | [24-compact-query-constructor.md](24-compact-query-constructor.md#t139--дерево-пакета-временные-и-виртуальные-таблицы) |
 | T140 | PLANNED | Настройки и модификаторы запроса | [24-compact-query-constructor.md](24-compact-query-constructor.md#t140--настройки-и-модификаторы-запроса) |
 | T141 | PLANNED | Связанный текст, комментарии и просмотр изменений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t141--связанный-текст-комментарии-и-просмотр-изменений) |

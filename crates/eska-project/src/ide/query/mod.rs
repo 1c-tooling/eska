@@ -89,6 +89,9 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
     if !constructors::is_method(method) {
         return 0;
     }
+    if method == "query/constructorPreview" {
+        return 32;
+    }
     if method == "query/constructorCatalog" {
         if !args["query"]["atStatement"].is_null() {
             return 26;
@@ -103,6 +106,19 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
         };
     }
     if method == "query/constructorAction" {
+        if matches!(
+            args["action"]["kind"].as_str(),
+            Some("alignUnion" | "setPredicate" | "movePredicate" | "setJoinKind")
+        ) {
+            return 32;
+        }
+        if matches!(
+            args["action"]["kind"].as_str(),
+            Some("editItems" | "addSourceFields")
+        ) {
+            return 31;
+        }
+
         if args["action"]["kind"] == "setDcs" {
             return 29;
         }

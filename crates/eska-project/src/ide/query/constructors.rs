@@ -32,6 +32,7 @@ pub(super) fn is_method(method: &str) -> bool {
             | "query/constructorPlan"
             | "query/constructorModel"
             | "query/constructorAction"
+            | "query/constructorPreview"
             | "query/constructorFinish"
             | "query/constructorCancel"
             | "query/constructorCatalog"
@@ -97,6 +98,8 @@ pub(super) fn capability(minor: u32) -> Value {
     }
     if minor >= 32 {
         result["predicates"] = json!(true);
+        result["unionMatrix"] = json!(true);
+        result["actionPreview"] = json!(true);
     }
     result
 }
@@ -169,6 +172,9 @@ impl State {
                 Some(&entry.stored.revision),
                 true,
             )?;
+        }
+        if method == "query/constructorPreview" {
+            return self.constructor_preview(entry, args, minor);
         }
         if method == "query/sessionComments" {
             return source_comments(&entry.core, args);
@@ -244,6 +250,30 @@ impl State {
         if let Some(released) = released {
             output["released"] = json!(released);
         }
+        Ok(output)
+    }
+
+    /// Preview uses the same permissions, resource admission and action code, then discards the staged session.
+    fn constructor_preview(
+        &self,
+        entry: &sessions::Entry,
+        args: &Value,
+        minor: u32,
+    ) -> Result<Value, Value> {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct Preview {
+            query_session_id: String,
+            constructor_id: String,
+            constructor_revision: String,
+        }
+        let input: Preview = params::decode(args)?;
+        let mut staged = entry.core.clone();
+        transition(&mut staged, "query/constructorAction", args, minor)?;
+        self.admit_change(entry.core.retained_bytes(), staged.retained_bytes())?;
+        let mut output = sessions::header(&input.query_session_id, entry)?;
+        output["preview"] = bound_model(&staged, &input.constructor_id, minor)?;
+        output["baseRevision"] = json!(input.constructor_revision);
         Ok(output)
     }
 
@@ -377,7 +407,10 @@ fn check_compatibility(
     if (minor < 32
         && (matches!(
             action,
-            Action::SetJoinKind { .. } | Action::SetPredicate { .. } | Action::MovePredicate { .. }
+            Action::AlignUnion { .. }
+                | Action::SetJoinKind { .. }
+                | Action::SetPredicate { .. }
+                | Action::MovePredicate { .. }
         ) || core
             .constructor(id)
             .map_err(session_error)?

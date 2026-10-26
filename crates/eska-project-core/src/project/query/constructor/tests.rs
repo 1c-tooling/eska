@@ -8,6 +8,7 @@ mod packages;
 mod predicates;
 mod total_sections;
 mod totals;
+mod union_matrix;
 mod unions;
 mod virtuals;
 

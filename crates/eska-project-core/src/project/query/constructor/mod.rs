@@ -10,6 +10,7 @@ mod packages;
 mod predicates;
 mod scopes;
 mod totals;
+mod union_matrix;
 mod unions;
 mod visual;
 
@@ -23,6 +24,7 @@ pub use packages::{PackageIssue, PackageIssueKind, PackageOperation, TemporaryTa
 pub use predicates::{JoinContext, Predicate};
 pub use scopes::{QueryScope, Union};
 pub use totals::{Hierarchy, PeriodRange, PeriodUnit, TotalSection};
+pub use union_matrix::{UnionColumn, UnionMatrix};
 pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
 
 /// One set is bounded by the same maximum used for adding metadata fields.
@@ -69,6 +71,9 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    AlignUnion {
+        statement: usize,
+    },
     SetJoinKind {
         selection: Selection,
         join: JoinKind,
@@ -194,7 +199,8 @@ impl Action {
     #[must_use]
     pub const fn statement(&self) -> usize {
         match self {
-            Self::SetPredicate { statement, .. }
+            Self::AlignUnion { statement }
+            | Self::SetPredicate { statement, .. }
             | Self::EditItems { statement, .. }
             | Self::AddSourceFields { statement, .. }
             | Self::SetDcs { statement, .. }
