@@ -6,6 +6,13 @@
 
 ## Текущее состояние
 
+По запросу от 2026-10-26 созданы задачи **T115–T133**: семантический анализ
+запросов и панель полей, гибкое форматирование, редакторы и помощники разработки.
+Это backlog для выбора приоритетов; реализация и новый `NEXT` не назначены.
+T120–T123 детализируют существующую T26. Развёртывание, отладка и тестовый
+контур остаются в T31, T98–T99 и T23 без дублирующих задач.
+[Новые направления и зависимости](#задачи-для-выбора-приоритетов).
+
 По решению пользователя от 2026-10-20 развитие продолжается на Designer XML:
 самостоятельные `eska-project`, `eska-check`, `eska-build`, `eska-vcs` и общая
 делегирующая команда `eska`; `eska-debug` — отдельная опциональная очередь.
@@ -227,6 +234,23 @@ TUI разделён на обработку клавиш, отрисовку и
 Результаты, охват и ограничения — [в отчёте ревью](../reviews/2026-09-24.md).
 Очередность продуктовых задач этим рефакторингом не изменяется.
 
+## Задачи для выбора приоритетов
+
+Запись задач от 2026-10-26 не утверждает предложенную в обсуждении первую очередь.
+Прежние статусы и порядок сохраняются до отдельного выбора пользователя.
+Языковые возможности развиваются в upstream bsl-analyzer, доменная логика
+документов — в ESKA, представление — в Explorer; внешнее ядро не форкается.
+
+| Направление | Задачи | Зависимости внутри направления | Подробности |
+| --- | --- | --- | --- |
+| Типы, диагностики и панель запросов (Q1–Q5) | T115–T119 | T115 → T116; T118 и T119 требуют T116/T117 | [21-query-analysis.md](21-query-analysis.md) |
+| Гибкий fmt (F1–F4), декомпозиция T26 | T120–T123 | T120 → T121/T122 → T123 | [22-configurable-formatting.md](22-configurable-formatting.md) |
+| Права на компоненты, редакторы и помощники (L1, E1–E8), XDTO | T124–T133 | T128 требует T125; T129 требует T116/T119; T130–T132 требуют T124 и уточнения scope | [23-metadata-editors.md](23-metadata-editors.md) |
+
+T130–T133 имеют статус `NEEDS-SPEC`; остальные новые задачи — `PLANNED`.
+Варианты приоритета можно выбирать независимо между направлениями с учётом
+зависимостей. T23, T31 и T98–T99 перечислены в дальнем списке последнего файла.
+
 ## Статусы
 
 - `DONE` — реализовано и проверено в текущем репозитории;
@@ -363,7 +387,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T23 | DEFERRED | Спецификация test backend | [08-quality.md](08-quality.md) |
 | T24 | PLANNED | `affected` analysis | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T25 | DONE | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T26 | PLANNED | `eska fmt` (последняя задача текущей очереди) | [08-quality.md](08-quality.md) |
+| T26 | PLANNED | `eska fmt`, сводная T120–T123 (прежний порядок сохранён) | [08-quality.md](08-quality.md) |
 | T27 | PLANNED | `eska check` | [08-quality.md](08-quality.md) |
 | T28 | DONE | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T29 | DONE | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
@@ -452,6 +476,25 @@ BSL LSP и визуальный редактор форм в это направ
 | T112 | DONE | Одна исполнимая секция итогов с несколькими уровнями | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 | T113 | DONE | Типизированные конструкции языка СКД по грамматике платформы | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
 | T114 | DONE | 19 платформенных сценариев, PostgreSQL buhmfo с пятью расширениями и редактор ru/en | [20-query-constructor-completion.md](20-query-constructor-completion.md) |
+| T115 | PLANNED | Типы значений характеристик и составные ссылки (Q1) | [21-query-analysis.md](21-query-analysis.md#t115--типы-значений-характеристик-и-составные-ссылки-q1) |
+| T116 | PLANNED | API семантической модели запроса (Q2) | [21-query-analysis.md](21-query-analysis.md#t116--api-семантической-модели-запроса-q2) |
+| T117 | PLANNED | Контекстные диагностики XML и BSL-запросов (Q3) | [21-query-analysis.md](21-query-analysis.md#t117--контекстные-диагностики-xml-и-bsl-запросов-q3) |
+| T118 | PLANNED | Панель источников, полей и результата (Q4) | [21-query-analysis.md](21-query-analysis.md#t118--панель-источников-полей-и-результата-q4) |
+| T119 | PLANNED | Параметры запроса и их ожидаемые типы (Q5) | [21-query-analysis.md](21-query-analysis.md#t119--параметры-запроса-и-их-ожидаемые-типы-q5) |
+| T120 | PLANNED | Политика и схема настроек форматирования (F1) | [22-configurable-formatting.md](22-configurable-formatting.md#t120--политика-и-схема-настроек-форматирования-f1) |
+| T121 | PLANNED | Гибкий форматтер BSL (F2) | [22-configurable-formatting.md](22-configurable-formatting.md#t121--гибкий-форматтер-bsl-f2) |
+| T122 | PLANNED | Гибкий форматтер SDBL и встроенных запросов (F3) | [22-configurable-formatting.md](22-configurable-formatting.md#t122--гибкий-форматтер-sdbl-и-встроенных-запросов-f3) |
+| T123 | PLANNED | Единый fmt для CLI, CI и Explorer (F4) | [22-configurable-formatting.md](22-configurable-formatting.md#t123--единый-fmt-для-cli-ci-и-explorer-f4) |
+| T124 | PLANNED | Происхождение компонентов и права на выбранные редакторы (L1) | [23-metadata-editors.md](23-metadata-editors.md#t124--происхождение-компонентов-и-права-на-выбранные-редакторы-l1) |
+| T125 | PLANNED | Создание, копирование и удаление метаданных (E1) | [23-metadata-editors.md](23-metadata-editors.md#t125--создание-копирование-и-удаление-метаданных-e1) |
+| T126 | PLANNED | Редактор прав ролей (E2) | [23-metadata-editors.md](23-metadata-editors.md#t126--редактор-прав-ролей-e2) |
+| T127 | PLANNED | Состав подсистем, планов обмена и общих настроек (E3) | [23-metadata-editors.md](23-metadata-editors.md#t127--состав-подсистем-планов-обмена-и-общих-настроек-e3) |
+| T128 | PLANNED | Заимствование и перехватчики в расширениях (E4) | [23-metadata-editors.md](23-metadata-editors.md#t128--заимствование-и-перехватчики-в-расширениях-e4) |
+| T129 | PLANNED | Генерация BSL по запросу (E5) | [23-metadata-editors.md](23-metadata-editors.md#t129--генерация-bsl-по-запросу-e5) |
+| T130 | NEEDS-SPEC | Редактор табличных макетов (E6) | [23-metadata-editors.md](23-metadata-editors.md#t130--редактор-табличных-макетов-e6) |
+| T131 | NEEDS-SPEC | Визуальный редактор управляемых форм (E7) | [23-metadata-editors.md](23-metadata-editors.md#t131--визуальный-редактор-управляемых-форм-e7) |
+| T132 | NEEDS-SPEC | Редактор схемы компоновки данных (E8) | [23-metadata-editors.md](23-metadata-editors.md#t132--редактор-схемы-компоновки-данных-e8) |
+| T133 | NEEDS-SPEC | Редактор XDTO | [23-metadata-editors.md](23-metadata-editors.md#t133--редактор-xdto) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в

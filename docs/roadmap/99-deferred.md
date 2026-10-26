@@ -18,7 +18,11 @@
 | `eska setup` onboarding | NEEDS-SPEC | После doctor + environments + build |
 | Завершение задачи после squash/rebase | NEEDS-SPEC | Приоритет и контракт в [T53](12-current-functionality.md); уточнение до изменения T40 |
 | Реализация самостоятельной команды `eska test` | DEFERRED | Отдельная задача после спецификации T23; поставить перед T33, если backend выбран |
-| Структурное редактирование Designer XML: add/remove | DEFERRED | [T74](13-metadata-and-ide.md); переименование отдельно разрешено пользователем и выполняется по [спецификации](t74-rename.md) |
+| Структурное редактирование Designer XML: add/remove | PLANNED | Выделено в [T125](23-metadata-editors.md#t125--создание-копирование-и-удаление-метаданных-e1); завершённое переименование T74 сохраняется |
+| Редактор табличных макетов | NEEDS-SPEC | [T130](23-metadata-editors.md#t130--редактор-табличных-макетов-e6), после определения scope и проверки T124 |
+| Визуальный редактор управляемых форм | NEEDS-SPEC | [T131](23-metadata-editors.md#t131--визуальный-редактор-управляемых-форм-e7), после определения scope и проверки T124 |
+| Редактор схемы СКД | NEEDS-SPEC | [T132](23-metadata-editors.md#t132--редактор-схемы-компоновки-данных-e8), после определения scope и проверки T124 |
+| Редактор XDTO | NEEDS-SPEC | [T133](23-metadata-editors.md#t133--редактор-xdto), после уточнения сценария |
 | Фоновый prefetch метаданных | DEFERRED | Отдельная оптимизация по замерам T68; не включает необходимую индексацию поиска T75 |
 | EDT / `1cedtcli` source format | DEFERRED | После зрелой Designer XML модели |
 | Standalone GUI | DEFERRED | После VS Code и стабильного protocol |
