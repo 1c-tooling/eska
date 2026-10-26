@@ -11,7 +11,8 @@ use super::{
 /// Resolve indices only against the supplied immutable model revision.
 pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<EditPlan, Error> {
     let edits = match action {
-        Action::SetModifiers { .. }
+        Action::SetText { .. }
+        | Action::SetModifiers { .. }
         | Action::CopyStatement { .. }
         | Action::AlignUnion { .. }
         | Action::SetJoinKind { .. }

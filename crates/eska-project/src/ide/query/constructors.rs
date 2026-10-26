@@ -1,6 +1,7 @@
 //! Constructor ownership and text transformations live in ESKA; a native adapter displays only these DTOs.
 
 mod presentation;
+mod text_view;
 use eska_project_core::project::metadata_edit::snapshot;
 use presentation::model;
 
@@ -33,6 +34,8 @@ pub(super) fn is_method(method: &str) -> bool {
             | "query/constructorModel"
             | "query/constructorAction"
             | "query/constructorPreview"
+            | "query/constructorText"
+            | "query/constructorLocate"
             | "query/constructorFinish"
             | "query/constructorCancel"
             | "query/constructorCatalog"
@@ -43,7 +46,9 @@ pub(super) fn is_method(method: &str) -> bool {
 pub(super) fn is_cleanup(method: &str) -> bool {
     matches!(
         method,
-        "query/constructorModel"
+        "query/constructorText"
+            | "query/constructorLocate"
+            | "query/constructorModel"
             | "query/constructorPlan"
             | "query/constructorCancel"
             | "query/sessionComments"
@@ -105,6 +110,10 @@ pub(super) fn capability(minor: u32) -> Value {
         result["modifiers"] = json!(true);
         result["maxTop"] = json!(u32::MAX);
         result["maxLockSources"] = json!(64);
+        result["linkedText"] = json!(true);
+        result["textBuffer"] = json!(true);
+        result["maxTextBytes"] = json!(8_388_608);
+        result["textValidation"] = json!("structural");
     }
     result
 }
@@ -164,6 +173,8 @@ impl State {
         struct SessionId {
             query_session_id: String,
         }
+        let hydrated = self.constructor_text_args(key, method, args)?;
+        let args = hydrated.as_ref().unwrap_or(args);
         let input: SessionId = params::decode(args)?;
         let entry = self
             .sessions
@@ -177,6 +188,9 @@ impl State {
                 Some(&entry.stored.revision),
                 true,
             )?;
+        }
+        if let Some(output) = Self::constructor_text_read(entry, method, args)? {
+            return Ok(output);
         }
         if method == "query/constructorPreview" {
             return self.constructor_preview(entry, args, minor);
@@ -207,19 +221,7 @@ impl State {
             return Ok(output);
         }
         if method == "query/constructorModel" {
-            let input: Id = params::decode(args)?;
-            let value = entry
-                .core
-                .constructor(params::counter(&input.constructor_id)?)
-                .map_err(session_error)?;
-            let mut output = sessions::header(&input.query_session_id, entry)?;
-            output["constructor"] = model(
-                value,
-                &input.constructor_id,
-                entry.core.constructor_writable(),
-                minor,
-            )?;
-            return Ok(output);
+            return read_model(entry, args, minor);
         }
         let mut core = entry.core.clone();
         let (id, plan, released) = transition(&mut core, method, args, minor)?;
@@ -301,6 +303,14 @@ type Transition = (
     Option<eska_project_core::project::metadata_edit::EditPlan>,
     Option<bool>,
 );
+
+/// Return the same source header and bounded model without entering the mutation pipeline.
+fn read_model(entry: &sessions::Entry, args: &Value, minor: u32) -> Result<Value, Value> {
+    let input: Id = params::decode(args)?;
+    let mut output = sessions::header(&input.query_session_id, entry)?;
+    output["constructor"] = bound_model(&entry.core, &input.constructor_id, minor)?;
+    Ok(output)
+}
 
 /// Resolve an owned constructor before producing any transport model.
 fn bound_model(
@@ -412,7 +422,8 @@ fn check_compatibility(
     if (minor < 32
         && (matches!(
             action,
-            Action::SetModifiers { .. }
+            Action::SetText { .. }
+                | Action::SetModifiers { .. }
                 | Action::CopyStatement { .. }
                 | Action::AlignUnion { .. }
                 | Action::SetJoinKind { .. }

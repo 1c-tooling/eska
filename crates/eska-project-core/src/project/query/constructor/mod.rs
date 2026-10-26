@@ -10,6 +10,7 @@ mod nested;
 mod packages;
 mod predicates;
 mod scopes;
+mod text;
 mod totals;
 mod union_matrix;
 mod unions;
@@ -25,6 +26,7 @@ pub use modifiers::{ModifierView, Modifiers};
 pub use packages::{PackageIssue, PackageIssueKind, PackageOperation, TemporaryTable};
 pub use predicates::{JoinContext, Predicate};
 pub use scopes::{QueryScope, Union};
+pub use text::{CommentPage, TextChange, TextComment, TextDiff, TextLocation, TextTarget};
 pub use totals::{Hierarchy, PeriodRange, PeriodUnit, TotalSection};
 pub use union_matrix::{UnionColumn, UnionMatrix};
 pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
@@ -73,6 +75,11 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    SetText {
+        text: String,
+        #[serde(rename = "editorNormalized")]
+        editor_normalized: bool,
+    },
     SetModifiers {
         statement: usize,
         modifiers: Modifiers,
@@ -208,6 +215,7 @@ impl Action {
     #[must_use]
     pub const fn statement(&self) -> usize {
         match self {
+            Self::SetText { .. } => 0,
             Self::SetModifiers { statement, .. }
             | Self::CopyStatement { statement }
             | Self::AlignUnion { statement }
@@ -399,6 +407,13 @@ impl Constructor {
         if expected != self.revision {
             return Err(Error::StaleRevision);
         }
+        if let Action::SetText {
+            text,
+            editor_normalized,
+        } = action
+        {
+            return self.apply_text(action, text, *editor_normalized);
+        }
         modifiers::guard(self, action)?;
         if let Some(plan) = modifiers::plan(self, action)?.or(predicates::plan(self, action)?) {
             return self.accept_structural(plan, action);
@@ -436,38 +451,7 @@ impl Constructor {
             return Ok(plan);
         }
         if let Action::AppendFields { statement, fields } = action {
-            if fields.len() > 512 {
-                return Err(Error::TooLarge);
-            }
-            let mut staged = self.clone();
-            for expression in fields {
-                let owner = staged
-                    .model
-                    .statements
-                    .get(*statement)
-                    .ok_or(Error::InvalidSelection)?;
-                let present = owner.clauses.iter().filter(|clause| clause.kind == ClauseKind::Fields)
-                    .flat_map(|clause| clause.items.iter().filter_map(|item| item.visual(&staged.working, clause)))
-                    .any(|field| matches!(field, Expression::Field { expression: existing, aggregate: None, .. } if existing.to_lowercase() == expression.to_lowercase()));
-                if !present {
-                    staged.apply(
-                        staged.revision,
-                        &Action::Compose {
-                            statement: *statement,
-                            selection: None,
-                            expression: Expression::Field {
-                                expression: expression.clone(),
-                                alias: String::new(),
-                                aggregate: None,
-                            },
-                        },
-                    )?;
-                }
-            }
-            let plan = super::minimal_text_plan(&self.working, &staged.working)
-                .map_err(|_| Error::InvalidExpression)?;
-            *self = staged;
-            return Ok(plan);
+            return self.append_fields(*statement, fields);
         }
         if let Some(actions) = unions::field_actions(&self.working, &self.model, action)? {
             let mut replacements = Vec::new();
@@ -526,6 +510,42 @@ impl Constructor {
         let plan = visual::augment(&self.working, &self.model, original_action, plan)?;
         let plan = nested::output_plan(&self.working, &self.model, original_action, plan)?;
         Ok((plan, action.clone()))
+    }
+
+    /// The existing add-all operation stages every field before replacing its caller's snapshot.
+    fn append_fields(&mut self, statement: usize, fields: &[String]) -> Result<EditPlan, Error> {
+        if fields.len() > 512 {
+            return Err(Error::TooLarge);
+        }
+        let mut staged = self.clone();
+        for expression in fields {
+            let owner = staged
+                .model
+                .statements
+                .get(statement)
+                .ok_or(Error::InvalidSelection)?;
+            let present = owner.clauses.iter().filter(|clause| clause.kind == ClauseKind::Fields)
+                    .flat_map(|clause| clause.items.iter().filter_map(|item| item.visual(&staged.working, clause)))
+                    .any(|field| matches!(field, Expression::Field { expression: existing, aggregate: None, .. } if existing.to_lowercase() == expression.to_lowercase()));
+            if !present {
+                staged.apply(
+                    staged.revision,
+                    &Action::Compose {
+                        statement,
+                        selection: None,
+                        expression: Expression::Field {
+                            expression: expression.clone(),
+                            alias: String::new(),
+                            aggregate: None,
+                        },
+                    },
+                )?;
+            }
+        }
+        let plan = super::minimal_text_plan(&self.working, &staged.working)
+            .map_err(|_| Error::InvalidExpression)?;
+        *self = staged;
+        Ok(plan)
     }
 
     /// A structural predicate cannot turn its selected operator into an opaque or missing statement.

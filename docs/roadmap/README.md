@@ -521,7 +521,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T138 | DONE | Матрица объединений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t138--матрица-объединений) |
 | T139 | DONE | Дерево пакета, временные и виртуальные таблицы | [24-compact-query-constructor.md](24-compact-query-constructor.md#t139--дерево-пакета-временные-и-виртуальные-таблицы) |
 | T140 | DONE | Настройки и модификаторы запроса | [24-compact-query-constructor.md](24-compact-query-constructor.md#t140--настройки-и-модификаторы-запроса) |
-| T141 | PLANNED | Связанный текст, комментарии и просмотр изменений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t141--связанный-текст-комментарии-и-просмотр-изменений) |
+| T141 | DONE | Связанный текст, комментарии и просмотр изменений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t141--связанный-текст-комментарии-и-просмотр-изменений) |
 | T142 | PLANNED | Приёмка компактного конструктора | [24-compact-query-constructor.md](24-compact-query-constructor.md#t142--приёмка-компактного-конструктора) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в

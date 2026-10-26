@@ -8,6 +8,7 @@ mod nested;
 mod package_tree;
 mod packages;
 mod predicates;
+mod text;
 mod total_sections;
 mod totals;
 mod union_matrix;

@@ -89,7 +89,10 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
     if !constructors::is_method(method) {
         return 0;
     }
-    if method == "query/constructorPreview" {
+    if matches!(
+        method,
+        "query/constructorPreview" | "query/constructorLocate" | "query/constructorText"
+    ) {
         return 32;
     }
     if method == "query/constructorCatalog" {
@@ -109,7 +112,8 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
         if matches!(
             args["action"]["kind"].as_str(),
             Some(
-                "setModifiers"
+                "setText"
+                    | "setModifiers"
                     | "copyStatement"
                     | "alignUnion"
                     | "setPredicate"
