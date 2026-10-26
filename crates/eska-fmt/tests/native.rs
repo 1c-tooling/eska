@@ -56,6 +56,32 @@ fn platform_evaluates_the_same_results_before_and_after_formatting() {
             serde_json::json!({"name":name,"before":before,"after":after,"expected":expected}),
         );
     }
+    for (name, query, expected, batch) in query_cases() {
+        let response = eska_fmt::format(&Request {
+            schema_version: 1,
+            language: Language::Sdbl,
+            text: query.into(),
+            options: Options::default(),
+            range: None,
+        })
+        .unwrap();
+        let mut formatted = query.to_owned();
+        for edit in response.edits.iter().rev() {
+            formatted.replace_range(edit.range.start..edit.range.end, &edit.text);
+        }
+        let module = |query: &str| {
+            format!(
+                "\u{feff}// Проверяет результат запроса на нативной платформе.\r\nФункция Run() Экспорт\r\nЗапрос = Новый Запрос(\"{}\");\r\n{}\r\nКонецФункции\r\n",
+                query.replace('"', "\"\"").replace('\n', "\r\n |"),
+                if batch {
+                    "Результат = Запрос.ВыполнитьПакет(); Возврат Результат[1].Выгрузить()[0].A;"
+                } else {
+                    "Возврат Запрос.Выполнить().Выгрузить()[0].A;"
+                }
+            )
+        };
+        payload.push(serde_json::json!({"name":name,"before":module(query),"after":module(&formatted),"expected":expected,"server":true}));
+    }
     let mut child = Command::new("python3")
         .arg(repository.join("tests/native_formatting.py"))
         .args([
@@ -81,6 +107,49 @@ fn platform_evaluates_the_same_results_before_and_after_formatting() {
         .write_all(&serde_json::to_vec(&payload).unwrap())
         .unwrap();
     assert!(child.wait().unwrap().success());
+}
+
+/// Runtime comparisons cover scalar expressions, grouping, nested UNIONs, packages and query functions.
+fn query_cases() -> Vec<(&'static str, &'static str, i64, bool)> {
+    vec![
+        ("query_ru", "выбрать 1+2*3 как A", 7, false),
+        (
+            "query_case",
+            "select case when 1=1 then 42 else 0 end as A",
+            42,
+            false,
+        ),
+        (
+            "query_union",
+            "select sum(T.N) as A from (select 1 as N union all select 2 as N) as T",
+            3,
+            false,
+        ),
+        (
+            "query_group",
+            "select sum(T.N) as A from (select 1 as N union all select 2 as N) as T group by T.N-T.N having sum(T.N)>2 order by A desc",
+            3,
+            false,
+        ),
+        (
+            "query_package",
+            "select 17 as A into Temp;select A from Temp;drop Temp",
+            17,
+            true,
+        ),
+        (
+            "query_date",
+            "select year(dateadd(datetime(2026,1,1),month,1)) as A",
+            2026,
+            false,
+        ),
+        (
+            "query_totals",
+            "select T.N as A from (select 1 as N union all select 2 as N) as T totals sum(A) by overall",
+            3,
+            false,
+        ),
+    ]
 }
 
 /// Missing test configuration must fail rather than silently choosing a user's live infobase.

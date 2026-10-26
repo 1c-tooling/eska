@@ -1,7 +1,7 @@
 //! BSL planning connects syntax units to layout while preserving frozen ranges and source trivia.
 
 mod expressions;
-mod layout;
+pub mod layout;
 mod syntax;
 
 use crate::lex::{Kind, Token};

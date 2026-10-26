@@ -5,6 +5,24 @@ use super::{
 };
 use std::path::Path;
 
+/// Additive SDBL options retain pinned v1 defaults for older pure-text clients.
+#[test]
+fn old_protocol_options_receive_only_pinned_additive_defaults() {
+    let mut value = serde_json::to_value(super::Options::default()).unwrap();
+    for key in [
+        "condition_items",
+        "group_items",
+        "order_items",
+        "blank_lines_between_queries",
+    ] {
+        value.as_object_mut().unwrap().remove(key);
+    }
+    assert_eq!(
+        serde_json::from_value::<super::Options>(value).unwrap(),
+        super::Options::default()
+    );
+}
+
 /// Each test parses the same table shape accepted by project and workspace manifests.
 fn config(input: &str) -> Config {
     toml::from_str(input).expect("valid format table")

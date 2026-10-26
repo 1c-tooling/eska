@@ -159,7 +159,11 @@ pub(super) fn validate_patch(patch: &Patch, language: Option<Language>) -> Resul
     let bsl_only = patch.align_assignments.is_some() || patch.blank_lines_between_methods.is_some();
     let sdbl_only = patch.select_items.is_some()
         || patch.clause_newlines.is_some()
-        || patch.align_aliases.is_some();
+        || patch.align_aliases.is_some()
+        || patch.condition_items.is_some()
+        || patch.group_items.is_some()
+        || patch.order_items.is_some()
+        || patch.blank_lines_between_queries.is_some();
     if (bsl_only && language != Some(Language::Bsl))
         || (sdbl_only && language != Some(Language::Sdbl))
     {

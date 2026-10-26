@@ -279,6 +279,12 @@
           "type": "boolean",
           "default": false
         },
+        "blank_lines_between_queries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 1
+        },
         "break_before_binary_operators": {
           "type": "boolean",
           "default": true
@@ -300,11 +306,27 @@
           ],
           "default": "indent_only"
         },
+        "condition_items": {
+          "enum": [
+            "fit",
+            "one_per_line",
+            "preserve"
+          ],
+          "default": "one_per_line"
+        },
         "continuation_indent_width": {
           "type": "integer",
           "minimum": 0,
           "maximum": 64,
           "default": 4
+        },
+        "group_items": {
+          "enum": [
+            "fit",
+            "one_per_line",
+            "preserve"
+          ],
+          "default": "one_per_line"
         },
         "indent_style": {
           "enum": [
@@ -337,6 +359,14 @@
           "minimum": 0,
           "maximum": 16,
           "default": 1
+        },
+        "order_items": {
+          "enum": [
+            "fit",
+            "one_per_line",
+            "preserve"
+          ],
+          "default": "one_per_line"
         },
         "select_items": {
           "enum": [

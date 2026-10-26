@@ -4,7 +4,7 @@ use super::{DcsKind, DcsModel, DcsNode, DcsStatement, DcsValue};
 use crate::project::query::{
     constructor::{
         ClauseKind, Error, Model,
-        lex::{Kind, Token},
+        lex::{self, Kind, Token},
         visual,
     },
     virtual_tables::VirtualTable,
@@ -20,8 +20,39 @@ struct Block {
 /// A same-byte-length masked view proves ordinary clause boundaries but is never supplied to the editor or saved.
 pub(super) fn inspect(input: &str, original: &Model, tokens: &[Token]) -> Result<DcsModel, Error> {
     let blocks = blocks(input, tokens);
+    let masked = projection(input, &blocks)?;
+    let parsed = Model::parse(&masked)?;
+    let mut output = super::empty(original);
+    populate(input, original, &blocks, &masked, &parsed, &mut output)?;
+    Ok(output)
+}
+
+/// Formatting consumes only byte ranges from this projection, never its masked source text.
+pub fn format_model(input: &str) -> Result<Model, Error> {
+    let tokens = lex::tokens(input)?;
+    let blocks = blocks(input, &tokens);
+    let mut masked = projection(input, &blocks)?.into_bytes();
+    let mut previous: Option<&Token> = None;
+    for token in &tokens {
+        if token.kind == Kind::Word
+            && previous.is_some_and(|previous| {
+                matches!(previous.kind, Kind::Symbol('.' | '&'))
+                    || previous.keyword(input, &["AS", "КАК"])
+            })
+        {
+            masked[token.range.clone()].fill(b'x');
+        }
+        if token.kind != Kind::Comment {
+            previous = Some(token);
+        }
+    }
+    Model::parse(&String::from_utf8(masked).map_err(|_| Error::InvalidSyntax)?)
+}
+
+/// Reuse the established DCS and CASE boundary proof while preserving all original byte offsets.
+fn projection(input: &str, blocks: &[Block]) -> Result<String, Error> {
     let mut masked = input.as_bytes().to_vec();
-    for block in &blocks {
+    for block in blocks {
         if matches!(block.kind, DcsKind::OptionalSource | DcsKind::Parameter) {
             masked[block.range.start] = b' ';
             masked[block.range.end - 1] = b' ';
@@ -34,9 +65,18 @@ pub(super) fn inspect(input: &str, original: &Model, tokens: &[Token]) -> Result
         }
     }
     mask_cases(&mut masked)?;
-    let masked = String::from_utf8(masked).map_err(|_| Error::InvalidSyntax)?;
-    let parsed = Model::parse(&masked)?;
-    let mut output = super::empty(original);
+    String::from_utf8(masked).map_err(|_| Error::InvalidSyntax)
+}
+
+/// Typed DCS sites keep their existing editing authority independently of formatter projection.
+fn populate(
+    input: &str,
+    original: &Model,
+    blocks: &[Block],
+    masked: &str,
+    parsed: &Model,
+    output: &mut DcsModel,
+) -> Result<(), Error> {
     for (index, owner) in original.statements.iter().enumerate() {
         let Some(base) = parsed
             .statements
@@ -48,11 +88,11 @@ pub(super) fn inspect(input: &str, original: &Model, tokens: &[Token]) -> Result
         let state = &mut output.statements[index];
         state.russian = base.russian;
         if base.unavailable.is_none() {
-            sites(base, &masked, &blocks, state);
-            standalone(input, base, &blocks, state);
-            sources(input, &masked, base, &blocks, state)?;
+            sites(base, masked, blocks, state);
+            standalone(input, base, blocks, state);
+            sources(input, masked, base, blocks, state)?;
         }
-        for block in &blocks {
+        for block in blocks {
             if block.range.start < owner.range.start
                 || block.range.end > owner.range.end
                 || original.statements.iter().any(|child| {
@@ -86,7 +126,7 @@ pub(super) fn inspect(input: &str, original: &Model, tokens: &[Token]) -> Result
         state.add_where = state.condition.is_some()
             && !state.nodes.iter().any(|node| node.kind == DcsKind::Where);
     }
-    Ok(output)
+    Ok(())
 }
 
 /// Balanced scalar CASE expressions are opaque values for boundary proof; their original bytes are never edited.

@@ -37,11 +37,11 @@ pub enum Comments {
 
 // One declaration keeps the public option catalogue and its sparse override in sync.
 macro_rules! options {
-    ($($name:ident: $kind:ty = $default:expr),+ $(,)?) => {
+    ($($(#[$attribute:meta])* $name:ident: $kind:ty = $default:expr),+ $(,)?) => {
         /// Complete effective policy sent to the standalone formatter.
         #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
         #[serde(deny_unknown_fields)]
-        pub struct Options { $(pub $name: $kind),+ }
+        pub struct Options { $($(#[$attribute])* pub $name: $kind),+ }
 
         impl Default for Options {
             /// Freeze the version-one 1C style independently of analyzer or editor defaults.
@@ -107,6 +107,24 @@ options! {
     select_items: Wrapping = Wrapping::OnePerLine,
     clause_newlines: bool = true,
     align_aliases: bool = false,
+    #[serde(default = "one_per_line")]
+    condition_items: Wrapping = Wrapping::OnePerLine,
+    #[serde(default = "one_per_line")]
+    group_items: Wrapping = Wrapping::OnePerLine,
+    #[serde(default = "one_per_line")]
+    order_items: Wrapping = Wrapping::OnePerLine,
+    #[serde(default = "one_blank_line")]
+    blank_lines_between_queries: u16 = 1,
+}
+
+/// Newly available SDBL switches retain the documented v1 request default when absent.
+const fn one_per_line() -> Wrapping {
+    Wrapping::OnePerLine
+}
+
+/// A v1 caller predating SDBL-specific layout still receives the pinned query profile.
+const fn one_blank_line() -> u16 {
+    1
 }
 
 impl Options {
@@ -137,6 +155,12 @@ impl Options {
             ),
             ("column_limit", self.column_limit, 0, 4096),
             ("max_empty_lines", self.max_empty_lines, 0, 16),
+            (
+                "blank_lines_between_queries",
+                self.blank_lines_between_queries,
+                0,
+                16,
+            ),
             (
                 "blank_lines_between_methods",
                 self.blank_lines_between_methods,

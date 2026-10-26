@@ -2,7 +2,11 @@
 
 mod bsl;
 mod lex;
+mod query;
+mod sdbl;
 mod spelling;
+
+pub use query::format_query;
 
 #[cfg(test)]
 mod tests;
@@ -21,10 +25,14 @@ pub fn format(request: &Request) -> Result<Response, Error> {
     let tokens = lex::tokens(&request.text, request.language)?;
     let (text, formatted_range) = match request.language {
         Language::Bsl => bsl::format(request, &tokens)?,
-        Language::Sdbl => return Err(Error::new("unsupported_language", "sdbl")),
+        Language::Sdbl => sdbl::format(request, &tokens)?,
     };
     let after = lex::tokens(&text, request.language)?;
-    if !lex::equivalent(&tokens, &after) {
+    let equivalent = match request.language {
+        Language::Bsl => lex::equivalent(&tokens, &after),
+        Language::Sdbl => sdbl::equivalent(&tokens, &after),
+    };
+    if !equivalent {
         return Err(Error::new("token_mismatch", "text"));
     }
     let edits = minimal_edit(&request.text, &text).into_iter().collect();

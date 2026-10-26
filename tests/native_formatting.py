@@ -25,10 +25,11 @@ def main():
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     playground = (repo.parent / "eska-playground").resolve()
-    stand = Path(tempfile.mkdtemp(prefix="t121-native-", dir=playground))
-    (stand / "owner.json").write_text(json.dumps({"task": "T121", "repository": str(repo)}) + "\n")
+    stand = Path(tempfile.mkdtemp(prefix="fmt-native-", dir=playground))
     print(stand, flush=True)
     cases = json.load(sys.stdin)
+    task = "T122" if any(case.get("server") for case in cases) else "T121"
+    (stand / "owner.json").write_text(json.dumps({"task": task, "repository": str(repo)}) + "\n")
     assert 0 < len(cases) <= 128
     (stand / "cases.json").write_text(json.dumps(cases, ensure_ascii=False, indent=2) + "\n")
     root = stand / "project"
@@ -44,7 +45,7 @@ def main():
     additions = []
     startup = ["// Сравнивает результаты модулей до и после форматирования.", "Процедура ПриНачалеРаботыСистемы()", "    Вывод = Новый ЗаписьТекста(ПараметрЗапуска, КодировкаТекста.UTF8);"]
     for index, case in enumerate(cases):
-        assert set(case) == {"name", "before", "after", "expected"}
+        assert set(case) in ({"name", "before", "after", "expected"}, {"name", "before", "after", "expected", "server"})
         assert isinstance(case["expected"], int) and case["name"].replace("_", "").isalnum()
         names = []
         for phase in ("before", "after"):
@@ -53,10 +54,11 @@ def main():
             additions.append(f"<CommonModule>{name}</CommonModule>")
             directory = source / "CommonModules" / name / "Ext"
             directory.mkdir(parents=True)
+            server = case.get("server", False)
             properties = (f"<Name>{name}</Name><Synonym/><Comment/><Global>false</Global>"
-                          "<ClientManagedApplication>true</ClientManagedApplication><Server>false</Server>"
+                          f"<ClientManagedApplication>{str(not server).lower()}</ClientManagedApplication><Server>{str(server).lower()}</Server>"
                           "<ExternalConnection>false</ExternalConnection><ClientOrdinaryApplication>false</ClientOrdinaryApplication>"
-                          "<ServerCall>false</ServerCall><Privileged>false</Privileged><ReturnValuesReuse>DontUse</ReturnValuesReuse>")
+                          f"<ServerCall>{str(server).lower()}</ServerCall><Privileged>false</Privileged><ReturnValuesReuse>DontUse</ReturnValuesReuse>")
             xml = f'\ufeff<?xml version="1.0" encoding="UTF-8"?>\r\n{header}\r\n<CommonModule uuid="{uuid.uuid4()}"><Properties>{properties}</Properties></CommonModule></MetaDataObject>\r\n'
             (source / "CommonModules" / f"{name}.xml").write_bytes(xml.encode())
             (directory / "Module.bsl").write_bytes(case[phase].encode())
