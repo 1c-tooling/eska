@@ -30,7 +30,7 @@ fn workspace(report_version: &str, processing_version: &str) -> TestDir {
     fs::create_dir_all(&processing).expect("processing member");
     fs::write(
         fixture.0.join("eska.toml"),
-        "[workspace]\nmembers = ['src/sales-report', 'src/import-orders']\n",
+        "[workspace]\n[workspace.members.app]\nexternal_objects=['src/sales-report', 'src/import-orders']\n",
     )
     .expect("workspace config");
     fs::write(

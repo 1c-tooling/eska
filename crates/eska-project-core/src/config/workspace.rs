@@ -1,7 +1,6 @@
 //! Strict root workspace configuration and member path validation.
 
 use std::{
-    collections::BTreeMap,
     fs, io,
     path::{Component, Path, PathBuf},
 };
@@ -10,16 +9,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     application::{
-        AnalysisOptions, AnalysisSettings, Application, RawAnalysis, RawApplication, RawTools,
+        AnalysisOptions, AnalysisSettings, RawAnalysis, RawTools,
         SettingsError as AnalysisSettingsError, ToolSettings,
     },
+    project::WorkspaceMember,
     project::build::{BuildSettings, BuildSettingsError},
-    project::{ProjectName, WorkspaceMember},
     workflow::WorkflowSettings,
 };
 
 use super::{
     ProjectConfigError,
+    composition::MemberLayout,
     schema::{RawBuild, RawVcs, SerializedBuild, SerializedVcs},
 };
 
@@ -31,14 +31,13 @@ struct RawWorkspaceDocument {
     vcs: Option<RawVcs>,
     analysis: Option<RawAnalysis>,
     tools: Option<RawTools>,
-    #[serde(default)]
-    applications: BTreeMap<String, RawApplication>,
 }
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct RawWorkspace {
-    members: Vec<PathBuf>,
+    #[serde(default)]
+    members: MemberLayout,
 }
 
 #[derive(Serialize)]
@@ -49,21 +48,20 @@ struct SerializedWorkspaceDocument<'a> {
     vcs: Option<SerializedVcs<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     analysis: Option<&'a AnalysisOptions>,
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    applications: &'a BTreeMap<ProjectName, Application>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tools: Option<&'a ToolSettings>,
 }
 
 #[derive(Serialize)]
 struct SerializedWorkspace<'a> {
-    members: &'a [PathBuf],
+    members: &'a MemberLayout,
 }
 
 /// The validated contents of a root workspace `eska.toml` file.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WorkspaceConfig {
     members: Vec<PathBuf>,
+    layout: MemberLayout,
     build: BuildSettings,
     workflow: Option<WorkflowSettings>,
     analysis: AnalysisSettings,
@@ -89,9 +87,9 @@ impl WorkspaceConfig {
     pub fn from_toml(input: &str) -> Result<Self, WorkspaceConfigError> {
         let document: RawWorkspaceDocument =
             toml::from_str(input).map_err(WorkspaceConfigError::Toml)?;
-        for member in &document.workspace.members {
-            validate_member_path(member)?;
-        }
+        let layout = document.workspace.members;
+        let members = layout.paths()?;
+        let names = layout.names()?;
 
         let defaults = BuildSettings::default();
         let raw_build = document.build.unwrap_or_default();
@@ -107,16 +105,13 @@ impl WorkspaceConfig {
             .map(|vcs| super::workflow::parse(vcs.workflow))
             .transpose()
             .map_err(WorkspaceConfigError::InvalidWorkflow)?;
-        let analysis = AnalysisSettings::parse(
-            document.analysis,
-            document.applications,
-            document.tools,
-            true,
-        )
-        .map_err(|error| WorkspaceConfigError::InvalidAnalysis(Box::new(error)))?;
+        let analysis =
+            AnalysisSettings::parse_with_names(document.analysis, document.tools, true, &names)
+                .map_err(|error| WorkspaceConfigError::InvalidAnalysis(Box::new(error)))?;
 
         Ok(Self {
-            members: document.workspace.members,
+            members,
+            layout,
             build,
             workflow,
             analysis,
@@ -131,7 +126,7 @@ impl WorkspaceConfig {
         let defaults = BuildSettings::default();
         let document = SerializedWorkspaceDocument {
             workspace: SerializedWorkspace {
-                members: &self.members,
+                members: &self.layout,
             },
             build: SerializedBuild {
                 platform_version: self
@@ -146,7 +141,6 @@ impl WorkspaceConfig {
                 workflow: super::workflow::serialize(settings),
             }),
             analysis: (!self.analysis.options().is_empty()).then_some(self.analysis.options()),
-            applications: self.analysis.applications(),
             tools: (!self.analysis.tools().is_empty()).then_some(self.analysis.tools()),
         };
         toml::to_string_pretty(&document)
@@ -167,20 +161,35 @@ impl WorkspaceConfig {
         self.workflow.as_ref()
     }
 
-    /// Return validated root declarations without reloading a second configuration source.
+    /// Return root options and policy; application identities are resolved during discovery.
     #[must_use]
     pub const fn analysis_settings(&self) -> &AnalysisSettings {
         &self.analysis
     }
 
     /// Check actual member types and names after filesystem-backed discovery.
-    pub(crate) fn validate_applications(
+    pub(crate) fn resolve_analysis(
         &self,
         members: &[WorkspaceMember],
-    ) -> Result<(), WorkspaceConfigError> {
-        self.analysis
+    ) -> Result<AnalysisSettings, WorkspaceConfigError> {
+        let mut analysis = self.analysis.clone();
+        {
+            let applications = &self.layout.0;
+            let declarations = self
+                .layout
+                .names()?
+                .into_iter()
+                .zip(applications.values())
+                .map(|(name, application)| (name, application.resolve(&self.members, members)))
+                .collect();
+            analysis = analysis
+                .with_applications(declarations)
+                .map_err(|error| WorkspaceConfigError::InvalidAnalysis(Box::new(error)))?;
+        }
+        analysis
             .validate_workspace(members)
-            .map_err(|error| WorkspaceConfigError::InvalidAnalysis(Box::new(error)))
+            .map_err(|error| WorkspaceConfigError::InvalidAnalysis(Box::new(error)))?;
+        Ok(analysis)
     }
 }
 
@@ -209,7 +218,7 @@ pub enum WorkspaceConfigError {
     },
 }
 
-fn validate_member_path(path: &Path) -> Result<(), WorkspaceConfigError> {
+pub(super) fn validate_member_path(path: &Path) -> Result<(), WorkspaceConfigError> {
     let reason = if path.as_os_str().is_empty() {
         Some(InvalidMemberPathReason::Empty)
     } else if path.is_absolute() {
@@ -239,7 +248,8 @@ mod tests {
     #[test]
     fn workspace_settings_and_members_round_trip() {
         let input = r#"[workspace]
-members = ["src/report", "src/processing"]
+[workspace.members.app]
+external_objects = ["src/report", "src/processing"]
 
 [build]
 platform_version = "8.3.27.2325"
@@ -263,15 +273,16 @@ preset = "trunk"
     #[test]
     fn workspace_rejects_unsafe_member_paths_and_project_sections() {
         for member in ["", "/absolute", "src/../outside"] {
-            let result =
-                WorkspaceConfig::from_toml(&format!("[workspace]\nmembers = ['{member}']\n"));
+            let result = WorkspaceConfig::from_toml(&format!(
+                "[workspace]\n[workspace.members.app]\nexternal_objects=['{member}']\n"
+            ));
             assert!(matches!(
                 result,
                 Err(WorkspaceConfigError::InvalidMemberPath { .. })
             ));
         }
         assert!(matches!(
-            WorkspaceConfig::from_toml("[workspace]\nmembers = []\n[project]\ntype = 'report'\n"),
+            WorkspaceConfig::from_toml("[workspace]\nmembers = {}\n[project]\ntype = 'report'\n"),
             Err(WorkspaceConfigError::Toml(_))
         ));
     }

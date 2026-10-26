@@ -6,7 +6,8 @@ use std::{
 };
 
 use crate::project::{
-    Project, ProjectName, ProjectType, Workspace, WorkspaceMember,
+    Project, ProjectConfiguration, ProjectName, ProjectType, SourceFormat, Workspace,
+    WorkspaceMember,
     designer_source::{self, SourceError},
     discovery::{self, ContextDiscoveryError, DiscoveryContext},
     metadata_model::ProjectScope,
@@ -40,6 +41,7 @@ impl SourceRole {
 /// Resolved metadata identity and source settings, without BSL text or a language index.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ContextSource {
+    reference: bool,
     member: Option<ProjectName>,
     role: SourceRole,
     project: Project,
@@ -50,6 +52,12 @@ pub struct ContextSource {
 }
 
 impl ContextSource {
+    /// Reference XML supplies analysis context without a member manifest or writable project.
+    #[must_use]
+    pub const fn is_reference(&self) -> bool {
+        self.reference
+    }
+
     /// Return the workspace member identity, when this is not a standalone project.
     #[must_use]
     pub const fn member(&self) -> Option<&ProjectName> {
@@ -122,7 +130,7 @@ impl AnalysisContext {
         &self.root
     }
 
-    /// Return the selected application or implicit single workspace member name.
+    /// Return the selected workspace application; standalone projects have no application name.
     #[must_use]
     pub const fn name(&self) -> Option<&ProjectName> {
         self.name.as_ref()
@@ -169,9 +177,6 @@ pub enum ContextError {
     AmbiguousApplication {
         available: Vec<ProjectName>,
     },
-    ApplicationDeclarationsMissing {
-        members: Vec<ProjectName>,
-    },
     EmptyWorkspace,
 }
 
@@ -196,7 +201,7 @@ pub fn resolve(start: &Path, requested: Option<&str>) -> Result<AnalysisContext,
         DiscoveryContext::Workspace { workspace, .. } => {
             let settings = workspace.analysis_settings();
             if settings.applications().is_empty() {
-                return single_member(&workspace, requested);
+                return Err(ContextError::EmptyWorkspace);
             }
             let (name, application) = choose_application(settings, requested)?;
             application_context(&workspace, name, application)
@@ -204,7 +209,7 @@ pub fn resolve(start: &Path, requested: Option<&str>) -> Result<AnalysisContext,
     }
 }
 
-/// Keep standalone projects and a workspace's sole member valid without inventing a base.
+/// Resolve a standalone project with its optional explicit reference configuration.
 fn single(
     root: &Path,
     member: Option<&ProjectName>,
@@ -216,43 +221,26 @@ fn single(
         project,
         role(project.configuration().project_type()),
     )?;
+    let mut sources = vec![source];
+    if let Some(reference) = settings.options().configuration() {
+        if project.configuration().project_type() == ProjectType::Configuration {
+            return Err(ContextError::Settings(Box::new(
+                SettingsError::ConfigurationReferenceScope,
+            )));
+        }
+        let base = read_reference(root, &reference.source)?;
+        validate_reference(&base, &sources)?;
+        sources.insert(0, base);
+    }
     Ok(AnalysisContext {
         root: root.into(),
         name: member.cloned(),
-        sources: vec![source],
+        sources,
         extension_dependencies: BTreeMap::new(),
         target_platform_version: target(settings.options().target_platform_version(), project),
         analyzer_policy: settings.tools().bsl_analyzer.clone(),
         check_policy: settings.tools().check.clone(),
     })
-}
-
-/// Multiple independent members require an explicit composition, even if one is a configuration.
-fn single_member(
-    workspace: &Workspace,
-    requested: Option<&str>,
-) -> Result<AnalysisContext, ContextError> {
-    let member = match workspace.members() {
-        [] => return Err(ContextError::EmptyWorkspace),
-        [member] => member,
-        members => {
-            return Err(ContextError::ApplicationDeclarationsMissing {
-                members: members.iter().map(|member| member.name().clone()).collect(),
-            });
-        }
-    };
-    if let Some(requested) = requested.filter(|requested| *requested != member.name().as_str()) {
-        return Err(ContextError::UnknownApplication {
-            requested: requested.into(),
-            available: vec![member.name().clone()],
-        });
-    }
-    single(
-        workspace.root(),
-        Some(member.name()),
-        member.project(),
-        workspace.analysis_settings(),
-    )
 }
 
 /// A sole declaration is unambiguous; more than one requires an explicit default or selection.
@@ -292,12 +280,18 @@ fn application_context(
     name: &ProjectName,
     application: &Application,
 ) -> Result<AnalysisContext, ContextError> {
-    let base = member(workspace, name, application.configuration())?;
-    let mut sources = vec![read_source(
-        Some(base.name()),
-        base.project(),
-        SourceRole::Configuration,
-    )?];
+    let base = application
+        .configuration()
+        .map(|base| member(workspace, name, base))
+        .transpose()?;
+    let mut sources = Vec::new();
+    if let Some(base) = base {
+        sources.push(read_source(
+            Some(base.name()),
+            base.project(),
+            SourceRole::Configuration,
+        )?);
+    }
     for extension in graph::ordered_extensions(name, application)
         .map_err(|error| ContextError::Settings(Box::new(error)))?
     {
@@ -316,12 +310,37 @@ fn application_context(
             SourceRole::ExternalObject,
         )?);
     }
+    if let Some(path) = application.configuration_source() {
+        let reference = read_reference(workspace.root(), path)?;
+        validate_reference(&reference, &sources)?;
+        // Reference roots must also stay distinct from unselected, writable workspace members.
+        if workspace
+            .members()
+            .iter()
+            .any(|member| overlaps(reference.project().source(), member.root()))
+        {
+            return Err(ContextError::Settings(Box::new(
+                SettingsError::ConfigurationReferenceScope,
+            )));
+        }
+        sources.insert(0, reference);
+    }
+    if sources.is_empty() {
+        return Err(ContextError::EmptyWorkspace);
+    }
+    let build = base.map_or_else(
+        || workspace.build_settings(),
+        |member| member.project().configuration().build_settings(),
+    );
     Ok(AnalysisContext {
         root: workspace.root().into(),
         name: Some(name.clone()),
         sources,
         extension_dependencies: application.extension_dependencies().clone(),
-        target_platform_version: target(application.target_platform_version(), base.project()),
+        target_platform_version: application
+            .target_platform_version()
+            .cloned()
+            .or_else(|| build.platform_version().map(TargetPlatformVersion::from)),
         analyzer_policy: workspace.analysis_settings().tools().bsl_analyzer.clone(),
         check_policy: workspace.analysis_settings().tools().check.clone(),
     })
@@ -378,6 +397,7 @@ fn read_source(
             .map_err(|error| ContextError::Source(Box::new(error)))?;
     let path = source.descriptor().to_owned();
     Ok(ContextSource {
+        reference: false,
         member: name.cloned(),
         role,
         project: project.clone(),
@@ -386,4 +406,52 @@ fn read_source(
         uuid: source.root().uuid().into(),
         compatibility_mode,
     })
+}
+
+/// Resolve only the explicitly supplied XML directory; no neighboring manifest or Git is consulted.
+fn read_reference(root: &Path, path: &Path) -> Result<ContextSource, ContextError> {
+    let path = root.join(path);
+    let source = std::fs::canonicalize(&path).map_err(|source| {
+        ContextError::Source(Box::new(SourceError::Io {
+            path: path.clone(),
+            source,
+        }))
+    })?;
+    let project = Project::new(
+        source.clone(),
+        source,
+        ProjectConfiguration::new(ProjectType::Configuration, SourceFormat::DesignerXml),
+    )
+    .map_err(|source| {
+        ContextError::Discovery(Box::new(ContextDiscoveryError::Project(
+            discovery::DiscoveryError::Config {
+                path,
+                source: crate::config::ProjectConfigError::ProjectPath(source),
+            },
+        )))
+    })?;
+    let mut source = read_source(None, &project, SourceRole::Configuration)?;
+    source.reference = true;
+    Ok(source)
+}
+
+/// Aliases cannot make the same physical source both a reference and a writable project.
+fn validate_reference(
+    reference: &ContextSource,
+    sources: &[ContextSource],
+) -> Result<(), ContextError> {
+    if sources
+        .iter()
+        .any(|source| overlaps(reference.project().source(), source.project().root()))
+    {
+        return Err(ContextError::Settings(Box::new(
+            SettingsError::ConfigurationReferenceScope,
+        )));
+    }
+    Ok(())
+}
+
+/// Compare component boundaries after canonical resolution, including identical roots.
+fn overlaps(first: &Path, second: &Path) -> bool {
+    first.starts_with(second) || second.starts_with(first)
 }

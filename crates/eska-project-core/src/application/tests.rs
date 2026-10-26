@@ -2,6 +2,7 @@
 
 use std::{
     collections::BTreeMap,
+    fmt::Write as _,
     fs,
     path::{Path, PathBuf},
 };
@@ -17,6 +18,8 @@ use crate::{
 use super::{
     ContextError, SettingsError, SourceRole, TargetPlatformVersion, resolve, resolve_snapshot,
 };
+
+mod composition;
 
 /// Plain editor context does not depend on a derived config or unrelated module contents.
 #[test]
@@ -67,7 +70,7 @@ fn context_snapshot_distinguishes_application_selection_for_identical_sources() 
     workspace(
         &fixture.0,
         &["main"],
-        "[applications.first]\nconfiguration='main'\n[applications.second]\nconfiguration='main'\n",
+        "[workspace.members.first]\nconfiguration='main'\n[workspace.members.second]\nconfiguration='main'\n",
     );
     let first = resolve_snapshot(&fixture.0, Some("first")).unwrap();
     let second = resolve_snapshot(&fixture.0, Some("second")).unwrap();
@@ -172,7 +175,39 @@ fn project(root: &Path, kind: &str, name: Option<&str>, version: Option<&str>) -
 
 /// Root settings always name members explicitly; the resolver may not infer additional inputs.
 fn workspace(root: &Path, members: &[&str], application: &str) {
-    fs::write(root.join("eska.toml"), format!("[workspace]\nmembers = {members:?}\n[build]\nplatform_version = '8.3.27.2325'\n{application}")).unwrap();
+    let mut text = format!("[workspace]\n[build]\nplatform_version = '8.3.27.2325'\n{application}");
+    let declared: toml::Value = toml::from_str(&text).unwrap();
+    let applications = declared
+        .get("workspace")
+        .and_then(|value| value.get("members"));
+    for path in members {
+        let selected = applications
+            .and_then(toml::Value::as_table)
+            .is_some_and(|apps| {
+                apps.values().any(|app| {
+                    app.get("configuration").and_then(toml::Value::as_str) == Some(path)
+                        || ["extensions", "external_objects"].iter().any(|key| {
+                            app.get(*key)
+                                .and_then(toml::Value::as_array)
+                                .is_some_and(|values| {
+                                    values.iter().any(|value| value.as_str() == Some(path))
+                                })
+                        })
+                })
+            });
+        if selected {
+            continue;
+        }
+        let config = ProjectConfig::load(&root.join(path).join("eska.toml")).unwrap();
+        let name = config.name().unwrap().as_str();
+        let role = match config.configuration().project_type() {
+            ProjectType::Configuration => format!("configuration = {path:?}"),
+            ProjectType::Extension => format!("extensions = [{path:?}]"),
+            _ => format!("external_objects = [{path:?}]"),
+        };
+        write!(text, "\n[workspace.members.{name}]\n{role}\n").unwrap();
+    }
+    fs::write(root.join("eska.toml"), text).unwrap();
 }
 
 /// Compare exact files before/after read-only resolution, including BOM, CRLF and opaque bytes.
@@ -194,8 +229,28 @@ fn snapshot(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
 
 /// Expose semantic schema errors separately from TOML parse failures.
 fn settings_error(extra: &str) -> SettingsError {
-    let document = format!("[workspace]\nmembers = []\n{extra}");
-    match WorkspaceConfig::from_toml(&document).unwrap_err() {
+    let document = format!("[workspace]\n{extra}");
+    let result = WorkspaceConfig::from_toml(&document).and_then(|config| {
+        let fixture = TestDir::new();
+        let members = config
+            .members()
+            .iter()
+            .map(|path| {
+                let name = ProjectName::parse(path.to_str().unwrap().into()).unwrap();
+                let kind = if name.as_str() == "main" {
+                    ProjectType::Configuration
+                } else {
+                    ProjectType::Extension
+                };
+                let project = ProjectConfig::new(kind)
+                    .into_project(fixture.0.join(path))
+                    .unwrap();
+                crate::project::WorkspaceMember::new(name, project)
+            })
+            .collect::<Vec<_>>();
+        config.resolve_analysis(&members)
+    });
+    match result.unwrap_err() {
         WorkspaceConfigError::InvalidAnalysis(error) => *error,
         other => panic!("unexpected error: {other:?}"),
     }
@@ -300,7 +355,7 @@ fn workspace_resolves_one_base_five_extensions_and_explicit_external_objects() {
             fs::write(path, "not XML").unwrap();
         }
     }
-    let declaration = "[analysis]\ndefault_application = 'accounting'\n[applications.accounting]\nconfiguration = 'main'\nextensions = ['ext-5', 'ext-4', 'ext-3', 'ext-2', 'ext-1']\nexternal_objects = ['processing', 'report']\nextension_dependencies = { ext-5 = ['ext-4'], ext-4 = ['ext-3'], ext-3 = ['ext-2'], ext-2 = ['ext-1'] }\n";
+    let declaration = "[analysis]\ndefault_application = 'accounting'\n[workspace.members.accounting]\nconfiguration = 'main'\nextensions = ['ext-5', 'ext-4', 'ext-3', 'ext-2', 'ext-1']\nexternal_objects = ['processing', 'report']\nextension_dependencies = { ext-5 = ['ext-4'], ext-4 = ['ext-3'], ext-3 = ['ext-2'], ext-2 = ['ext-1'] }\n";
     workspace(&fixture.0, &names, declaration);
     let before = snapshot(&fixture.0);
     let context = resolve(&fixture.0, None).unwrap();
@@ -345,7 +400,7 @@ fn multiple_applications_require_a_default_or_explicit_selection() {
     for name in ["first", "second"] {
         project(&fixture.0.join(name), "configuration", Some(name), None);
     }
-    let applications = "[applications.first]\nconfiguration = 'first'\n[applications.second]\nconfiguration = 'second'\ntarget_platform_version = '8.5.1'\n";
+    let applications = "[workspace.members.first]\nconfiguration = 'first'\n[workspace.members.second]\nconfiguration = 'second'\ntarget_platform_version = '8.5.1'\n";
     workspace(&fixture.0, &["first", "second"], applications);
     assert!(matches!(
         resolve(&fixture.0.join("first"), None),
@@ -396,7 +451,7 @@ fn implicit_context_requires_exactly_one_member() {
     workspace(&fixture.0, &["only", "other"], "");
     assert!(matches!(
         resolve(&fixture.0, None),
-        Err(ContextError::ApplicationDeclarationsMissing { .. })
+        Err(ContextError::AmbiguousApplication { .. })
     ));
 }
 
@@ -408,13 +463,13 @@ fn graph_and_root_selection_are_strict() {
         SettingsError::UnknownDefaultApplication { .. }
     ));
     assert!(matches!(
-        settings_error("[applications.Main]\nconfiguration = 'main'"),
+        settings_error("[workspace.members.Main]\nconfiguration = 'main'"),
         SettingsError::InvalidName { .. }
     ));
     for extra in ["extensions = ['one', 'one']", "extensions = ['main']"] {
         assert!(matches!(
             settings_error(&format!(
-                "[applications.app]\nconfiguration = 'main'\n{extra}"
+                "[workspace.members.app]\nconfiguration = 'main'\n{extra}"
             )),
             SettingsError::DuplicateMember { .. }
         ));
@@ -422,7 +477,7 @@ fn graph_and_root_selection_are_strict() {
     for edges in ["{ one = ['two'] }", "{ two = ['one'] }"] {
         assert!(matches!(
             settings_error(&format!(
-                "[applications.app]\nconfiguration = 'main'\nextensions = ['one']\nextension_dependencies = {edges}"
+                "[workspace.members.app]\nconfiguration = 'main'\nextensions = ['one']\nextension_dependencies = {edges}"
             )),
             SettingsError::DependencyOutsideApplication { .. }
         ));
@@ -430,24 +485,24 @@ fn graph_and_root_selection_are_strict() {
     for edges in ["{ one = ['one'] }", "{ one = ['two'], two = ['one'] }"] {
         assert!(matches!(
             settings_error(&format!(
-                "[applications.app]\nconfiguration = 'main'\nextensions = ['one', 'two']\nextension_dependencies = {edges}"
+                "[workspace.members.app]\nconfiguration = 'main'\nextensions = ['one', 'two']\nextension_dependencies = {edges}"
             )),
             SettingsError::DependencyCycle { .. }
         ));
     }
     assert!(matches!(
         settings_error(
-            "[analysis]\ntarget_platform_version = '8.3.27'\n[applications.app]\nconfiguration = 'main'"
+            "[analysis]\ntarget_platform_version = '8.3.27'\n[workspace.members.app]\nconfiguration = 'main'"
         ),
         SettingsError::TargetPlatformScope
     ));
     assert!(
-        WorkspaceConfig::from_toml("[workspace]\nmembers = []\n[analysis]\nunknown = true")
+        WorkspaceConfig::from_toml("[workspace]\nmembers = {}\n[analysis]\nunknown = true")
             .is_err()
     );
     assert!(
         ProjectConfig::from_toml(
-            "[project]\ntype = 'report'\n[applications.app]\nconfiguration = 'main'"
+            "[project]\ntype = 'report'\n[workspace.members.app]\nconfiguration = 'main'"
         )
         .is_err()
     );
@@ -460,14 +515,13 @@ fn missing_members_wrong_roles_and_member_settings_are_rejected() {
     project(&fixture.0.join("main"), "configuration", Some("main"), None);
     project(&fixture.0.join("ext"), "extension", Some("ext"), None);
     for (declaration, reason) in [
-        ("configuration = 'absent'", "unknown"),
         ("configuration = 'ext'", "type"),
         ("configuration = 'main'\nexternal_objects = ['ext']", "type"),
     ] {
         workspace(
             &fixture.0,
             &["main", "ext"],
-            &format!("[applications.app]\n{declaration}"),
+            &format!("[workspace.members.app]\n{declaration}"),
         );
         let ContextError::Discovery(error) = resolve(&fixture.0, None).unwrap_err() else {
             panic!("discovery error")
@@ -498,7 +552,7 @@ fn missing_members_wrong_roles_and_member_settings_are_rejected() {
     workspace(
         &fixture.0,
         &["main", "ext"],
-        "[applications.app]\nconfiguration = 'main'\nextensions = ['ext']",
+        "[workspace.members.app]\nconfiguration = 'main'\nextensions = ['ext']",
     );
     assert!(resolve(&fixture.0, None).is_err());
 }
@@ -670,7 +724,7 @@ fn target_platform_follows_the_main_configuration_until_explicitly_overridden() 
         Some("ext"),
         Some("8.5.1.1234"),
     );
-    let declaration = "[applications.app]\nconfiguration = 'main'\nextensions = ['ext']\n";
+    let declaration = "[workspace.members.app]\nconfiguration = 'main'\nextensions = ['ext']\n";
     workspace(&fixture.0, &["main", "ext"], declaration);
     let context = resolve(&fixture.0, None).unwrap();
     assert_eq!(
@@ -693,15 +747,20 @@ fn target_platform_follows_the_main_configuration_until_explicitly_overridden() 
 #[test]
 /// Ready extensions retain their declaration order even when dependencies occur later in the list.
 fn dependency_order_is_deterministic_for_unrelated_extensions() {
-    let config = WorkspaceConfig::from_toml("[workspace]\nmembers = []\n[applications.app]\nconfiguration = 'main'\nextensions = ['third', 'first', 'second']\nextension_dependencies = {third = ['first']}\n").unwrap();
-    let (name, application) = config
-        .analysis_settings()
-        .applications()
-        .first_key_value()
-        .unwrap();
-    let ordered = super::graph::ordered_extensions(name, application).unwrap();
+    let fixture = TestDir::new();
+    project(&fixture.0.join("main"), "configuration", Some("main"), None);
+    for name in ["third", "first", "second"] {
+        project(&fixture.0.join(name), "extension", Some(name), None);
+    }
+    fs::write(fixture.0.join("eska.toml"), "[workspace.members.app]\nconfiguration = 'main'\nextensions = ['third', 'first', 'second']\nextension_dependencies = {third = ['first']}\n").unwrap();
+    let context = resolve(&fixture.0, None).unwrap();
+    let ordered = context
+        .sources()
+        .iter()
+        .skip(1)
+        .map(|source| source.member().unwrap());
     assert_eq!(
-        ordered.iter().map(ProjectName::as_str).collect::<Vec<_>>(),
+        ordered.map(ProjectName::as_str).collect::<Vec<_>>(),
         ["first", "third", "second"]
     );
 }

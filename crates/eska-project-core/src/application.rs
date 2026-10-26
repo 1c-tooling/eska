@@ -10,9 +10,10 @@ pub use context::{AnalysisContext, ContextError, ContextSource, SourceRole, reso
 pub(crate) use policy::RawTools;
 pub use policy::{AnalyzerPolicy, CheckPolicy, ToolSettings};
 pub use settings::{
-    AnalysisOptions, AnalysisSettings, Application, SettingsError, TargetPlatformVersion,
+    AnalysisOptions, AnalysisSettings, Application, ConfigurationReference, SettingsError,
+    TargetPlatformVersion,
 };
-pub(crate) use settings::{RawAnalysis, RawApplication};
+pub(crate) use settings::{RawAnalysis, RawApplication, RawConfiguration};
 pub use snapshot::{ContextSnapshot, resolve_snapshot};
 
 #[cfg(test)]

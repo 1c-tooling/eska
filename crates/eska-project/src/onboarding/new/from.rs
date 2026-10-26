@@ -80,6 +80,12 @@ fn execute(
             ),
         )
     })?;
+    if workspace.is_none() && args.application.is_some() {
+        return Err(Failure::new(
+            "application-requires-workspace",
+            localizer.text("workspace-onboarding-application-only"),
+        ));
+    }
     let creation_error = |error| match error {
         create::CreationError::Operation(create::CreationFailure::Native(error)) => error,
         create::CreationError::Operation(create::CreationFailure::Cancelled) => {
@@ -100,7 +106,9 @@ fn execute(
                 localizer.text("artifact-member-name-invalid"),
             )
         })?;
-        let plan = create::inspect_workspace_member(workspace, name).map_err(creation_error)?;
+        let plan = create::inspect_workspace_member(workspace, name)
+            .map_err(creation_error)?
+            .with_application(args.application.as_deref());
         (plan.destination().to_owned(), Some(plan))
     } else {
         (

@@ -155,9 +155,6 @@ fn context(error: &eska_project_core::application::ContextError) -> Value {
         ContextError::AmbiguousApplication { available } => {
             json!({"reason":"ambiguous_application","available":available})
         }
-        ContextError::ApplicationDeclarationsMissing { members } => {
-            json!({"reason":"application_declarations_missing","members":members})
-        }
         ContextError::EmptyWorkspace => json!({"reason":"empty_workspace"}),
         ContextError::Discovery(_) => json!({"reason":"project_discovery"}),
         ContextError::Source(_) => json!({"reason":"source"}),

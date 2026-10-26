@@ -35,9 +35,16 @@ pub struct WorkspaceInitPlan {
     name: ProjectName,
     config: ProjectConfig,
     enrollment: WorkspaceMemberEnrollment,
+    application: Option<String>,
 }
 
 impl WorkspaceInitPlan {
+    /// Select the owning application before the init transaction writes either manifest.
+    #[must_use]
+    pub fn with_application(mut self, application: Option<&str>) -> Self {
+        self.application = application.map(str::to_owned);
+        self
+    }
     /// Save an explicit platform override while retaining root-owned workspace settings.
     #[must_use]
     pub fn with_build_settings(mut self, build: BuildSettings) -> Self {
@@ -144,6 +151,7 @@ pub fn prepare_workspace_member<E>(
         name,
         config,
         enrollment,
+        application: None,
     })
 }
 
@@ -156,6 +164,11 @@ pub fn apply_workspace_member<E>(
     verify: impl Fn() -> Result<(), E>,
 ) -> Result<Project, InitError<E>> {
     verify().map_err(InitError::Operation)?;
+    let enrollment = plan
+        .enrollment
+        .clone()
+        .for_project(plan.detected.project_type, plan.application.as_deref())
+        .map_err(InitError::Workspace)?;
     if inspect(&plan.detected.root, Some(&plan.detected.source))? != plan.detected {
         return Err(InitError::ChangedSource {
             path: plan.detected.root.clone(),
@@ -192,9 +205,9 @@ pub fn apply_workspace_member<E>(
                 source,
             })?;
         verify().map_err(InitError::Operation)?;
-        plan.enrollment.publish().map_err(InitError::Workspace)?;
+        enrollment.publish().map_err(InitError::Workspace)?;
         manifest_published = true;
-        let context = discovery::discover_context(plan.enrollment.workspace_root())
+        let context = discovery::discover_context(enrollment.workspace_root())
             .map_err(|error| InitError::WorkspaceValidation(Box::new(error)))?;
         let DiscoveryContext::Workspace { workspace, .. } = context else {
             return Err(InitError::WorkspaceMemberMissing {
@@ -216,7 +229,7 @@ pub fn apply_workspace_member<E>(
     }
     let original = result.expect_err("handled successful result");
     let mut paths = Vec::new();
-    if manifest_published && plan.enrollment.restore().is_err() {
+    if manifest_published && enrollment.restore().is_err() {
         paths.push(plan.enrollment.workspace_root().join(FILE_NAME));
     }
     if fs::remove_file(&config_path).is_err() {
@@ -422,6 +435,20 @@ pub fn write_project<T, E>(
     initialize: impl FnOnce(&Path) -> Result<(), InitError<E>>,
     validate: impl FnOnce() -> Result<T, InitError<E>>,
 ) -> Result<T, InitError<E>> {
+    let artifacts = ProjectConfig::from_toml(contents).ok().map(|config| {
+        config
+            .configuration()
+            .build_settings()
+            .artifacts_directory()
+            .to_owned()
+    });
+    let ignore = project_files
+        .iter()
+        .any(|file| file.path() == Path::new(".gitignore"))
+        .then(|| super::ignore::IgnorePlan::inspect(root, artifacts.as_deref()))
+        .transpose()
+        .map_err(InitError::Workspace)?;
+    let mut ignore_published = false;
     let config = root.join(FILE_NAME);
     let mut config_file = OpenOptions::new()
         .write(true)
@@ -451,6 +478,10 @@ pub fn write_project<T, E>(
                 source,
             })?;
         write_missing_project_files(root, project_files, &mut owned_project_files)?;
+        if let Some(ignore) = &ignore {
+            ignore.publish().map_err(InitError::Workspace)?;
+            ignore_published = true;
+        }
         if create_git {
             fs::create_dir(&git).map_err(|source| InitError::Io {
                 path: git.clone(),
@@ -466,6 +497,12 @@ pub fn write_project<T, E>(
         Ok(value) => Ok(value),
         Err(original) => {
             let mut paths = Vec::new();
+            if ignore_published
+                && let Some(ignore) = &ignore
+                && ignore.restore().is_err()
+            {
+                paths.push(root.join(".gitignore"));
+            }
             if owns_git && fs::remove_dir_all(&git).is_err() {
                 paths.push(git);
             }
@@ -496,6 +533,9 @@ fn write_missing_project_files<E>(
     owned_paths: &mut Vec<PathBuf>,
 ) -> Result<(), InitError<E>> {
     for entry in project_files {
+        if entry.path() == Path::new(".gitignore") {
+            continue;
+        }
         let path = root.join(entry.path());
         let mut file = match OpenOptions::new().write(true).create_new(true).open(&path) {
             Ok(file) => file,

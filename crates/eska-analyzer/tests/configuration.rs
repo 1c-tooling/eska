@@ -97,13 +97,102 @@ fn inspection_is_deterministic_and_policy_ownership_is_strict() {
         );
     }
     let workspace = WorkspaceConfig::from_toml(
-        "[workspace]\nmembers=[]\n[tools.bsl-analyzer.output]\ndisplay_language='en'\n",
+        "[workspace]\nmembers={}\n[tools.bsl-analyzer.output]\ndisplay_language='en'\n",
     )
     .unwrap();
     assert_eq!(
         WorkspaceConfig::from_toml(&workspace.to_toml().unwrap()).unwrap(),
         workspace
     );
+}
+
+/// Explicit reference XML outside the project is fingerprinted and policy changes regenerate it.
+#[cfg(unix)]
+#[test]
+fn reference_context_regenerates_from_policy_and_external_descriptor_changes() {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("обработка");
+    let base = fixture.0.join("база БСП\\test");
+    project(&root, ProjectType::Processing);
+    project(&base, ProjectType::Configuration);
+    fs::remove_file(base.join("eska.toml")).unwrap();
+    let manifest = root.join("eska.toml");
+    let text = fs::read_to_string(&manifest).unwrap()
+        + "\n[analysis.configuration]\nsource='../база БСП\\test/src'\n[tools.bsl-analyzer.diagnostics.parameters]\nLineLength=false\n";
+    fs::write(&manifest, &text).unwrap();
+    let cancelled = AtomicBool::new(false);
+    let analyzer = Analyzer {
+        binary: fake_analyzer(&fixture.0),
+        timeout: Duration::from_secs(5),
+        cancelled: &cancelled,
+        connection_closed: None,
+    };
+    let plan = configuration::inspect(&root, None).unwrap();
+    let current = configuration::prepare(&plan, &analyzer, false).unwrap();
+    let generated: toml::Value =
+        toml::from_str(std::str::from_utf8(&current.contents).unwrap()).unwrap();
+    assert_eq!(
+        generated["source"]["root"].as_str().unwrap(),
+        base.join("src").to_str().unwrap()
+    );
+    assert_eq!(
+        generated["diagnostics"]["parameters"]["LineLength"].as_bool(),
+        Some(false)
+    );
+    fs::write(
+        &manifest,
+        text + "\n[tools.bsl-analyzer.formatting]\nindent_size=2\n",
+    )
+    .unwrap();
+    let stale = configuration::inspect(&root, None).unwrap();
+    assert_eq!(stale.status, Status::Stale);
+    let updated = configuration::prepare(&stale, &analyzer, false).unwrap();
+    assert_eq!(updated.status, Status::Current);
+    assert!(
+        std::str::from_utf8(&updated.contents)
+            .unwrap()
+            .contains("LineLength = false")
+    );
+    let descriptor = base.join("src/Configuration.xml");
+    fs::write(
+        &descriptor,
+        fs::read_to_string(&descriptor).unwrap() + "<!-- reference changed -->",
+    )
+    .unwrap();
+    assert_eq!(
+        configuration::inspect(&root, None).unwrap().status,
+        Status::Stale
+    );
+    assert!(!base.join("bsl-analyzer.toml").exists());
+    assert!(!base.join(".eska").exists());
+}
+
+/// The published analyzer, rather than a fixture process, validates the absolute reference topology.
+#[test]
+#[ignore = "requires ESKA_BSL_ANALYZER pointing to published bsl-analyzer-app 0.4.0"]
+fn published_analyzer_accepts_external_configuration_reference() {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("report");
+    let reference = fixture.0.join("База с БСП");
+    project(&root, ProjectType::Report);
+    project(&reference, ProjectType::Configuration);
+    fs::remove_file(reference.join("eska.toml")).unwrap();
+    let manifest = root.join("eska.toml");
+    fs::write(&manifest, fs::read_to_string(&manifest).unwrap() + "\n[analysis.configuration]\nsource='../База с БСП/src'\n[tools.bsl-analyzer.diagnostics.parameters]\nLineLength=false\n").unwrap();
+    let cancelled = AtomicBool::new(false);
+    let analyzer = Analyzer {
+        binary: std::env::var_os("ESKA_BSL_ANALYZER")
+            .map(PathBuf::from)
+            .expect("explicit upstream executable"),
+        timeout: Duration::from_secs(60),
+        cancelled: &cancelled,
+        connection_closed: None,
+    };
+    let plan = configuration::inspect(&root, None).unwrap();
+    let current = configuration::prepare(&plan, &analyzer, false).unwrap();
+    assert_eq!(current.status, Status::Current);
+    assert!(!current.context.limited_context());
+    assert!(!reference.join("bsl-analyzer.toml").exists());
 }
 
 /// Prepare is idempotent, manual edits conflict and a changed context cannot reuse the old config.
@@ -351,7 +440,7 @@ fn active_context_is_protected_across_processes() {
         )
         .unwrap();
     }
-    fs::write(root.join("eska.toml"),"[workspace]\nmembers=['a','b']\n[applications.one]\nconfiguration='a'\n[applications.two]\nconfiguration='b'\n").unwrap();
+    fs::write(root.join("eska.toml"),"[workspace]\n[workspace.members.one]\nconfiguration='a'\n[workspace.members.two]\nconfiguration='b'\n").unwrap();
     let cancelled = AtomicBool::new(false);
     let analyzer = Analyzer {
         binary: fake_analyzer(&fixture.0),

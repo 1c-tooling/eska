@@ -79,6 +79,14 @@ impl NewHandler<'_> {
         if let Some(workspace) = workspace {
             return self.run_workspace(&workspace, localizer, scope);
         }
+        if self.args.application.is_some() {
+            artifact::report(
+                "✗",
+                &localizer.text("workspace-onboarding-application-only"),
+                "31",
+            );
+            return ExitCode::from(2);
+        }
         self.run_standalone(base, localizer, scope)
     }
 
@@ -209,7 +217,7 @@ impl NewHandler<'_> {
             return ExitCode::from(2);
         }
         let plan = match create::inspect_workspace_member(workspace, name) {
-            Ok(plan) => plan,
+            Ok(plan) => plan.with_application(self.args.application.as_deref()),
             Err(error) => {
                 artifact::report("✗", &present(&error, localizer), "31");
                 return ExitCode::FAILURE;

@@ -104,6 +104,8 @@ pub struct ContextArgs {
 #[derive(Debug, Args)]
 pub struct NewArgs {
     pub path: PathBuf,
+    #[arg(long)]
+    pub application: Option<String>,
     #[arg(long = "type", required = true)]
     pub project_type: String,
     #[arg(long, default_value = "src")]
@@ -120,6 +122,8 @@ pub struct NewArgs {
 pub struct InitArgs {
     #[arg(default_value = ".")]
     pub path: PathBuf,
+    #[arg(long)]
+    pub application: Option<String>,
     #[arg(long)]
     pub source: Option<PathBuf>,
     #[arg(long)]

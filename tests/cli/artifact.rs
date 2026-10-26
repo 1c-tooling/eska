@@ -564,7 +564,7 @@ fn creates_workspace_member_with_inherited_platform() {
     let fixture = TestDir::new();
     fs::write(
         fixture.0.join("eska.toml"),
-        "# preserved\n[workspace]\nmembers = []\n[build]\nplatform_version = '8.3.27.2325'\n",
+        "# preserved\n[workspace]\nmembers = {}\n[build]\nplatform_version = '8.3.27.2325'\n",
     )
     .unwrap();
     artifact(&fixture.0, "epf", "ExternalDataProcessor", "Пример", UUID);
@@ -883,7 +883,7 @@ fn fills_empty_scaffold_and_selects_exactly_one_workspace_member() {
     assert!(serde_json::from_slice::<Value>(&output.stdout).unwrap()["current"].is_null());
     fs::write(
         fixture.0.join("eska.toml"),
-        "[workspace]\nmembers = []\n[build]\nplatform_version = '8.3.27.2325'\n",
+        "[workspace]\nmembers = {}\n[build]\nplatform_version = '8.3.27.2325'\n",
     )
     .unwrap();
     let created = run(

@@ -234,7 +234,7 @@ eska-check --analyzer /path/to/bsl-analyzer-app --format json
 Компиляцию и поведение на платформе 1С они не подтверждают.
 
 Первичный конфиг — `eska.toml`. Состав приложения задаётся через
-`[applications.<name>]`, политика анализатора — через `[tools.bsl-analyzer]`.
+`[workspace.members.<name>]`, политика анализатора — через `[tools.bsl-analyzer]`.
 `bsl-analyzer.toml` генерируется ESKA; существующий пользовательский файл
 требует явной миграции с предварительным просмотром и резервной копией.
 

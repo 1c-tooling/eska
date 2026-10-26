@@ -74,15 +74,14 @@ analysis-name-invalid = В поле { $field } указано некоррект
 analysis-platform-invalid = Некорректная целевая платформа «{ $value }». Укажите три или четыре числовых компонента.
 analysis-managed-field = Поле анализатора { $field } определяется контекстом проекта; удалите его из tools.bsl-analyzer.
 analysis-policy-invalid = Не удалось сериализовать политику анализатора.
-analysis-workspace-required = Секция applications допустима только в корневом манифесте workspace.
-analysis-default-unknown = Приложение по умолчанию «{ $name }» не объявлено в applications.
+analysis-default-unknown = Приложение по умолчанию «{ $name }» не объявлено в workspace.members.
 analysis-member-duplicate = Проект «{ $member }» указан в приложении «{ $application }» несколько раз.
 analysis-dependency-outside = Зависимость «{ $member }» приложения «{ $application }» не входит в его extensions.
 analysis-dependency-cycle = Зависимости расширений приложения «{ $application }» содержат цикл.
 analysis-member-unknown = Приложение «{ $application }» ссылается на отсутствующий member «{ $member }».
 analysis-member-type = В приложении «{ $application }» member «{ $member }» должен иметь project.type = { $expected }, получено { $actual }.
 analysis-member-settings = Настройки analysis для member «{ $member }» задаются в корневом манифесте workspace.
-analysis-platform-scope = Целевая платформа приложения задаётся в applications.<имя>.target_platform_version; удалите общий analysis.target_platform_version.
+analysis-platform-scope = Целевая платформа приложения задаётся в workspace.members.<имя>.target_platform_version; удалите общий analysis.target_platform_version.
 project-serve-about = Запустить самостоятельный сервер Metadata API проекта через stdio
 project-tool-about = Работа с проектами Designer XML
 project-new-about = Создать проект Designer XML без инициализации Git
@@ -104,7 +103,6 @@ project-context-ready = Определён контекст приложения
 project-context-limited = Ограниченный контекст: основная конфигурация не объявлена.
 project-application-unknown = Неизвестное приложение: { $name }.
 project-application-ambiguous = Выберите приложение через --application или analysis.default_application.
-project-application-required = Для контекста анализа нескольких участников объявите приложения в eska.toml.
 project-empty-workspace = В workspace нет проектов для проверки или анализа.
 project-validated = Проверены манифест и корневой дескриптор Designer XML: { $path }.
 cli-usage = Использование
@@ -1018,3 +1016,12 @@ component-failed = Компонент завершился с ошибкой.
 component-rejected = Компонент { $tool } отклонил операцию: { $code }.
 
 component-incompatible = Компонент { $tool } установлен с несовместимым receipt: { $receipt }. Проверьте установку выбранного компонента.
+
+analysis-reference-empty = Укажите непустой путь configuration.source к XML основной конфигурации.
+analysis-reference-scope = Подключайте configuration.source только как отдельный контекст расширения или внешнего объекта; его каталог не должен пересекаться с рабочими проектами.
+
+workspace-onboarding-application-help = Приложение в workspace.members для нового участника; при нескольких приложениях выбор обязателен.
+workspace-onboarding-application-required = Укажите --application. Доступные приложения: { $names }.
+workspace-onboarding-application-invalid = Некорректное имя приложения «{ $name }».
+workspace-onboarding-configuration-set = В приложении «{ $name }» уже задана основная конфигурация. Укажите другое --application.
+workspace-onboarding-application-only = --application допустим только при добавлении проекта в workspace.

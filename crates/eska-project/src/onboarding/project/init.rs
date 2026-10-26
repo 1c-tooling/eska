@@ -249,7 +249,7 @@ mod tests {
         )
         .unwrap();
         let manifest = fixture.0.join("eska.toml");
-        let original = b"# preserved\n[workspace]\nmembers = [\"src/existing\"]\n";
+        let original = b"# preserved\n[workspace]\n[workspace.members.app]\nexternal_objects=[\"src/existing\"]\n";
         fs::write(&manifest, original).unwrap();
         let DiscoveryContext::Workspace { workspace, .. } = discover_context(&fixture.0).unwrap()
         else {

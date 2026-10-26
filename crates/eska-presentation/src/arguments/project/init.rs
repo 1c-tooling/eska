@@ -10,6 +10,8 @@ pub struct InitArgs {
     #[arg(default_value = ".")]
     pub path: PathBuf,
     #[arg(long)]
+    pub application: Option<String>,
+    #[arg(long)]
     pub source: Option<PathBuf>,
     #[arg(long)]
     pub name: Option<String>,
@@ -26,6 +28,9 @@ pub struct InitArgs {
 /// Localize project options without loading a project session.
 pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
     artifact::localize(command, localizer)
+        .mut_arg("application", |arg| {
+            arg.help(localizer.text("workspace-onboarding-application-help"))
+        })
         .mut_arg("platform_version", |arg| {
             arg.help(localizer.text("init-platform-version-help"))
         })

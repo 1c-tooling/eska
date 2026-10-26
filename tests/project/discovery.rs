@@ -35,7 +35,7 @@ impl Fixture {
         fs::create_dir_all(&processing).expect("create processing member");
         fs::write(
             root.join("eska.toml"),
-            "[workspace]\nmembers = ['src/sales-report', 'src/import-orders']\n\
+            "[workspace]\n[workspace.members.app]\nexternal_objects= ['src/sales-report', 'src/import-orders']\n\
              [build]\nplatform_version = '8.3.27.2325'\nartifacts_directory = 'dist'\n\
              [vcs.workflow]\npreset = 'trunk'\n",
         )
@@ -248,7 +248,7 @@ fn rejects_duplicate_names_and_nested_member_roots() {
 
     fs::write(
         root.join("eska.toml"),
-        "[workspace]\nmembers = ['src/sales-report', 'src']\n",
+        "[workspace]\n[workspace.members.app]\nexternal_objects= ['src/sales-report', 'src']\n",
     )
     .expect("nested member list");
     assert!(matches!(
@@ -269,7 +269,7 @@ fn rejects_workspace_member_symlinks_outside_workspace() {
     symlink(&outside, root.join("src/outside")).expect("outside member link");
     fs::write(
         root.join("eska.toml"),
-        "[workspace]\nmembers = ['src/outside']\n",
+        "[workspace]\n[workspace.members.app]\nexternal_objects= ['src/outside']\n",
     )
     .expect("outside member config");
 

@@ -52,12 +52,24 @@ pub fn present_workspace_enrollment_error_with_links(
     hyperlinks: bool,
 ) -> String {
     match error {
+        WorkspaceEnrollmentError::ApplicationRequired { available } => localizer.format(
+            "workspace-onboarding-application-required",
+            &[("names", LocalizationValue::Text(&available.join(", ")))],
+        ),
+        WorkspaceEnrollmentError::InvalidApplication { name } => localizer.format(
+            "workspace-onboarding-application-invalid",
+            &[("name", LocalizationValue::Text(name))],
+        ),
+        WorkspaceEnrollmentError::ConfigurationAlreadySet { application } => localizer.format(
+            "workspace-onboarding-configuration-set",
+            &[("name", LocalizationValue::Text(application))],
+        ),
         WorkspaceEnrollmentError::Io { path, source } => {
             io_message(localizer, path, source, hyperlinks)
         }
         WorkspaceEnrollmentError::Config(_)
         | WorkspaceEnrollmentError::TomlEdit(_)
-        | WorkspaceEnrollmentError::MembersNotArray => {
+        | WorkspaceEnrollmentError::InvalidComposition => {
             localizer.text("workspace-onboarding-config-invalid")
         }
         WorkspaceEnrollmentError::NonUtf8MemberPath { path } => path_message(

@@ -193,30 +193,27 @@ debug-регистрации в Explorer. Отдельный UI отладки �
 состава проектов, путей и версии платформы. `Project` остаётся одной
 сборочной единицей с одним `source`, как в [T44](11-workspaces.md).
 
-Workspace перечисляет независимые проекты. Контекст приложения связывает
-основную конфигурацию, расширения и внешние обработки/отчёты именами members.
+Workspace группирует пути проектов по приложениям в `workspace.members.<имя>`.
+Роли основной конфигурации, расширений и внешних обработок/отчётов заданы явно.
 Зависимости расширений задаются явно; их нельзя выводить из соседства
 каталогов или совпадения имён модулей. Два приложения одного workspace
 не объединяются в одну основную конфигурацию.
 
-Добавления к корневому `eska.toml` для `buhmfo` ниже фиксируются в T83
-вместе со схемой и диагностикой. [Схема и resolver](../application-context.md)
-поддерживают `analysis` и `applications`; политика `tools.bsl-analyzer`
-и [производный конфиг](../analyzer-configuration.md) реализованы в T84. Существующие
-`workspace.members`, `[build]` и member `project.source` сохраняются:
+Первоначальная схема T83 с отдельными `members` и `applications` заменена
+единой [схемой состава приложения](../application-context.md) `designer-xml-2`.
+Старый формат не поддерживается. Политика `tools.bsl-analyzer` и
+[производный конфиг](../analyzer-configuration.md) остаются механизмом T84.
+Пример корневого `eska.toml` для `buhmfo`:
 
 ```toml
-[analysis]
-default_application = "buhmfo"
-
-[applications.buhmfo]
-configuration = "buhmfo"
+[workspace.members.buhmfo]
+configuration = "src/buhmfo"
 extensions = [
-    "external-systems",
-    "dzp-auto-statements",
-    "dzp-typical-code",
-    "dzp-fill-bank-statements",
-    "dzp-config-fixes",
+    "src/ExternalSystems",
+    "src/dzp_АвтоматическаяЗагрузкаВыписок",
+    "src/dzp_АдаптацияКодаТиповойКонфигурации",
+    "src/dzp_ЗаполнениеБанковскихВыписок",
+    "src/dzp_ИсправлениеОшибокКонфигурации",
 ]
 
 [tools.bsl-analyzer.diagnostics.parameters]

@@ -130,7 +130,7 @@ fn query_rpc_isolates_application_members_and_their_retained_buffers() {
         )
         .unwrap();
     }
-    std::fs::write(directory.0.join("eska.toml"),"[workspace]\nmembers=['first','second']\n[applications.first]\nconfiguration='first'\n[applications.second]\nconfiguration='second'\n").unwrap();
+    std::fs::write(directory.0.join("eska.toml"),"[workspace]\n[workspace.members.first]\nconfiguration='first'\n[workspace.members.second]\nconfiguration='second'\n").unwrap();
     let mut client = Client::new("en-US");
     initialize(&mut client, "en-US");
     let workspace=client.ok("workspace/open",json!({"start":{"value":directory.0,"encoding":"utf-8"},"selection":{"kind":"all"},"diskCache":false}));

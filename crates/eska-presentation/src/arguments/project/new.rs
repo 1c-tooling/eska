@@ -8,6 +8,8 @@ use std::path::PathBuf;
 #[derive(Debug, Args)]
 pub struct NewArgs {
     pub path: PathBuf,
+    #[arg(long)]
+    pub application: Option<String>,
     #[arg(long, conflicts_with = "project_type")]
     pub from: Option<PathBuf>,
     #[command(flatten)]
@@ -25,6 +27,9 @@ pub struct NewArgs {
 /// Localize project options without loading a project session.
 pub fn localize(command: clap::Command, localizer: &Localizer) -> clap::Command {
     super::artifact::localize(command, localizer)
+        .mut_arg("application", |arg| {
+            arg.help(localizer.text("workspace-onboarding-application-help"))
+        })
         .mut_arg("from", |arg| arg.help(localizer.text("artifact-from-help")))
         .about(localizer.text("new-about"))
         .override_usage(localizer.text("new-usage"))

@@ -82,7 +82,7 @@ def contract(value, tool, target=None):
     require(tool in TOOLS and value["tool"] == tool and value["target"] in TARGETS, "incompatible", tool)
     require(target is None or value["target"] == target, "target", value["target"])
     version(value["version"])
-    require(value["config_schema"] == "designer-xml-1" and type(value["bridge_schema"]) is int
+    require(value["config_schema"] == "designer-xml-2" and type(value["bridge_schema"]) is int
             and value["bridge_schema"] == 1, "incompatible", tool)
     api = value["metadata_api"]
     if tool == "eska-project":

@@ -76,7 +76,7 @@ mod tests {
             Err(ManifestConfigError::KindMissing)
         ));
         assert!(matches!(
-            ManifestConfig::from_toml("[project]\ntype = 'report'\n[workspace]\nmembers = []\n"),
+            ManifestConfig::from_toml("[project]\ntype = 'report'\n[workspace]\nmembers = {}\n"),
             Err(ManifestConfigError::KindAmbiguous)
         ));
     }

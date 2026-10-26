@@ -13,7 +13,7 @@ use std::{fs, path::Path};
 #[path = "../../../tests/support/mod.rs"]
 mod support;
 
-const WORKSPACE: &[u8] = b"# exact user comment\r\n[workspace]\r\nmembers = []\r\n";
+const WORKSPACE: &[u8] = b"# exact user comment\r\n[workspace]\r\nmembers = {}\r\n";
 const XML: &[u8] = b"\xef\xbb\xbf<MetaDataObject xmlns=\"http://v8.1c.ru/8.3/MDClasses\"><ExternalReport uuid=\"11111111-1111-1111-1111-111111111111\"><Properties><Name>Existing</Name></Properties></ExternalReport></MetaDataObject>\r\n";
 
 /// A source tree includes both bounded XML and opaque bytes; neither may change during init.

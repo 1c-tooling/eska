@@ -91,7 +91,18 @@ impl Template {
     pub fn from_config(config: &ProjectConfig) -> Result<Self, toml::ser::Error> {
         let source = config.source().to_path_buf();
         let contents = config.to_toml()?;
-        let [attributes, ignore] = built_in_git_files();
+        let [attributes, mut ignore] = built_in_git_files();
+        if let Some(rule) = super::ignore::artifact_rule(
+            config
+                .configuration()
+                .build_settings()
+                .artifacts_directory(),
+        ) && !ignore.contents.lines().any(|line| line == rule)
+        {
+            ignore.contents.push('\n');
+            ignore.contents.push_str(&rule);
+            ignore.contents.push('\n');
+        }
 
         Ok(Self {
             files: vec![

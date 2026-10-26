@@ -30,7 +30,11 @@ fn catalog_rpc_composes_base_and_extension_schemas_independently_of_locale() {
     )
     .unwrap();
     fs::write(extension.join("src/Configuration.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='33333333-3333-3333-3333-333333333333'><Properties><Name>Extension</Name><ConfigurationExtensionPurpose>Patch</ConfigurationExtensionPurpose></Properties><ChildObjects><AccountingRegister>Ledger</AccountingRegister></ChildObjects></Configuration></MetaDataObject>").unwrap();
-    fs::write(directory.0.join("eska.toml"), "[workspace]\nmembers=['base','extension']\n[applications.main]\nconfiguration='base'\nextensions=['extension']\n").unwrap();
+    fs::write(
+        directory.0.join("eska.toml"),
+        "[workspace]\n[workspace.members.main]\nconfiguration='base'\nextensions=['extension']\n",
+    )
+    .unwrap();
     let config = root.join("src/Configuration.xml");
     fs::write(&config, fs::read_to_string(&config).unwrap().replace("</ChildObjects>", "<AccountingRegister>Ledger</AccountingRegister><ChartOfAccounts>Accounts</ChartOfAccounts></ChildObjects>")).unwrap();
     fs::create_dir_all(root.join("src/AccountingRegisters")).unwrap();

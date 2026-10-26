@@ -9,7 +9,7 @@ use std::{
 
 pub const SCHEMA_VERSION: u64 = 2;
 pub const TARGET: &str = env!("ESKA_BUILD_TARGET");
-pub const CONFIG_SCHEMA: &str = "designer-xml-1";
+pub const CONFIG_SCHEMA: &str = "designer-xml-2";
 pub const BRIDGE_SCHEMA: u64 = 1;
 
 /// Answer only the exact machine entry, before locale, discovery, signals or native probes.
@@ -108,7 +108,7 @@ mod tests {
             ("schema_version", json!(1)),
             ("tool", json!("eska")),
             ("version", json!("0.14.3-dev")),
-            ("config_schema", json!("designer-xml-2")),
+            ("config_schema", json!("designer-xml-1")),
             ("bridge_schema", json!(2)),
             ("metadata_api", json!({"major":2,"minor":12})),
             ("metadata_api", json!({"major":1,"minor":11})),

@@ -1,6 +1,7 @@
 //! Validated application declarations; membership and paths come from project discovery.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -57,13 +58,17 @@ pub struct AnalysisOptions {
     default_application: Option<ProjectName>,
     #[serde(skip_serializing_if = "Option::is_none")]
     target_platform_version: Option<TargetPlatformVersion>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    configuration: Option<ConfigurationReference>,
 }
 
 impl AnalysisOptions {
     /// Report whether serializing this table would add any settings.
     #[must_use]
     pub const fn is_empty(&self) -> bool {
-        self.default_application.is_none() && self.target_platform_version.is_none()
+        self.default_application.is_none()
+            && self.target_platform_version.is_none()
+            && self.configuration.is_none()
     }
 
     /// Return an explicitly selected default, never a guessed neighboring member.
@@ -77,12 +82,44 @@ impl AnalysisOptions {
     pub const fn target_platform_version(&self) -> Option<&TargetPlatformVersion> {
         self.target_platform_version.as_ref()
     }
+
+    /// Return an explicitly attached, analysis-only Designer XML configuration.
+    #[must_use]
+    pub const fn configuration(&self) -> Option<&ConfigurationReference> {
+        self.configuration.as_ref()
+    }
 }
 
-/// One explicitly declared application; all references are portable member names.
+/// A read-only analysis dependency; its directory does not become a workspace member.
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ConfigurationReference {
+    pub source: PathBuf,
+}
+
+impl ConfigurationReference {
+    /// Reject an empty path before resolving it against the owning manifest.
+    pub(crate) fn validate(&self) -> Result<(), SettingsError> {
+        if self.source.as_os_str().is_empty() {
+            return Err(SettingsError::EmptyConfigurationSource);
+        }
+        Ok(())
+    }
+}
+
+/// A base is either a declared member identity or an explicit analysis-only XML source.
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+#[serde(untagged)]
+enum Configuration {
+    Member(ProjectName),
+    Reference(ConfigurationReference),
+}
+
+/// Resolved application roles use project identities, with an optional raw reference configuration.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct Application {
-    configuration: ProjectName,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    configuration: Option<Configuration>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     extensions: Vec<ProjectName>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -96,8 +133,20 @@ pub struct Application {
 impl Application {
     /// Return the main configuration's workspace member name.
     #[must_use]
-    pub const fn configuration(&self) -> &ProjectName {
-        &self.configuration
+    pub const fn configuration(&self) -> Option<&ProjectName> {
+        match &self.configuration {
+            Some(Configuration::Member(name)) => Some(name),
+            _ => None,
+        }
+    }
+
+    /// Return the analysis-only base without enrolling it in build or VCS operations.
+    #[must_use]
+    pub fn configuration_source(&self) -> Option<&Path> {
+        match &self.configuration {
+            Some(Configuration::Reference(reference)) => Some(&reference.source),
+            _ => None,
+        }
     }
 
     /// Preserve the declaration order independently of dependency ordering.
@@ -127,7 +176,18 @@ impl Application {
     /// Convert raw strings once, before either manifest consumers or the resolver can use them.
     fn parse(name: &ProjectName, raw: RawApplication) -> Result<Self, SettingsError> {
         let result = Self {
-            configuration: member_name(raw.configuration, "configuration")?,
+            configuration: raw
+                .configuration
+                .map(|value| match value {
+                    RawConfiguration::Member(name) => {
+                        member_name(name, "configuration").map(Configuration::Member)
+                    }
+                    RawConfiguration::Reference(reference) => {
+                        reference.validate()?;
+                        Ok(Configuration::Reference(reference))
+                    }
+                })
+                .transpose()?,
             extensions: member_names(raw.extensions, "extensions")?,
             external_objects: member_names(raw.external_objects, "external_objects")?,
             extension_dependencies: raw
@@ -147,7 +207,9 @@ impl Application {
                 .transpose()?,
         };
         let mut unique = BTreeSet::new();
-        for member in std::iter::once(&result.configuration)
+        for member in result
+            .configuration()
+            .into_iter()
             .chain(&result.extensions)
             .chain(&result.external_objects)
         {
@@ -168,7 +230,10 @@ impl Application {
         application: &ProjectName,
         members: &[WorkspaceMember],
     ) -> Result<(), SettingsError> {
-        for (name, expected) in std::iter::once((&self.configuration, SourceRole::Configuration))
+        for (name, expected) in self
+            .configuration()
+            .into_iter()
+            .map(|name| (name, SourceRole::Configuration))
             .chain(
                 self.extensions
                     .iter()
@@ -234,18 +299,22 @@ impl AnalysisSettings {
         self.options.is_empty() && self.applications.is_empty() && self.tools.is_empty()
     }
 
-    /// Validate the strict TOML fields before constructing the shared model.
-    pub(crate) fn parse(
+    /// Validate root options before path-based application members have been discovered.
+    pub(crate) fn parse_with_names(
         raw: Option<RawAnalysis>,
-        applications: BTreeMap<String, RawApplication>,
         tools: Option<RawTools>,
         workspace: bool,
+        names: &[ProjectName],
     ) -> Result<Self, SettingsError> {
-        if !workspace && !applications.is_empty() {
-            return Err(SettingsError::WorkspaceRequired);
-        }
         let raw = raw.unwrap_or_default();
+        if let Some(reference) = &raw.configuration {
+            reference.validate()?;
+            if workspace {
+                return Err(SettingsError::ConfigurationReferenceScope);
+            }
+        }
         let options = AnalysisOptions {
+            configuration: raw.configuration,
             default_application: raw
                 .default_application
                 .map(|value| member_name(value, "analysis.default_application"))
@@ -256,29 +325,36 @@ impl AnalysisSettings {
                 .map(TargetPlatformVersion::parse)
                 .transpose()?,
         };
-        let applications = applications
-            .into_iter()
-            .map(|(name, raw)| {
-                let name = member_name(name, "applications")?;
-                let application = Application::parse(&name, raw)?;
-                Ok((name, application))
-            })
-            .collect::<Result<BTreeMap<_, _>, SettingsError>>()?;
         if let Some(name) = options
             .default_application
             .as_ref()
-            .filter(|name| !applications.contains_key(*name))
+            .filter(|name| !names.contains(name))
         {
             return Err(SettingsError::UnknownDefaultApplication { name: name.clone() });
         }
-        if !applications.is_empty() && options.target_platform_version.is_some() {
+        if workspace && options.target_platform_version.is_some() {
             return Err(SettingsError::TargetPlatformScope);
         }
         Ok(Self {
             options,
-            applications,
+            applications: BTreeMap::new(),
             tools: ToolSettings::parse(tools)?,
         })
+    }
+
+    /// Resolve discovered identities into the validated role and dependency model.
+    pub(crate) fn with_applications(
+        mut self,
+        declarations: BTreeMap<ProjectName, RawApplication>,
+    ) -> Result<Self, SettingsError> {
+        self.applications = declarations
+            .into_iter()
+            .map(|(name, raw)| {
+                let application = Application::parse(&name, raw)?;
+                Ok((name, application))
+            })
+            .collect::<Result<_, SettingsError>>()?;
+        Ok(self)
     }
 
     /// Validate all declarations without reading BSL or selecting an active application.
@@ -311,25 +387,36 @@ impl AnalysisSettings {
 pub struct RawAnalysis {
     default_application: Option<String>,
     target_platform_version: Option<String>,
+    configuration: Option<ConfigurationReference>,
+}
+
+/// Resolved member identities and reference directories retain their distinct ownership.
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub enum RawConfiguration {
+    Member(String),
+    Reference(ConfigurationReference),
 }
 
 /// An application has one required base and explicit optional members and dependency edges.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RawApplication {
-    configuration: String,
+    pub(crate) configuration: Option<RawConfiguration>,
     #[serde(default)]
-    extensions: Vec<String>,
+    pub(crate) extensions: Vec<String>,
     #[serde(default)]
-    external_objects: Vec<String>,
+    pub(crate) external_objects: Vec<String>,
     #[serde(default)]
-    extension_dependencies: BTreeMap<String, Vec<String>>,
-    target_platform_version: Option<String>,
+    pub(crate) extension_dependencies: BTreeMap<String, Vec<String>>,
+    pub(crate) target_platform_version: Option<String>,
 }
 
 /// Structured configuration errors contain machine-facing values, never localized sentences.
 #[derive(Debug, Eq, PartialEq)]
 pub enum SettingsError {
+    EmptyConfigurationSource,
+    ConfigurationReferenceScope,
     ManagedAnalyzerField {
         field: String,
     },
@@ -341,7 +428,6 @@ pub enum SettingsError {
     InvalidPlatformVersion {
         value: String,
     },
-    WorkspaceRequired,
     UnknownDefaultApplication {
         name: ProjectName,
     },

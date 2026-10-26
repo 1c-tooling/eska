@@ -470,7 +470,7 @@ fn process_workspace_members_are_isolated() {
     }
     std::fs::write(
         directory.0.join("eska.toml"),
-        "[workspace]\nmembers=['first','second']\n",
+        "[workspace]\n[workspace.members.app]\nexternal_objects=['first','second']\n",
     )
     .unwrap();
     let mut client = Client::new("en");

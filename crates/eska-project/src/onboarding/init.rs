@@ -78,6 +78,13 @@ impl InitHandler<'_> {
         if let Some(workspace) = workspace {
             return self.run_workspace(plan, &workspace, localizer, scope);
         }
+        if self.args.application.is_some() {
+            eprintln!(
+                "{}",
+                localizer.text("workspace-onboarding-application-only")
+            );
+            return ExitCode::from(2);
+        }
         self.run_standalone(&plan, localizer, scope)
     }
 
@@ -186,7 +193,7 @@ impl InitHandler<'_> {
             return ExitCode::from(2);
         };
         let plan = match init::prepare_workspace_member(plan, workspace, name) {
-            Ok(plan) => plan,
+            Ok(plan) => plan.with_application(self.args.application.as_deref()),
             Err(error) => {
                 eprintln!("{}", present(&error, localizer));
                 return ExitCode::FAILURE;

@@ -312,7 +312,7 @@ fn published_application_uses_exact_members_and_exclusions() {
         )
         .unwrap();
     }
-    fs::write(directory.0.join("eska.toml"), "[workspace]\nmembers=['base','e1','e2','e3','e4','e5','epf','unselected']\n[applications.demo]\nconfiguration='base'\nextensions=['e1','e2','e3','e4','e5']\nexternal_objects=['epf']\n[applications.demo.extension_dependencies]\ne2=['e1']\ne3=['e2']\ne4=['e3']\ne5=['e4']\n[analysis]\ndefault_application='demo'\n[tools.bsl-analyzer.source]\nexclude=['base/Выгрузка XML/skip']\n").unwrap();
+    fs::write(directory.0.join("eska.toml"), "[workspace]\n[workspace.members.unselected]\nconfiguration='unselected'\n[workspace.members.demo]\nconfiguration='base'\nextensions=['e1','e2','e3','e4','e5']\nexternal_objects=['epf']\n[workspace.members.demo.extension_dependencies]\ne2=['e1']\ne3=['e2']\ne4=['e3']\ne5=['e4']\n[analysis]\ndefault_application='demo'\n[tools.bsl-analyzer.source]\nexclude=['base/Выгрузка XML/skip']\n").unwrap();
     let excluded = directory.0.join("base/Выгрузка XML/skip");
     fs::create_dir(&excluded).unwrap();
     fs::write(excluded.join("Ignored.bsl"), "broken fixture").unwrap();

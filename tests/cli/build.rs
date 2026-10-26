@@ -85,7 +85,7 @@ pub(super) fn workspace() -> TestDir {
         fixture.0.join("eska.toml"),
         concat!(
             "[workspace]\n",
-            "members = ['src/sales-report', 'src/import-orders']\n\n",
+            "[workspace.members.app]\nexternal_objects=['src/sales-report', 'src/import-orders']\n\n",
             "[build]\n",
             "platform_version = '8.3.27.2325'\n",
             "artifacts_directory = 'build'\n",

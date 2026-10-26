@@ -314,7 +314,7 @@ fn workspace_scopes_members_and_honors_selection() {
     }
     fs::write(
         directory.0.join("eska.toml"),
-        "[workspace]\nmembers=['first','second']\n",
+        "[workspace]\n[workspace.members.app]\nexternal_objects=['first','second']\n",
     )
     .unwrap();
     let mut workspace = MetadataWorkspace::open(&directory.0, &[], true).unwrap();

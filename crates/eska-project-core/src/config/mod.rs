@@ -1,5 +1,6 @@
 //! Strict project and workspace manifests; machine-local runner configuration is separate.
 
+pub(crate) mod composition;
 mod manifest;
 mod project;
 mod schema;

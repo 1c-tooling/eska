@@ -87,7 +87,7 @@ fn empty_workspace() -> TestDir {
     let fixture = TestDir::new();
     fs::write(
         fixture.0.join("eska.toml"),
-        "# root comment\n[workspace]\nmembers = [] # members comment\n\n[build]\nplatform_version = \"8.3.27.2325\"\n\n[vcs.workflow]\npreset = \"trunk\"\n",
+        "# root comment\n[workspace]\nmembers = {} # members comment\n\n[build]\nplatform_version = \"8.3.27.2325\"\n\n[vcs.workflow]\npreset = \"trunk\"\n",
     )
     .expect("workspace manifest");
     fixture
@@ -158,7 +158,7 @@ fn workspace_init_saves_an_explicit_platform_even_when_root_has_no_version() {
             let fixture = TestDir::new();
             fs::write(
                 fixture.0.join("eska.toml"),
-                format!("# preserve\n[workspace]\nmembers = []\n[build]\nplatform_version = \"{inherited}\"\nartifacts_directory = \"artifacts\"\n"),
+                format!("# preserve\n[workspace]\nmembers = {{}}\n[build]\nplatform_version = \"{inherited}\"\nartifacts_directory = \"artifacts\"\n"),
             ).unwrap();
             let member = fixture.0.join("src/orders");
             descriptor(&member.join("src"), "configuration");
@@ -221,7 +221,7 @@ fn workspace_init_requires_platform_when_root_is_unconfigured_or_selection_is_fo
         for select in [false, true] {
             let fixture = empty_workspace();
             if !select {
-                fs::write(fixture.0.join("eska.toml"), "[workspace]\nmembers = []\n").unwrap();
+                fs::write(fixture.0.join("eska.toml"), "[workspace]\nmembers = {}\n").unwrap();
             }
             let member = fixture.0.join("src/orders");
             descriptor(&member, "processing");
@@ -325,7 +325,7 @@ fn workspace_init_rejects_nested_members_and_duplicate_names_before_writing() {
     .unwrap();
     fs::write(
         fixture.0.join("eska.toml"),
-        "[workspace]\nmembers = [\"src/existing\"]\n",
+        "[workspace]\n[workspace.members.app]\nexternal_objects=[\"src/existing\"]\n",
     )
     .unwrap();
 
@@ -451,15 +451,22 @@ fn creates_only_missing_git_files_and_preserves_existing_files() {
                 b"user attributes\n"
             }
         );
-        assert_eq!(
-            fs::read(root.join(".gitignore")).expect("ignore rules"),
-            if missing == Some(".gitignore") {
-                include_bytes!("../../crates/eska-project-core/assets/project/.gitignore")
-                    .as_slice()
-            } else {
-                b"user ignore rules\n"
+        let ignore = fs::read_to_string(root.join(".gitignore")).expect("ignore rules");
+        if missing == Some(".gitignore") {
+            assert_eq!(
+                ignore,
+                include_str!("../../crates/eska-project-core/assets/project/.gitignore")
+            );
+        } else {
+            assert!(ignore.starts_with("user ignore rules\n"));
+            for rule in [
+                "ConfigDumpInfo.xml",
+                "DumpFilesIndex.txt",
+                "/bsl-analyzer.toml",
+            ] {
+                assert!(ignore.lines().any(|line| line == rule));
             }
-        );
+        }
     }
 }
 
