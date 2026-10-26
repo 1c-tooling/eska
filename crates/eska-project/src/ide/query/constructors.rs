@@ -100,6 +100,8 @@ pub(super) fn capability(minor: u32) -> Value {
         result["predicates"] = json!(true);
         result["unionMatrix"] = json!(true);
         result["actionPreview"] = json!(true);
+        result["packageTree"] = json!(true);
+        result["copyStatement"] = json!(true);
     }
     result
 }
@@ -407,7 +409,8 @@ fn check_compatibility(
     if (minor < 32
         && (matches!(
             action,
-            Action::AlignUnion { .. }
+            Action::CopyStatement { .. }
+                | Action::AlignUnion { .. }
                 | Action::SetJoinKind { .. }
                 | Action::SetPredicate { .. }
                 | Action::MovePredicate { .. }

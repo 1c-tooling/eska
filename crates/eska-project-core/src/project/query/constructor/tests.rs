@@ -4,6 +4,7 @@ mod dcs;
 mod having;
 mod items;
 mod nested;
+mod package_tree;
 mod packages;
 mod predicates;
 mod total_sections;

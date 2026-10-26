@@ -141,22 +141,8 @@ impl View<'_> {
             statement.source_bindings(input)
         };
         let sources: Vec<_> = bindings
-            .into_iter()
-            .map(|source| {
-                let nested = source
-                    .derived
-                    .then(|| {
-                        self.value.model().source_scope(Selection {
-                            statement: index,
-                            clause: source.clause,
-                            item: source.item,
-                        })
-                    })
-                    .flatten();
-                let mut value = json!(source);
-                value["nestedScope"] = json!(nested);
-                value
-            })
+            .iter()
+            .map(|source| self.source(index, source))
             .collect();
         let first = self.value.model().scopes[statement.scope].branches[0];
         let columns: Vec<_> = self.value.model().statements[first]
@@ -195,11 +181,49 @@ impl View<'_> {
                 "moveDown":position.filter(|at|self.writable && statement.unavailable.is_none() && at+1<roots.len()).map(|at|at+1),
                 "setInto":self.writable && !statement.nested && self.value.model().package_operation(index)==Some(eska_project_core::project::query::constructor::PackageOperation::Select)});
         }
+        if self.minor >= 32 {
+            output["package"]["copy"]=json!(self.writable && !opaque && self.value.model().package_operation(index)==Some(eska_project_core::project::query::constructor::PackageOperation::Select));
+        }
         if self.minor >= 28 {
             self.sections(statement, opaque, &mut output);
         }
 
         output
+    }
+
+    /// Source navigation comes from the same revision's lexical scope and temporary-table lifetime.
+    fn source(
+        &self,
+        index: usize,
+        source: &eska_project_core::project::query::constructor::SourceBinding,
+    ) -> Value {
+        let input = self.value.text();
+        let nested = source
+            .derived
+            .then(|| {
+                self.value.model().source_scope(Selection {
+                    statement: index,
+                    clause: source.clause,
+                    item: source.item,
+                })
+            })
+            .flatten();
+        let mut value = json!(source);
+        value["nestedScope"] = json!(nested);
+        if self.minor >= 32 {
+            value["temporaryDefinition"] = json!(
+                (!source.derived)
+                    .then(|| self
+                        .value
+                        .model()
+                        .temporary_source(input, index, &source.table)
+                        .ok()
+                        .flatten()
+                        .map(|table| table.statement))
+                    .flatten()
+            );
+        }
+        value
     }
 
     /// Totals permissions remain shared with earlier clients and keep the native single-section limit.
@@ -218,6 +242,7 @@ impl View<'_> {
 
     /// Compact projections are additive and bounded independently of the old statement vocabulary.
     fn compact(&self, index: usize, statement: &Statement, output: &mut Value) {
+        output["path"] = json!(self.value.statement_path(index));
         output["unionMatrix"] = if self.value.model().scopes[statement.scope].branches[0] == index {
             json!(self.value.union_matrix(index).map(|mut matrix| {
                 matrix.can_align &= self.writable;

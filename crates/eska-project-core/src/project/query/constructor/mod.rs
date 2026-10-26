@@ -71,6 +71,9 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    CopyStatement {
+        statement: usize,
+    },
     AlignUnion {
         statement: usize,
     },
@@ -199,7 +202,8 @@ impl Action {
     #[must_use]
     pub const fn statement(&self) -> usize {
         match self {
-            Self::AlignUnion { statement }
+            Self::CopyStatement { statement }
+            | Self::AlignUnion { statement }
             | Self::SetPredicate { statement, .. }
             | Self::EditItems { statement, .. }
             | Self::AddSourceFields { statement, .. }
@@ -329,6 +333,22 @@ impl Constructor {
             .statements
             .get(statement)
             .is_some_and(|owner| predicates::complex(self.text(), owner))
+    }
+
+    /// Breadcrumbs use core scope edges; adapters never reconstruct nested SQL ownership.
+    #[must_use]
+    pub fn statement_path(&self, statement: usize) -> Vec<usize> {
+        let mut path = Vec::new();
+        let mut current = Some(statement);
+        while let Some(index) = current {
+            let Some(owner) = self.model.statements.get(index) else {
+                return Vec::new();
+            };
+            path.push(index);
+            current = self.model.scopes[owner.scope].parent;
+        }
+        path.reverse();
+        path
     }
 
     /// Copy controls reflect recognized syntax and never infer permission from a field name.
