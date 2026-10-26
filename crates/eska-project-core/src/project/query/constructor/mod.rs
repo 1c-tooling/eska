@@ -2,6 +2,7 @@
 
 mod dcs;
 mod editing;
+mod items;
 pub(super) mod lex;
 mod model;
 mod nested;
@@ -21,6 +22,18 @@ pub use packages::{PackageIssue, PackageIssueKind, PackageOperation, TemporaryTa
 pub use scopes::{QueryScope, Union};
 pub use totals::{Hierarchy, PeriodRange, PeriodUnit, TotalSection};
 pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
+
+/// One set is bounded by the same maximum used for adding metadata fields.
+pub const MAX_ITEM_SET_ITEMS: usize = 512;
+
+/// Destinations are gaps in the immutable clause: zero precedes the first item, length follows the last.
+#[derive(Clone, Copy, Debug, serde::Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
+pub enum ItemSetOperation {
+    Remove,
+    Move { to: usize },
+    Copy { to: usize },
+}
 
 /// A selection is valid only with the exact constructor revision that supplied its indices.
 #[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
@@ -54,6 +67,18 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    EditItems {
+        statement: usize,
+        clause: usize,
+        items: Vec<usize>,
+        operation: ItemSetOperation,
+        comments: Option<CommentDecision>,
+    },
+    AddSourceFields {
+        statement: usize,
+        source: Expression,
+        fields: Vec<String>,
+    },
     SetDcs {
         statement: usize,
         node: Option<usize>,
@@ -153,7 +178,9 @@ impl Action {
     #[must_use]
     pub const fn statement(&self) -> usize {
         match self {
-            Self::SetDcs { statement, .. }
+            Self::EditItems { statement, .. }
+            | Self::AddSourceFields { statement, .. }
+            | Self::SetDcs { statement, .. }
             | Self::AddTotals { statement, .. }
             | Self::RemoveTotals { statement, .. }
             | Self::MoveTotals { statement, .. }
@@ -201,6 +228,7 @@ pub struct Constructor {
     revision: u64,
     focus: Option<usize>,
     total_focus: Option<usize>,
+    item_focus: Vec<Selection>,
 }
 
 impl Constructor {
@@ -221,6 +249,7 @@ impl Constructor {
             revision: 1,
             focus,
             total_focus: None,
+            item_focus: Vec::new(),
         })
     }
 
@@ -262,6 +291,18 @@ impl Constructor {
         self.total_focus
     }
 
+    /// A grouped action returns its resulting selections without client-side index remapping.
+    #[must_use]
+    pub fn item_focus(&self) -> &[Selection] {
+        &self.item_focus
+    }
+
+    /// Copy controls reflect recognized syntax and never infer permission from a field name.
+    #[must_use]
+    pub fn copy_unavailable(&self, selection: Selection) -> Option<Error> {
+        items::copy_unavailable(self, selection)
+    }
+
     /// A stable hash binds streamed preview bodies and final native text plans.
     #[must_use]
     pub fn snapshot(&self) -> String {
@@ -272,6 +313,7 @@ impl Constructor {
     #[must_use]
     pub fn retained_bytes(&self) -> usize {
         self.model.retained_bytes()
+            + self.item_focus.capacity() * std::mem::size_of::<Selection>()
             + if Arc::ptr_eq(&self.original, &self.working) {
                 0
             } else {
@@ -286,6 +328,15 @@ impl Constructor {
     pub fn apply(&mut self, expected: u64, action: &Action) -> Result<EditPlan, Error> {
         if expected != self.revision {
             return Err(Error::StaleRevision);
+        }
+        if let Some(staged) = items::stage(self, action)? {
+            let plan = super::minimal_text_plan(&self.working, staged.value.text())
+                .map_err(|_| Error::InvalidExpression)?;
+            let model = Model::parse(plan.output())?;
+            self.accept(&plan, model, action)?;
+            self.focus = Some(action.statement());
+            self.item_focus = staged.focus;
+            return Ok(plan);
         }
         if let Some(plan) = dcs::plan(&self.working, &self.model, action)? {
             let model = Model::parse(plan.output())?;
@@ -419,6 +470,7 @@ impl Constructor {
         }
         self.focus = focus;
         self.total_focus = total_focus;
+        self.item_focus.clear();
         Ok(())
     }
 

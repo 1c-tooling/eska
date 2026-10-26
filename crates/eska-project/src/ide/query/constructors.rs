@@ -6,7 +6,7 @@ use presentation::model;
 
 use std::path::PathBuf;
 
-use eska_project_core::project::query::constructor::{Action, ClauseKind};
+use eska_project_core::project::query::constructor::{Action, ClauseKind, MAX_ITEM_SET_ITEMS};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -89,6 +89,11 @@ pub(super) fn capability(minor: u32) -> Value {
     if minor >= 29 {
         result["dcs"] = json!(true);
         result["maxDcsValues"] = json!(128);
+    }
+    if minor >= 31 {
+        result["bulkItems"] = json!(true);
+        result["maxBulkItems"] = json!(MAX_ITEM_SET_ITEMS);
+        result["addSourceFields"] = json!(true);
     }
     result
 }
@@ -366,7 +371,12 @@ fn check_compatibility(
 ) -> Result<(), Value> {
     let model = core.constructor(id).map_err(session_error)?.model();
     let statement = action.statement();
-    if (minor < 23 && model.requires_scopes(statement))
+    if (minor < 31
+        && matches!(
+            action,
+            Action::EditItems { .. } | Action::AddSourceFields { .. }
+        ))
+        || (minor < 23 && model.requires_scopes(statement))
         || (minor < 26 && model.requires_packages(statement))
         || (minor < 27 && model.requires_having(statement))
         || (minor < 28 && model.requires_multiple_totals(statement))
@@ -417,4 +427,21 @@ fn source_comments(
         "lineStartsOnly":line_starts_only,
         "comments":comments,"positions":positions}),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Older clients retain their exact capability vocabulary, while item sets require an explicit bound.
+    #[test]
+    fn bulk_capabilities_require_minor_31() {
+        let old = capability(30);
+        assert!(old.get("bulkItems").is_none());
+        assert!(old.get("addSourceFields").is_none());
+        let current = capability(31);
+        assert_eq!(current["bulkItems"], true);
+        assert_eq!(current["addSourceFields"], true);
+        assert_eq!(current["maxBulkItems"], MAX_ITEM_SET_ITEMS);
+    }
 }

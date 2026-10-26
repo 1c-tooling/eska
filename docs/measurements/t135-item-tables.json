@@ -1,0 +1,83 @@
+{
+  "task": "T135",
+  "status": "DONE",
+  "scope": "Core atomic groups and compact tables",
+  "date": "2026-10-26",
+  "platform": "Linux / VSCodium 1.109.51242 / 1C 8.3.27.2325",
+  "backendApi": "1.31",
+  "uiBundleSha256": "f542dabb4e6d5a55bfa8c970040915dd4ed4744289125d97b4661d01ba671453",
+  "stand": "/home/akalsin/Documents/Projects/eska-playground/t135-compact-esr4w105",
+  "core": {
+    "newTests": 8,
+    "covered": [
+      "BOM CRLF comments",
+      "single public revision",
+      "late failure rollback",
+      "stale and duplicate indices",
+      "UNION synchronization",
+      "nested copy body preservation",
+      "source and fields atomic insertion",
+      "totals plus matching output projection"
+    ]
+  },
+  "rpc": {
+    "tests": 31,
+    "passed": 31,
+    "locales": [
+      "ru-RU",
+      "en-US"
+    ],
+    "ownerAndDraftPreserved": true
+  },
+  "installedEditor": {
+    "passed": true,
+    "locales": [
+      "en",
+      "ru"
+    ],
+    "accepted": [
+      "selection and core copy alias",
+      "move and returned selection",
+      "inline editing",
+      "select all with atomic required-field rejection",
+      "apply Undo Redo",
+      "source disk bytes preserved"
+    ],
+    "logs": [
+      "items-en-2.log",
+      "items-ru-2.log"
+    ]
+  },
+  "platformProbe": {
+    "passed": true,
+    "queriesExecuted": 2,
+    "report": "/home/akalsin/Documents/Projects/eska-playground/t135-compact-esr4w105/platform/matrix-current.json",
+    "kind": "hand-authored executable grammar probe for total output aliases and copied fields",
+    "regressionFound": "A copied total needs a matching SELECT output column; core now adds both atomically."
+  },
+  "limitations": [
+    "Windows macOS VS Code Remote unverified",
+    "Full semantic services await analyzer",
+    "Full T142 measurements and scenario matrix remain separate"
+  ],
+  "validation": {
+    "cargoFmt": "passed",
+    "cargoCheck": "passed",
+    "cargoClippyAllTargetsAllFeatures": "passed",
+    "cargoTest": "passed before final unaliased-total generalization; targeted regression rerun; full final gates required after remaining tasks",
+    "rustdocWarningsDenied": "passed",
+    "node": {
+      "passed": 336,
+      "skipped": 3,
+      "failed": 0,
+      "serial": true
+    },
+    "bun": {
+      "version": "1.4.2",
+      "passed": 336,
+      "skipped": 3,
+      "failed": 0
+    },
+    "typescript": "passed"
+  }
+}

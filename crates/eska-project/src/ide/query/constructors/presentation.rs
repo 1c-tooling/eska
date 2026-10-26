@@ -74,6 +74,9 @@ pub(super) fn model(
     if minor >= 28 {
         output["totalFocus"] = json!(value.total_focus());
     }
+    if minor >= 31 {
+        output["itemFocus"] = json!(value.item_focus());
+    }
     if minor >= 26
         && let Some(issues) = output["issues"].as_array_mut()
     {
@@ -219,7 +222,7 @@ impl View<'_> {
     fn item(
         &self,
         statement: usize,
-        _clause: usize,
+        clause_index: usize,
         index: usize,
         item: &Item,
         clause: &Clause,
@@ -250,13 +253,27 @@ impl View<'_> {
             })
             .map(|(index, _)| index)
             .collect();
-        json!({"index":index,"range":bytes(&item.range),"preview":preview(&input[item.range.clone()]),
+        let mut output = json!({"index":index,"range":bytes(&item.range),"preview":preview(&input[item.range.clone()]),
             "visual":if too_large {None} else {visual},"expression":if too_large {None} else {Some(expression)},"comments":item.comments.len(),
             "removable":removable,"movable":up||down,"moveUp":up,"moveDown":down,"children":children,
             "unavailable":{"replace":if !self.writable {Some("read_only")} else if too_large {Some("expression_too_large")} else {None},
                 "remove":if !self.writable {Some("read_only")} else if !removable {Some("required_item")} else {None},
                 "move":if !self.writable {Some("read_only")} else if clause.kind==ClauseKind::Joins {Some("join_order_dependency")}
-                    else if clause.items.len()<2 {Some("single_item")} else if !up&&!down {Some("required_item")} else {None}}})
+                    else if clause.items.len()<2 {Some("single_item")} else if !up&&!down {Some("required_item")} else {None}}});
+        if self.minor >= 31 {
+            output["unavailable"]["copy"] = if !self.writable {
+                json!("read_only")
+            } else if too_large {
+                json!("expression_too_large")
+            } else {
+                json!(self.value.copy_unavailable(Selection {
+                    statement,
+                    clause: clause_index,
+                    item: index
+                }))
+            };
+        }
+        output
     }
 }
 
