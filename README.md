@@ -28,6 +28,9 @@ Save сохраняет черновик; «Применить» меняет м
 Новые операции выполняет ESKA через Metadata API 1.32; расширение предоставляет
 интерфейс. Типы и языковые сервисы ожидают доработки bsl-analyzer.
 [Приёмка, сборки и ограничения](docs/measurements/t142-compact-constructor.md).
+[Ревью и ускорение конструктора](docs/measurements/t143-constructor-review.md):
+на проверенном Linux/VSCodium открытие — 240 мс, добавление поля — 51 мс
+(медианы на 48 полях).
 
 [Подробное руководство](docs/user-guide.md) ·
 [Сайт и инструкция](https://1c-tooling.github.io/eska/docs/) ·
