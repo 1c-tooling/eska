@@ -727,6 +727,31 @@ eska-project analyzer-config prepare --analyzer /path/to/bsl-analyzer-app
 может означать ещё не созданный или устаревший конфиг. `prepare` проверяет
 конфиг настоящим анализатором перед публикацией.
 
+ESKA по умолчанию считает расширения установленными для всей базы (`InfoBase`).
+Путь и параметры задаются вместе, без отдельного списка областей установки:
+
+```toml
+[workspace.members.buhmfo]
+configuration = "src/buhmfo"
+extensions = [
+    { path = "src/ExternalSystems" },
+    { path = "src/dzp_АвтоматическаяЗагрузкаВыписок" },
+    { path = "src/dzp_АдаптацияКодаТиповойКонфигурации" },
+    { path = "src/dzp_ЗаполнениеБанковскихВыписок" },
+    { path = "src/dzp_ИсправлениеОшибокКонфигурации" },
+]
+```
+
+Для расширения в области данных добавьте `scope = "DataSeparation"` в его
+запись. Его зависимости задаются там же через `depends_on = ["имя-расширения"]`.
+У отдельного проекта расширения переопределение —
+`[analysis] extension_scope = "DataSeparation"`.
+После подготовки ESKA всегда записывает `scope` в `bsl-analyzer.toml`, поэтому
+предупреждение `Extensions without an installation scope` не возникает.
+Если оно осталось от старого конфига, выполните `analyzer-config prepare`
+либо перезапустите язык Explorer. `LineLength` и остальные настройки сохраняются
+в `tools.bsl-analyzer`.
+
 ### Если уже есть собственный bsl-analyzer.toml
 
 Сначала получите предварительный просмотр:
@@ -790,7 +815,7 @@ solution/
 ```toml
 [workspace.members.accounting]
 configuration = "src/main"
-extensions = ["src/integration"]
+extensions = [{ path = "src/integration" }]
 external_objects = ["src/data-import"]
 
 [build]
@@ -824,9 +849,10 @@ eska-project analyzer-config prepare --application accounting --analyzer /path/t
 ```
 
 Пути в `workspace.members.accounting` задаются один раз. Имена в
-`extension_dependencies` — это `project.name` расширений. Старая структура
+`extensions[].depends_on` — это `project.name` расширений; область установки
+задаётся в той же записи через `scope` и по умолчанию равна `InfoBase`. Старая структура
 `members = [...]` вместе с `[applications]` не поддерживается: нужна сборка
-ESKA и Explorer с контрактом `designer-xml-2`.
+ESKA и Explorer с контрактом `designer-xml-3`.
 
 Для внешней обработки, использующей БСП из другой базы:
 

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     application::{
-        ConfigurationReference, RawApplication, RawConfiguration, SettingsError,
+        ConfigurationReference, ExtensionScope, RawApplication, RawConfiguration, SettingsError,
         TargetPlatformVersion,
     },
     project::{ProjectName, WorkspaceMember},
@@ -27,6 +27,17 @@ pub enum ConfigurationMember {
     Reference(ConfigurationReference),
 }
 
+/// Keep a member's deployment and dependency settings with its only path declaration.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ExtensionMember {
+    pub path: PathBuf,
+    #[serde(default, skip_serializing_if = "ExtensionScope::is_default")]
+    pub scope: ExtensionScope,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub depends_on: Vec<String>,
+}
+
 /// An application's members are declared once, under their semantic roles.
 #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -34,11 +45,9 @@ pub struct ApplicationMembers {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub configuration: Option<ConfigurationMember>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub extensions: Vec<PathBuf>,
+    pub extensions: Vec<ExtensionMember>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub external_objects: Vec<PathBuf>,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub extension_dependencies: BTreeMap<String, Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub target_platform_version: Option<String>,
 }
@@ -52,7 +61,7 @@ impl ApplicationMembers {
         };
         configuration
             .into_iter()
-            .chain(&self.extensions)
+            .chain(self.extensions.iter().map(|extension| &extension.path))
             .chain(&self.external_objects)
     }
 
@@ -75,9 +84,23 @@ impl ApplicationMembers {
                         RawConfiguration::Reference(reference.clone())
                     }
                 }),
-            extensions: self.extensions.iter().map(name).collect(),
+            extensions: self
+                .extensions
+                .iter()
+                .map(|extension| name(&extension.path))
+                .collect(),
             external_objects: self.external_objects.iter().map(name).collect(),
-            extension_dependencies: self.extension_dependencies.clone(),
+            extension_dependencies: self
+                .extensions
+                .iter()
+                .filter(|extension| !extension.depends_on.is_empty())
+                .map(|extension| (name(&extension.path), extension.depends_on.clone()))
+                .collect(),
+            extension_scopes: self
+                .extensions
+                .iter()
+                .map(|extension| (name(&extension.path), extension.scope))
+                .collect(),
             target_platform_version: self.target_platform_version.clone(),
         }
     }

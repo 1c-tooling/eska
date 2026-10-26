@@ -200,8 +200,10 @@ Workspace группирует пути проектов по приложени
 не объединяются в одну основную конфигурацию.
 
 Первоначальная схема T83 с отдельными `members` и `applications` заменена
-единой [схемой состава приложения](../application-context.md) `designer-xml-2`.
-Старый формат не поддерживается. Политика `tools.bsl-analyzer` и
+единой [схемой состава приложения](../application-context.md) `designer-xml-3`.
+Путь, `scope` (по умолчанию `InfoBase`) и `depends_on` принадлежат одной записи
+расширения. Строковые списки расширений и отдельные карты их параметров не
+поддерживаются. Политика `tools.bsl-analyzer` и
 [производный конфиг](../analyzer-configuration.md) остаются механизмом T84.
 Пример корневого `eska.toml` для `buhmfo`:
 
@@ -209,11 +211,11 @@ Workspace группирует пути проектов по приложени
 [workspace.members.buhmfo]
 configuration = "src/buhmfo"
 extensions = [
-    "src/ExternalSystems",
-    "src/dzp_АвтоматическаяЗагрузкаВыписок",
-    "src/dzp_АдаптацияКодаТиповойКонфигурации",
-    "src/dzp_ЗаполнениеБанковскихВыписок",
-    "src/dzp_ИсправлениеОшибокКонфигурации",
+    { path = "src/ExternalSystems" },
+    { path = "src/dzp_АвтоматическаяЗагрузкаВыписок" },
+    { path = "src/dzp_АдаптацияКодаТиповойКонфигурации" },
+    { path = "src/dzp_ЗаполнениеБанковскихВыписок" },
+    { path = "src/dzp_ИсправлениеОшибокКонфигурации" },
 ]
 
 [tools.bsl-analyzer.diagnostics.parameters]

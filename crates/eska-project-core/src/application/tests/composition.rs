@@ -18,7 +18,7 @@ fn role_paths_supply_members_and_context_without_a_second_table() {
         Some("fixes"),
         None,
     );
-    fs::write(fixture.0.join("eska.toml"), "[workspace.members.accounting]\nconfiguration='основная база'\nextensions=['исправления']\n[build]\nplatform_version='8.3.27.2325'\n[tools.bsl-analyzer.diagnostics.parameters]\nLineLength=false\n").unwrap();
+    fs::write(fixture.0.join("eska.toml"), "[workspace.members.accounting]\nconfiguration='основная база'\nextensions = [{path='исправления'}]\n[build]\nplatform_version='8.3.27.2325'\n[tools.bsl-analyzer.diagnostics.parameters]\nLineLength=false\n").unwrap();
     let context = resolve(&fixture.0, None).unwrap();
     assert_eq!(
         context

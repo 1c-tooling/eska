@@ -31,6 +31,9 @@ pub fn present(
 /// Describe the rejected relationship without turning machine-facing names into translated keys.
 fn reason(localizer: &Localizer, error: &SettingsError) -> String {
     match error {
+        SettingsError::ExtensionScopeLocation => {
+            localizer.text("analysis-extension-scope-location")
+        }
         SettingsError::EmptyConfigurationSource => localizer.text("analysis-reference-empty"),
         SettingsError::ConfigurationReferenceScope => localizer.text("analysis-reference-scope"),
         SettingsError::ManagedAnalyzerField { field } => localizer.format(

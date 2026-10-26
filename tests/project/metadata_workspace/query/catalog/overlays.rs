@@ -23,7 +23,7 @@ fn application_fixture(root: &Path) {
         )
         .unwrap();
     }
-    fs::write(root.join("eska.toml"), "[workspace]\n[workspace.members.main]\nconfiguration='base'\nextensions=['first','second']\n[workspace.members.other]\nconfiguration='foreign'\n").unwrap();
+    fs::write(root.join("eska.toml"), "[workspace]\n[workspace.members.main]\nconfiguration='base'\nextensions = [{path='first'}, {path='second'}]\n[workspace.members.other]\nconfiguration='foreign'\n").unwrap();
     descriptor(
         root,
         "base",

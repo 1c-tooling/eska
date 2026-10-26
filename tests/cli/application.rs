@@ -37,7 +37,7 @@ fn application_declarations_are_validated_without_runtime_dependencies() {
     member(&fixture.0, "base", "configuration");
     member(&fixture.0, "ext", "extension");
     member(&fixture.0, "external", "report");
-    let input = "[workspace]\n[analysis]\ndefault_application = 'accounting'\n[workspace.members.accounting]\nconfiguration = 'base'\nextensions = ['ext']\nexternal_objects = ['external']\ntarget_platform_version = '8.3.27'\n";
+    let input = "[workspace]\n[analysis]\ndefault_application = 'accounting'\n[workspace.members.accounting]\nconfiguration = 'base'\nextensions = [{path='ext'}]\nexternal_objects = ['external']\ntarget_platform_version = '8.3.27'\n";
     fs::write(fixture.0.join("eska.toml"), input).unwrap();
     for language in ["ru", "en"] {
         let output = validate(&fixture.0, language);
@@ -60,6 +60,11 @@ fn invalid_context_relationships_have_localized_errors() {
     member(&fixture.0, "ext", "extension");
     for (fields, russian, english) in [
         (
+            "[analysis]\nextension_scope='InfoBase'",
+            "допустим только для отдельного расширения",
+            "only valid for a standalone extension",
+        ),
+        (
             "[workspace.members.App]\nconfiguration = 'base'",
             "некорректное имя",
             "Invalid name",
@@ -75,17 +80,17 @@ fn invalid_context_relationships_have_localized_errors() {
             "Invalid target platform",
         ),
         (
-            "[workspace.members.app]\nconfiguration = 'base'\nextensions = ['ext', 'ext']",
+            "[workspace.members.app]\nconfiguration = 'base'\nextensions = [{path='ext'}, {path='ext'}]",
             "несколько раз",
             "more than once",
         ),
         (
-            "[workspace.members.app]\nconfiguration = 'base'\nextensions = ['ext']\nextension_dependencies = {ext = ['ext']}",
+            "[workspace.members.app]\nconfiguration = 'base'\nextensions = [{path='ext',depends_on=['ext']}]",
             "содержат цикл",
             "contain a cycle",
         ),
         (
-            "[workspace.members.app]\nconfiguration = 'base'\nextensions = ['ext']\nextension_dependencies = {ext = ['missing']}",
+            "[workspace.members.app]\nconfiguration = 'base'\nextensions = [{path='ext',depends_on=['missing']}]",
             "не входит",
             "is not in",
         ),

@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use toml_edit::{Array, DocumentMut, Item, Table, Value};
+use toml_edit::{Array, DocumentMut, InlineTable, Item, Table, Value};
 
 use super::{ProjectName, ProjectType, WorkspaceEnrollmentError};
 
@@ -47,13 +47,34 @@ pub(super) fn append(
             } else {
                 "external_objects"
             };
-            let values = application
+            let item = application
                 .entry(key)
-                .or_insert_with(|| Item::Value(Value::Array(Array::new())))
-                .as_array_mut()
-                .ok_or(WorkspaceEnrollmentError::InvalidComposition)?;
-            values.push(member);
+                .or_insert_with(|| Item::Value(Value::Array(Array::new())));
+            if kind == ProjectType::Extension {
+                append_extension(item, member)?;
+            } else {
+                item.as_array_mut()
+                    .ok_or(WorkspaceEnrollmentError::InvalidComposition)?
+                    .push(member);
+            }
         }
+    }
+    Ok(())
+}
+
+/// Both TOML spellings retain the same structured member and preserve existing settings.
+fn append_extension(item: &mut Item, path: &str) -> Result<(), WorkspaceEnrollmentError> {
+    if let Some(tables) = item.as_array_of_tables_mut() {
+        let mut extension = Table::new();
+        extension.insert("path", toml_edit::value(path));
+        tables.push(extension);
+    } else {
+        let values = item
+            .as_array_mut()
+            .ok_or(WorkspaceEnrollmentError::InvalidComposition)?;
+        let mut extension = InlineTable::new();
+        extension.insert("path", path.into());
+        values.push(extension);
     }
     Ok(())
 }

@@ -358,7 +358,7 @@ fn workspace_new_init_and_application_selection_share_core_rules() {
     assert!(root.contains("# root preserved") && root.contains("# members preserved"));
     assert!(root.contains("[workspace.members.base]"));
     assert!(root.contains("configuration = \"src/base\""));
-    assert!(root.contains("extensions = [\"src/ext\"]"));
+    assert!(root.contains("path = \"src/ext\""));
     let en = success(
         &command(&fixture.0, "en")
             .args(["context", "--format", "json"])
@@ -379,6 +379,78 @@ fn workspace_new_init_and_application_selection_share_core_rules() {
         "Version8_3_24"
     );
     assert!(!fixture.0.join("bsl-analyzer.toml").exists());
+}
+
+/// Adding members must preserve deployment, dependency edges and comments in either TOML spelling.
+#[test]
+fn new_and_init_preserve_structured_extension_settings() {
+    for language in ["ru", "en"] {
+        for entries in [
+            "extensions = [{path='src/library'}, {path='src/tenant',scope='DataSeparation',depends_on=['library']}] # keep scope\n",
+            "[[workspace.members.base.extensions]]\npath='src/library'\n[[workspace.members.base.extensions]]\npath='src/tenant'\nscope='DataSeparation' # keep scope\ndepends_on=['library']\n",
+        ] {
+            let fixture = TestDir::new();
+            fs::write(fixture.0.join("eska.toml"), "[workspace]\n").unwrap();
+            for (name, kind) in [
+                ("base", "configuration"),
+                ("library", "extension"),
+                ("tenant", "extension"),
+            ] {
+                success(
+                    &command(&fixture.0, language)
+                        .args(["new", name, "--type", kind, "--format", "json"])
+                        .output()
+                        .unwrap(),
+                );
+                export(&fixture.0.join("src").join(name).join("src"), kind);
+            }
+            let original = format!("[workspace.members.base]\nconfiguration='src/base'\n{entries}");
+            fs::write(fixture.0.join("eska.toml"), &original).unwrap();
+            success(
+                &command(&fixture.0, language)
+                    .args(["new", "fixes", "--type", "extension", "--format", "json"])
+                    .output()
+                    .unwrap(),
+            );
+            export(&fixture.0.join("src/fixes/src"), "extension");
+            let imported = fixture.0.join("src/imported");
+            export(&imported.join("src"), "extension");
+            success(
+                &command(&imported, language)
+                    .args(["init", "--format", "json"])
+                    .output()
+                    .unwrap(),
+            );
+            let text = fs::read_to_string(fixture.0.join("eska.toml")).unwrap();
+            assert!(text.contains("# keep scope") && text.contains("scope='DataSeparation'"));
+            assert!(text.contains("depends_on=['library']"));
+            assert!(!text.contains("extension_scopes") && !text.contains("extension_dependencies"));
+            let context = eska_project_core::application::resolve(&fixture.0, None).unwrap();
+            assert_eq!(context.sources().len(), 5);
+            for source in &context.sources()[1..] {
+                let name = source.member().unwrap().as_str();
+                let scope = source.extension_scope().unwrap().as_str();
+                assert_eq!(
+                    scope,
+                    if name == "tenant" {
+                        "DataSeparation"
+                    } else {
+                        "InfoBase"
+                    }
+                );
+            }
+            let value = success(
+                &command(&fixture.0, language)
+                    .args(["context", "--format", "json"])
+                    .output()
+                    .unwrap(),
+            );
+            assert_eq!(
+                value["context"]["extension_dependencies"]["tenant"],
+                serde_json::json!(["library"])
+            );
+        }
+    }
 }
 
 /// Invalid options and collisions leave user files and even the destination namespace untouched.
