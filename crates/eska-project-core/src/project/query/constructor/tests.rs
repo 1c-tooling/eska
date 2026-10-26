@@ -5,6 +5,7 @@ mod having;
 mod items;
 mod nested;
 mod packages;
+mod predicates;
 mod total_sections;
 mod totals;
 mod unions;
@@ -588,10 +589,8 @@ fn no_op_operations_preserve_modifiers_whitespace_comments_and_revision() {
 }
 
 #[test]
-fn ambiguous_condition_operators_and_unresolved_modifiers_remain_opaque() {
+fn unresolved_control_syntax_remains_opaque() {
     for text in [
-        "SELECT A FROM T WHERE A BETWEEN 1 AND 2",
-        "SELECT A FROM T WHERE A OR B",
         "SELECT TOP &Count A FROM T",
         "SELECT A FROM T ORDER A",
         "SELECT A FROM T WHERE CASE WHEN A AND B THEN 1 ELSE 0 END = 1",

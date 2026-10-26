@@ -517,7 +517,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T134 | DONE | Компактная оболочка, разделители и сохранение состояния; native ru/en | [24-compact-query-constructor.md](24-compact-query-constructor.md#t134--компактная-оболочка-и-адаптивная-компоновка) |
 | T135 | DONE | Табличное редактирование и групповые действия | [24-compact-query-constructor.md](24-compact-query-constructor.md#t135--табличное-редактирование-и-групповые-действия) |
 | T136 | IN-PROGRESS | Контекстный редактор выражений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t136--контекстный-редактор-выражений) |
-| T137 | PLANNED | Связи и сложные условия | [24-compact-query-constructor.md](24-compact-query-constructor.md#t137--связи-и-сложные-условия) |
+| T137 | IN-PROGRESS | Связи и сложные условия | [24-compact-query-constructor.md](24-compact-query-constructor.md#t137--связи-и-сложные-условия) |
 | T138 | PLANNED | Матрица объединений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t138--матрица-объединений) |
 | T139 | PLANNED | Дерево пакета, временные и виртуальные таблицы | [24-compact-query-constructor.md](24-compact-query-constructor.md#t139--дерево-пакета-временные-и-виртуальные-таблицы) |
 | T140 | PLANNED | Настройки и модификаторы запроса | [24-compact-query-constructor.md](24-compact-query-constructor.md#t140--настройки-и-модификаторы-запроса) |

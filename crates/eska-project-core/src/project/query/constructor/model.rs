@@ -572,12 +572,8 @@ fn unsupported_controls(input: &str, tokens: &[&Token], top: &[&Token]) -> bool 
                     "ОБЪЕДИНИТЬ",
                     "FOR",
                     "ДЛЯ",
-                    "OR",
-                    "ИЛИ",
                     "CASE",
                     "ВЫБОР",
-                    "BETWEEN",
-                    "МЕЖДУ",
                 ],
             )
         })
@@ -724,6 +720,13 @@ fn clause(
         .collect();
     let mut items = Vec::new();
     let mut start = body.start;
+    let indivisible = matches!(kind, ClauseKind::Conditions | ClauseKind::Having)
+        && tokens.iter().any(|token| {
+            token.range.start >= body.start
+                && token.range.end <= body.end
+                && token.depth == depth
+                && token.keyword(input, &["OR", "ИЛИ", "BETWEEN", "МЕЖДУ"])
+        });
     for end in tokens
         .iter()
         .filter(|token| {
@@ -735,6 +738,7 @@ fn clause(
                     ClauseKind::Conditions | ClauseKind::Having | ClauseKind::Joins
                 ) && token.kind == Kind::Symbol(','))
                     || (matches!(kind, ClauseKind::Conditions | ClauseKind::Having)
+                        && !indivisible
                         && token.keyword(input, &["AND", "И"])))
         })
         .map(|token| (token.range.start, token.range.end))

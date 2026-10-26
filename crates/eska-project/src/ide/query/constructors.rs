@@ -95,6 +95,9 @@ pub(super) fn capability(minor: u32) -> Value {
         result["maxBulkItems"] = json!(MAX_ITEM_SET_ITEMS);
         result["addSourceFields"] = json!(true);
     }
+    if minor >= 32 {
+        result["predicates"] = json!(true);
+    }
     result
 }
 
@@ -371,11 +374,19 @@ fn check_compatibility(
 ) -> Result<(), Value> {
     let model = core.constructor(id).map_err(session_error)?.model();
     let statement = action.statement();
-    if (minor < 31
-        && matches!(
+    if (minor < 32
+        && (matches!(
             action,
-            Action::EditItems { .. } | Action::AddSourceFields { .. }
-        ))
+            Action::SetJoinKind { .. } | Action::SetPredicate { .. } | Action::MovePredicate { .. }
+        ) || core
+            .constructor(id)
+            .map_err(session_error)?
+            .requires_predicates(statement)))
+        || (minor < 31
+            && matches!(
+                action,
+                Action::EditItems { .. } | Action::AddSourceFields { .. }
+            ))
         || (minor < 23 && model.requires_scopes(statement))
         || (minor < 26 && model.requires_packages(statement))
         || (minor < 27 && model.requires_having(statement))

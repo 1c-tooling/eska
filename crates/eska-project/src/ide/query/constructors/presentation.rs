@@ -108,7 +108,8 @@ impl View<'_> {
     /// Older negotiated adapters see composite queries as exact opaque text rather than unknown clause identifiers.
     fn statement(&self, index: usize, statement: &Statement) -> Value {
         let input = self.value.text();
-        let opaque = (self.minor < 23 && self.value.model().requires_scopes(index))
+        let opaque = (self.minor < 32 && self.value.requires_predicates(index))
+            || (self.minor < 23 && self.value.model().requires_scopes(index))
             || (self.minor < 26 && self.value.model().requires_packages(index))
             || (self.minor < 27 && self.value.model().requires_having(index))
             || (self.minor < 28 && self.value.model().requires_multiple_totals(index));
@@ -215,7 +216,12 @@ impl View<'_> {
             .enumerate()
             .map(|(item, value)| self.item(statement, index, item, value, clause))
             .collect();
-        json!({"index":index,"kind":clause.kind,"header":preview(self.value.text()[clause.range.start..clause.body.start].trim()),"items":items})
+        let mut output = json!({"index":index,"kind":clause.kind,"header":preview(self.value.text()[clause.range.start..clause.body.start].trim()),"items":items});
+        if self.minor >= 32 {
+            output["predicate"] = json!(self.value.predicate(statement, index));
+            output["join"] = json!(self.value.join_context(statement, index));
+        }
+        output
     }
 
     /// Each button receives its own domain permission, including fixed OVERALL placement and nested navigation.

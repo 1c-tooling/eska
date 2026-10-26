@@ -131,7 +131,7 @@ fn implicit_alias<'a>(table: &'a str, alias: &'a str) -> &'a str {
 }
 
 /// Change the JOIN type without deleting comments between LEFT/OUTER/JOIN or their Russian equivalents.
-fn join_header(
+pub(in super::super) fn join_header(
     input: &str,
     clause: &Clause,
     kind: JoinKind,

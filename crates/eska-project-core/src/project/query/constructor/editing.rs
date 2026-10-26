@@ -11,7 +11,10 @@ use super::{
 /// Resolve indices only against the supplied immutable model revision.
 pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<EditPlan, Error> {
     let edits = match action {
-        Action::EditItems { .. }
+        Action::SetJoinKind { .. }
+        | Action::MovePredicate { .. }
+        | Action::SetPredicate { .. }
+        | Action::EditItems { .. }
         | Action::AddSourceFields { .. }
         | Action::Compose { .. }
         | Action::SetDcs { .. }
@@ -193,6 +196,15 @@ pub(super) fn append(
         } else {
             ","
         };
+        if matches!(kind, ClauseKind::Conditions | ClauseKind::Having)
+            && super::predicates::complex(input, statement)
+        {
+            let raw = &input[clause.body.clone()];
+            return Ok(vec![Replacement {
+                range: clause.body.clone(),
+                text: format!(" ({raw}{newline}){separator} ({text}){newline}"),
+            }]);
+        }
         let text = if matches!(kind, ClauseKind::Conditions | ClauseKind::Having) {
             format!("{newline}{separator} {text}")
         } else {

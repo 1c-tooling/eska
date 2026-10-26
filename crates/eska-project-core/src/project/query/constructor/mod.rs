@@ -7,6 +7,7 @@ pub(super) mod lex;
 mod model;
 mod nested;
 mod packages;
+mod predicates;
 mod scopes;
 mod totals;
 mod unions;
@@ -19,6 +20,7 @@ use crate::project::metadata_edit::{EditPlan, snapshot};
 pub use dcs::{DcsKind, DcsModel, DcsNode, DcsStatement, DcsValue};
 pub use model::{Clause, ClauseKind, Item, Model, Statement, Unavailable};
 pub use packages::{PackageIssue, PackageIssueKind, PackageOperation, TemporaryTable};
+pub use predicates::{JoinContext, Predicate};
 pub use scopes::{QueryScope, Union};
 pub use totals::{Hierarchy, PeriodRange, PeriodUnit, TotalSection};
 pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
@@ -67,6 +69,20 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    SetJoinKind {
+        selection: Selection,
+        join: JoinKind,
+    },
+    MovePredicate {
+        selection: Selection,
+        target: ClauseKind,
+    },
+    SetPredicate {
+        statement: usize,
+        clause: ClauseKind,
+        selection: Option<Selection>,
+        predicate: Predicate,
+    },
     EditItems {
         statement: usize,
         clause: usize,
@@ -178,7 +194,8 @@ impl Action {
     #[must_use]
     pub const fn statement(&self) -> usize {
         match self {
-            Self::EditItems { statement, .. }
+            Self::SetPredicate { statement, .. }
+            | Self::EditItems { statement, .. }
             | Self::AddSourceFields { statement, .. }
             | Self::SetDcs { statement, .. }
             | Self::AddTotals { statement, .. }
@@ -196,7 +213,9 @@ impl Action {
             | Self::AppendFields { statement, .. }
             | Self::Compose { statement, .. }
             | Self::Append { statement, .. } => *statement,
-            Self::Replace { selection, .. }
+            Self::SetJoinKind { selection, .. }
+            | Self::MovePredicate { selection, .. }
+            | Self::Replace { selection, .. }
             | Self::Remove { selection, .. }
             | Self::Move { selection, .. } => selection.statement,
         }
@@ -297,6 +316,15 @@ impl Constructor {
         &self.item_focus
     }
 
+    /// A negotiated old client cannot edit newly recognized boolean structures.
+    #[must_use]
+    pub fn requires_predicates(&self, statement: usize) -> bool {
+        self.model
+            .statements
+            .get(statement)
+            .is_some_and(|owner| predicates::complex(self.text(), owner))
+    }
+
     /// Copy controls reflect recognized syntax and never infer permission from a field name.
     #[must_use]
     pub fn copy_unavailable(&self, selection: Selection) -> Option<Error> {
@@ -328,6 +356,9 @@ impl Constructor {
     pub fn apply(&mut self, expected: u64, action: &Action) -> Result<EditPlan, Error> {
         if expected != self.revision {
             return Err(Error::StaleRevision);
+        }
+        if let Some(plan) = predicates::plan(self, action)? {
+            return self.accept_predicate(plan, action);
         }
         if let Some(staged) = items::stage(self, action)? {
             let plan = super::minimal_text_plan(&self.working, staged.value.text())
@@ -452,6 +483,20 @@ impl Constructor {
         let plan = visual::augment(&self.working, &self.model, original_action, plan)?;
         let plan = nested::output_plan(&self.working, &self.model, original_action, plan)?;
         Ok((plan, action.clone()))
+    }
+
+    /// A structural predicate cannot turn its selected operator into an opaque or missing statement.
+    fn accept_predicate(&mut self, plan: EditPlan, action: &Action) -> Result<EditPlan, Error> {
+        let model = Model::parse(plan.output())?;
+        if model
+            .statements
+            .get(action.statement())
+            .is_none_or(|owner| owner.unavailable.is_some())
+        {
+            return Err(Error::Unsupported);
+        }
+        self.accept(&plan, model, action)?;
+        Ok(plan)
     }
 
     /// All multi-part operations share one checked publication and one revision increment.
