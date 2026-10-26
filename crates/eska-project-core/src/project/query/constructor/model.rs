@@ -63,8 +63,8 @@ impl ClauseKind {
             Self::Having => 6,
             Self::Index => 7,
             Self::Order => 8,
-            Self::Totals => 9,
-            Self::TotalGroups => 10,
+            Self::Totals => 11,
+            Self::TotalGroups => 12,
         }
     }
 
@@ -164,6 +164,7 @@ impl Clause {
 /// Every statement keeps its original range even when no visual operation is safe.
 #[derive(Clone, Debug)]
 pub struct Statement {
+    pub(super) controls: Vec<super::modifiers::Control>,
     pub range: Range<usize>,
     pub russian: bool,
     pub unavailable: Option<Unavailable>,
@@ -348,7 +349,9 @@ impl Model {
             }
             Err(error) => return Err(error),
         };
-        super::scopes::parse(input, &tokens)
+        let mut model = super::scopes::parse(input, &tokens)?;
+        super::modifiers::constrain(input, &mut model);
+        Ok(model)
     }
 
     /// Include nested allocations in the shared query budget, without duplicating source strings.
@@ -369,6 +372,7 @@ impl Model {
                 .iter()
                 .map(|statement| {
                     std::mem::size_of_val(statement.clauses.as_slice())
+                        + std::mem::size_of_val(statement.controls.as_slice())
                         + statement
                             .clauses
                             .iter()
@@ -390,6 +394,7 @@ impl Model {
 /// An opaque node is still available for exact no-op round trips and text-mode editing after cancellation.
 pub(super) const fn opaque(range: Range<usize>, reason: Unavailable) -> Statement {
     Statement {
+        controls: Vec::new(),
         range,
         russian: false,
         unavailable: Some(reason),
@@ -433,6 +438,9 @@ pub(super) fn parse_statement(
     {
         return opaque(range, Unavailable::ModelLimit);
     }
+    let Ok(controls) = super::modifiers::controls(input, &top) else {
+        return opaque(range, Unavailable::UnsupportedConstruct);
+    };
     let russian = first.keyword(input, &["ВЫБРАТЬ"]);
     let mut headers = vec![(
         ClauseKind::Fields,
@@ -440,6 +448,12 @@ pub(super) fn parse_statement(
         select_end(input, &top),
     )];
     for (index, token) in top.iter().enumerate().skip(1) {
+        if controls
+            .iter()
+            .any(|control| control.range.contains(&token.range.start))
+        {
+            continue;
+        }
         if let Some((kind, start, end)) = header(input, &top, index, token) {
             headers.push((kind, start, end));
         }
@@ -454,36 +468,32 @@ pub(super) fn parse_statement(
     }) {
         return opaque(range, Unavailable::UnsupportedConstruct);
     }
+    if !super::modifiers::ordered(&headers, &controls) {
+        return opaque(range, Unavailable::UnsupportedConstruct);
+    }
     let mut clauses = Vec::new();
     for (index, &(kind, start, body)) in headers.iter().enumerate() {
         let end = headers.get(index + 1).map_or(range.end, |header| header.1);
+        let end = controls
+            .iter()
+            .filter(|control| control.range.start >= body && control.range.start < end)
+            .map(|control| control.range.start)
+            .min()
+            .unwrap_or(end);
         let clause = clause(input, kind, start..end, body..end, tokens, depth);
         if clause.items.is_empty() && kind != ClauseKind::Totals {
             return opaque(range, Unavailable::InvalidSyntax);
         }
         clauses.push(clause);
     }
-    if clauses.iter().any(|clause| {
-        clause.kind == ClauseKind::Into
-            && (depth != 0
-                || clause.items.len() != 1
-                || !super::packages::identifier(&clause.items[0].expression(input)))
-    }) {
-        return opaque(range, Unavailable::InvalidSyntax);
-    }
-    if clauses.iter().any(|clause| {
-        clause.kind == ClauseKind::Index
-            && clause
-                .items
-                .iter()
-                .any(|item| !super::packages::identifier(&item.expression(input)))
-    }) {
-        return opaque(range, Unavailable::UnsupportedConstruct);
+    if let Some(reason) = package_unavailable(input, &clauses, depth) {
+        return opaque(range, reason);
     }
     if let Some(reason) = totals_unavailable(input, &clauses) {
         return opaque(range, reason);
     }
     Statement {
+        controls,
         range,
         russian,
         unavailable: None,
@@ -493,6 +503,28 @@ pub(super) fn parse_statement(
         nested: false,
         result: true,
     }
+}
+
+/// Package identifiers are syntax constraints independent of query analysis services.
+fn package_unavailable(input: &str, clauses: &[Clause], depth: u16) -> Option<Unavailable> {
+    if clauses.iter().any(|clause| {
+        clause.kind == ClauseKind::Into
+            && (depth != 0
+                || clause.items.len() != 1
+                || !super::packages::identifier(&clause.items[0].expression(input)))
+    }) {
+        return Some(Unavailable::InvalidSyntax);
+    }
+    if clauses.iter().any(|clause| {
+        clause.kind == ClauseKind::Index
+            && clause
+                .items
+                .iter()
+                .any(|item| !super::packages::identifier(&item.expression(input)))
+    }) {
+        return Some(Unavailable::UnsupportedConstruct);
+    }
+    None
 }
 
 /// Native execution accepts one TOTALS/BY pair; repeated pairs remain exact opaque text.
@@ -546,6 +578,7 @@ fn destroy_statement(
         depth,
     );
     Statement {
+        controls: Vec::new(),
         range,
         russian: top[0].keyword(input, &["УНИЧТОЖИТЬ"]),
         unavailable: None,
@@ -565,16 +598,7 @@ fn unsupported_controls(input: &str, tokens: &[&Token], top: &[&Token]) -> bool 
         || top.iter().skip(1).any(|token| {
             token.keyword(
                 input,
-                &[
-                    "SELECT",
-                    "ВЫБРАТЬ",
-                    "UNION",
-                    "ОБЪЕДИНИТЬ",
-                    "FOR",
-                    "ДЛЯ",
-                    "CASE",
-                    "ВЫБОР",
-                ],
+                &["SELECT", "ВЫБРАТЬ", "UNION", "ОБЪЕДИНИТЬ", "CASE", "ВЫБОР"],
             )
         })
     {

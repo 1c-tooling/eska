@@ -3,6 +3,7 @@ use super::*;
 mod dcs;
 mod having;
 mod items;
+mod modifiers;
 mod nested;
 mod package_tree;
 mod packages;

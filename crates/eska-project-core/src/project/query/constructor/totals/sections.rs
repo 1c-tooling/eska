@@ -84,11 +84,7 @@ fn add(input: &str, owner: &Statement, after: Option<usize>) -> Result<Vec<Repla
     if !sections.is_empty() {
         return Err(Error::Unsupported);
     }
-    let position = owner
-        .clauses
-        .last()
-        .and_then(|clause| clause.items.last())
-        .map_or(owner.range.end, |item| item.range.end);
+    let position = super::super::modifiers::insertion(owner, ClauseKind::Totals);
     let newline = editing::newline(input);
     Ok(vec![Replacement {
         range: position..position,

@@ -5,6 +5,7 @@ mod editing;
 mod items;
 pub(super) mod lex;
 mod model;
+mod modifiers;
 mod nested;
 mod packages;
 mod predicates;
@@ -20,6 +21,7 @@ use crate::project::metadata_edit::{EditPlan, snapshot};
 
 pub use dcs::{DcsKind, DcsModel, DcsNode, DcsStatement, DcsValue};
 pub use model::{Clause, ClauseKind, Item, Model, Statement, Unavailable};
+pub use modifiers::{ModifierView, Modifiers};
 pub use packages::{PackageIssue, PackageIssueKind, PackageOperation, TemporaryTable};
 pub use predicates::{JoinContext, Predicate};
 pub use scopes::{QueryScope, Union};
@@ -71,6 +73,10 @@ pub enum JoinKind {
 #[derive(Clone, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Action {
+    SetModifiers {
+        statement: usize,
+        modifiers: Modifiers,
+    },
     CopyStatement {
         statement: usize,
     },
@@ -202,7 +208,8 @@ impl Action {
     #[must_use]
     pub const fn statement(&self) -> usize {
         match self {
-            Self::CopyStatement { statement }
+            Self::SetModifiers { statement, .. }
+            | Self::CopyStatement { statement }
             | Self::AlignUnion { statement }
             | Self::SetPredicate { statement, .. }
             | Self::EditItems { statement, .. }
@@ -351,6 +358,15 @@ impl Constructor {
         path
     }
 
+    /// Earlier adapters cannot safely edit newly recognized trailing controls.
+    #[must_use]
+    pub fn requires_modifiers(&self, statement: usize) -> bool {
+        self.model
+            .statements
+            .get(statement)
+            .is_some_and(|owner| !owner.controls.is_empty())
+    }
+
     /// Copy controls reflect recognized syntax and never infer permission from a field name.
     #[must_use]
     pub fn copy_unavailable(&self, selection: Selection) -> Option<Error> {
@@ -383,8 +399,9 @@ impl Constructor {
         if expected != self.revision {
             return Err(Error::StaleRevision);
         }
-        if let Some(plan) = predicates::plan(self, action)? {
-            return self.accept_predicate(plan, action);
+        modifiers::guard(self, action)?;
+        if let Some(plan) = modifiers::plan(self, action)?.or(predicates::plan(self, action)?) {
+            return self.accept_structural(plan, action);
         }
         if let Some(staged) = items::stage(self, action)? {
             let plan = super::minimal_text_plan(&self.working, staged.value.text())
@@ -512,7 +529,7 @@ impl Constructor {
     }
 
     /// A structural predicate cannot turn its selected operator into an opaque or missing statement.
-    fn accept_predicate(&mut self, plan: EditPlan, action: &Action) -> Result<EditPlan, Error> {
+    fn accept_structural(&mut self, plan: EditPlan, action: &Action) -> Result<EditPlan, Error> {
         let model = Model::parse(plan.output())?;
         if model
             .statements

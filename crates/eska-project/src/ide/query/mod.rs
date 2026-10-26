@@ -108,7 +108,14 @@ pub(super) fn constructor_api_minor(method: &str, args: &Value) -> u32 {
     if method == "query/constructorAction" {
         if matches!(
             args["action"]["kind"].as_str(),
-            Some("copyStatement" | "alignUnion" | "setPredicate" | "movePredicate" | "setJoinKind")
+            Some(
+                "setModifiers"
+                    | "copyStatement"
+                    | "alignUnion"
+                    | "setPredicate"
+                    | "movePredicate"
+                    | "setJoinKind"
+            )
         ) {
             return 32;
         }

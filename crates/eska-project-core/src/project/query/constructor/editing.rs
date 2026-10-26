@@ -11,7 +11,8 @@ use super::{
 /// Resolve indices only against the supplied immutable model revision.
 pub(super) fn plan(input: &str, model: &Model, action: &Action) -> Result<EditPlan, Error> {
     let edits = match action {
-        Action::CopyStatement { .. }
+        Action::SetModifiers { .. }
+        | Action::CopyStatement { .. }
         | Action::AlignUnion { .. }
         | Action::SetJoinKind { .. }
         | Action::MovePredicate { .. }
@@ -114,6 +115,10 @@ pub(super) fn fragment(text: &str) -> Result<(), Error> {
                             &[
                                 "SELECT",
                                 "ВЫБРАТЬ",
+                                "FOR",
+                                "ДЛЯ",
+                                "AUTOORDER",
+                                "АВТОУПОРЯДОЧИВАНИЕ",
                                 "FROM",
                                 "ИЗ",
                                 "WHERE",
@@ -160,11 +165,7 @@ pub(super) fn append(
             .iter()
             .any(|clause| clause.kind == ClauseKind::Totals)
     {
-        let position = statement
-            .clauses
-            .last()
-            .and_then(|clause| clause.items.last())
-            .map_or(statement.range.end, |item| item.range.end);
+        let position = super::modifiers::insertion(statement, ClauseKind::Totals);
         let totals = ClauseKind::Totals.keyword(statement.russian);
         let groups = ClauseKind::TotalGroups.keyword(statement.russian);
         let body = if kind == ClauseKind::Totals {
@@ -224,20 +225,7 @@ pub(super) fn append(
             text: safe_boundary(input, item.range.end, text)?,
         }]);
     }
-    let position = statement
-        .clauses
-        .iter()
-        .find(|clause| clause.kind.rank() > kind.rank())
-        .map_or_else(
-            || {
-                statement
-                    .clauses
-                    .last()
-                    .and_then(|clause| clause.items.last())
-                    .map_or(statement.range.end, |item| item.range.end)
-            },
-            |clause| clause.range.start,
-        );
+    let position = super::modifiers::insertion(statement, kind);
     let keyword = if kind == ClauseKind::Joins {
         join_keyword(join, statement.russian)
     } else {

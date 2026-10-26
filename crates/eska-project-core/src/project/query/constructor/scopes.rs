@@ -205,11 +205,20 @@ fn tail_start(input: &str, top: &[&Token]) -> Option<usize> {
         .enumerate()
         .skip(last)
         .find(|(index, token)| {
-            token.keyword(input, &["TOTALS", "ИТОГИ", "INDEX", "ИНДЕКСИРОВАТЬ"])
-                || (token.keyword(input, &["ORDER", "УПОРЯДОЧИТЬ"])
-                    && top
-                        .get(index + 1)
-                        .is_some_and(|next| next.keyword(input, &["BY", "ПО"])))
+            token.keyword(
+                input,
+                &[
+                    "TOTALS",
+                    "ИТОГИ",
+                    "INDEX",
+                    "ИНДЕКСИРОВАТЬ",
+                    "AUTOORDER",
+                    "АВТОУПОРЯДОЧИВАНИЕ",
+                ],
+            ) || (token.keyword(input, &["ORDER", "УПОРЯДОЧИТЬ"])
+                && top
+                    .get(index + 1)
+                    .is_some_and(|next| next.keyword(input, &["BY", "ПО"])))
         })
         .map(|(_, token)| token.range.start)
 }

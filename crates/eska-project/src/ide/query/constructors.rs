@@ -102,6 +102,9 @@ pub(super) fn capability(minor: u32) -> Value {
         result["actionPreview"] = json!(true);
         result["packageTree"] = json!(true);
         result["copyStatement"] = json!(true);
+        result["modifiers"] = json!(true);
+        result["maxTop"] = json!(u32::MAX);
+        result["maxLockSources"] = json!(64);
     }
     result
 }
@@ -409,15 +412,20 @@ fn check_compatibility(
     if (minor < 32
         && (matches!(
             action,
-            Action::CopyStatement { .. }
+            Action::SetModifiers { .. }
+                | Action::CopyStatement { .. }
                 | Action::AlignUnion { .. }
                 | Action::SetJoinKind { .. }
                 | Action::SetPredicate { .. }
                 | Action::MovePredicate { .. }
-        ) || core
+        ) || (core
             .constructor(id)
             .map_err(session_error)?
-            .requires_predicates(statement)))
+            .requires_predicates(statement)
+            || core
+                .constructor(id)
+                .map_err(session_error)?
+                .requires_modifiers(statement))))
         || (minor < 31
             && matches!(
                 action,

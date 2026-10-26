@@ -108,7 +108,8 @@ impl View<'_> {
     /// Older negotiated adapters see composite queries as exact opaque text rather than unknown clause identifiers.
     fn statement(&self, index: usize, statement: &Statement) -> Value {
         let input = self.value.text();
-        let opaque = (self.minor < 32 && self.value.requires_predicates(index))
+        let opaque = (self.minor < 32
+            && (self.value.requires_predicates(index) || self.value.requires_modifiers(index)))
             || (self.minor < 23 && self.value.model().requires_scopes(index))
             || (self.minor < 26 && self.value.model().requires_packages(index))
             || (self.minor < 27 && self.value.model().requires_having(index))
@@ -243,6 +244,10 @@ impl View<'_> {
     /// Compact projections are additive and bounded independently of the old statement vocabulary.
     fn compact(&self, index: usize, statement: &Statement, output: &mut Value) {
         output["path"] = json!(self.value.statement_path(index));
+        output["modifiers"] = json!(self.value.modifiers(index).map(|mut view| {
+            view.editable &= self.writable;
+            view
+        }));
         output["unionMatrix"] = if self.value.model().scopes[statement.scope].branches[0] == index {
             json!(self.value.union_matrix(index).map(|mut matrix| {
                 matrix.can_align &= self.writable;
