@@ -31,6 +31,7 @@ struct RawWorkspaceDocument {
     vcs: Option<RawVcs>,
     analysis: Option<RawAnalysis>,
     tools: Option<RawTools>,
+    format: Option<crate::formatting::Config>,
 }
 
 #[derive(Deserialize)]
@@ -50,6 +51,8 @@ struct SerializedWorkspaceDocument<'a> {
     analysis: Option<&'a AnalysisOptions>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tools: Option<&'a ToolSettings>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    format: Option<&'a crate::formatting::Config>,
 }
 
 #[derive(Serialize)]
@@ -65,6 +68,7 @@ pub struct WorkspaceConfig {
     build: BuildSettings,
     workflow: Option<WorkflowSettings>,
     analysis: AnalysisSettings,
+    formatting: crate::formatting::Config,
 }
 
 impl WorkspaceConfig {
@@ -115,6 +119,7 @@ impl WorkspaceConfig {
             build,
             workflow,
             analysis,
+            formatting: document.format.unwrap_or_default(),
         })
     }
 
@@ -142,6 +147,7 @@ impl WorkspaceConfig {
             }),
             analysis: (!self.analysis.options().is_empty()).then_some(self.analysis.options()),
             tools: (!self.analysis.tools().is_empty()).then_some(self.analysis.tools()),
+            format: (!self.formatting.is_empty()).then_some(&self.formatting),
         };
         toml::to_string_pretty(&document)
     }
@@ -165,6 +171,12 @@ impl WorkspaceConfig {
     #[must_use]
     pub const fn analysis_settings(&self) -> &AnalysisSettings {
         &self.analysis
+    }
+
+    /// Formatting rules remain sparse until a concrete member and source path are selected.
+    #[must_use]
+    pub const fn formatting_settings(&self) -> &crate::formatting::Config {
+        &self.formatting
     }
 
     /// Check actual member types and names after filesystem-backed discovery.

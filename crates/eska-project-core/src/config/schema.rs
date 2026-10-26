@@ -19,6 +19,7 @@ pub(super) struct RawDocument {
     pub(super) vcs: Option<RawVcs>,
     pub(super) analysis: Option<RawAnalysis>,
     pub(super) tools: Option<RawTools>,
+    pub(super) format: Option<crate::formatting::Config>,
 }
 
 #[derive(Default, Deserialize)]
@@ -80,6 +81,8 @@ pub(super) struct SerializedDocument<'a> {
     pub(super) analysis: Option<&'a AnalysisOptions>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) tools: Option<&'a ToolSettings>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) format: Option<&'a crate::formatting::Config>,
 }
 
 #[derive(Serialize)]

@@ -1,0 +1,451 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:eska:format:1",
+  "title": "ESKA formatting policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "profile": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "default": "1c"
+    },
+    "profile_version": {
+      "const": 1
+    },
+    "exclude": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "maxProperties": 128,
+      "additionalProperties": {
+        "$ref": "#/$defs/profile"
+      },
+      "propertyNames": {
+        "minLength": 1,
+        "maxLength": 128,
+        "not": {
+          "const": "1c"
+        }
+      }
+    },
+    "common": {
+      "$ref": "#/$defs/common"
+    },
+    "bsl": {
+      "$ref": "#/$defs/bsl"
+    },
+    "sdbl": {
+      "$ref": "#/$defs/sdbl"
+    },
+    "overrides": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "$ref": "#/$defs/override"
+      }
+    }
+  },
+  "$defs": {
+    "common": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "break_before_binary_operators": {
+          "type": "boolean",
+          "default": true
+        },
+        "column_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096,
+          "default": 120
+        },
+        "comments": {
+          "enum": [
+            "indent_only",
+            "preserve"
+          ],
+          "default": "indent_only"
+        },
+        "continuation_indent_width": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64,
+          "default": 4
+        },
+        "indent_style": {
+          "enum": [
+            "tab",
+            "space"
+          ],
+          "default": "tab"
+        },
+        "indent_width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 4
+        },
+        "insert_final_newline": {
+          "type": "boolean",
+          "default": true
+        },
+        "keyword_case": {
+          "enum": [
+            "canonical",
+            "upper",
+            "lower",
+            "preserve"
+          ],
+          "default": "canonical"
+        },
+        "max_empty_lines": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 1
+        },
+        "space_after_comma": {
+          "type": "boolean",
+          "default": true
+        },
+        "space_around_operators": {
+          "type": "boolean",
+          "default": true
+        },
+        "space_before_call_parenthesis": {
+          "type": "boolean",
+          "default": false
+        },
+        "space_inside_parentheses": {
+          "type": "boolean",
+          "default": false
+        },
+        "tab_width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 4
+        },
+        "trim_trailing_whitespace": {
+          "type": "boolean",
+          "default": true
+        },
+        "wrap_arguments": {
+          "enum": [
+            "fit",
+            "one_per_line",
+            "preserve"
+          ],
+          "default": "fit"
+        },
+        "wrap_binary": {
+          "enum": [
+            "fit",
+            "one_per_line",
+            "preserve"
+          ],
+          "default": "fit"
+        }
+      }
+    },
+    "bsl": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "align_assignments": {
+          "type": "boolean",
+          "default": false
+        },
+        "blank_lines_between_methods": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 1
+        },
+        "break_before_binary_operators": {
+          "type": "boolean",
+          "default": true
+        },
+        "column_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096,
+          "default": 120
+        },
+        "comments": {
+          "enum": [
+            "indent_only",
+            "preserve"
+          ],
+          "default": "indent_only"
+        },
+        "continuation_indent_width": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64,
+          "default": 4
+        },
+        "indent_style": {
+          "enum": [
+            "tab",
+            "space"
+          ],
+          "default": "tab"
+        },
+        "indent_width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 4
+        },
+        "insert_final_newline": {
+          "type": "boolean",
+          "default": true
+        },
+        "keyword_case": {
+          "enum": [
+            "canonical",
+            "upper",
+            "lower",
+            "preserve"
+          ],
+          "default": "canonical"
+        },
+        "max_empty_lines": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 1
+        },
+        "space_after_comma": {
+          "type": "boolean",
+          "default": true
+        },
+        "space_around_operators": {
+          "type": "boolean",
+          "default": true
+        },
+        "space_before_call_parenthesis": {
+          "type": "boolean",
+          "default": false
+        },
+        "space_inside_parentheses": {
+          "type": "boolean",
+          "default": false
+        },
+        "tab_width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 4
+        },
+        "trim_trailing_whitespace": {
+          "type": "boolean",
+          "default": true
+        },
+        "wrap_arguments": {
+          "enum": [
+            "fit",
+            "one_per_line",
+            "preserve"
+          ],
+          "default": "fit"
+        },
+        "wrap_binary": {
+          "enum": [
+            "fit",
+            "one_per_line",
+            "preserve"
+          ],
+          "default": "fit"
+        }
+      }
+    },
+    "sdbl": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "align_aliases": {
+          "type": "boolean",
+          "default": false
+        },
+        "break_before_binary_operators": {
+          "type": "boolean",
+          "default": true
+        },
+        "clause_newlines": {
+          "type": "boolean",
+          "default": true
+        },
+        "column_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096,
+          "default": 120
+        },
+        "comments": {
+          "enum": [
+            "indent_only",
+            "preserve"
+          ],
+          "default": "indent_only"
+        },
+        "continuation_indent_width": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64,
+          "default": 4
+        },
+        "indent_style": {
+          "enum": [
+            "tab",
+            "space"
+          ],
+          "default": "tab"
+        },
+        "indent_width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 4
+        },
+        "insert_final_newline": {
+          "type": "boolean",
+          "default": true
+        },
+        "keyword_case": {
+          "enum": [
+            "canonical",
+            "upper",
+            "lower",
+            "preserve"
+          ],
+          "default": "upper"
+        },
+        "max_empty_lines": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 1
+        },
+        "select_items": {
+          "enum": [
+            "fit",
+            "one_per_line",
+            "preserve"
+          ],
+          "default": "one_per_line"
+        },
+        "space_after_comma": {
+          "type": "boolean",
+          "default": true
+        },
+        "space_around_operators": {
+          "type": "boolean",
+          "default": true
+        },
+        "space_before_call_parenthesis": {
+          "type": "boolean",
+          "default": false
+        },
+        "space_inside_parentheses": {
+          "type": "boolean",
+          "default": false
+        },
+        "tab_width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 4
+        },
+        "trim_trailing_whitespace": {
+          "type": "boolean",
+          "default": true
+        },
+        "wrap_arguments": {
+          "enum": [
+            "fit",
+            "one_per_line",
+            "preserve"
+          ],
+          "default": "fit"
+        },
+        "wrap_binary": {
+          "enum": [
+            "fit",
+            "one_per_line",
+            "preserve"
+          ],
+          "default": "fit"
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "based_on": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "common": {
+          "$ref": "#/$defs/common"
+        },
+        "bsl": {
+          "$ref": "#/$defs/bsl"
+        },
+        "sdbl": {
+          "$ref": "#/$defs/sdbl"
+        }
+      }
+    },
+    "override": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "include"
+      ],
+      "properties": {
+        "include": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "minItems": 1
+        },
+        "exclude": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "common": {
+          "$ref": "#/$defs/common"
+        },
+        "bsl": {
+          "$ref": "#/$defs/bsl"
+        },
+        "sdbl": {
+          "$ref": "#/$defs/sdbl"
+        }
+      }
+    }
+  }
+}

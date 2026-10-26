@@ -297,6 +297,7 @@ fn resolve_member_configuration(
         member.configuration().source_format(),
     )
     .with_analysis_settings(member.configuration().analysis_settings().clone())
+    .with_formatting_settings(member.configuration().formatting_settings().clone())
     .with_build_settings(build);
     if let Some(workflow) = workspace.workflow_settings() {
         configuration = configuration.with_workflow_settings(workflow.clone());
