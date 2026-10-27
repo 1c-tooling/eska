@@ -1,0 +1,208 @@
+{
+  "date": "2026-10-27",
+  "feature": "Supplier and ChangeAndValidate formatting protection",
+  "status": "implemented_and_locally_verified",
+  "architecture": {
+    "policy_owner": "eska-project-core::formatting::protection",
+    "formatter": "Preserves complete controlled methods and emits disjoint edits around them",
+    "explorer": "Passes native selection/version facts and localizes core policy errors",
+    "style_can_override_protection": false
+  },
+  "rules": {
+    "locked": "No formatting, including a selected range or embedded query",
+    "editableWithSupport": "Explicit nonempty proper selection; every edit is inside its source bytes",
+    "unrestricted": "Document and range formatting, with controlled methods preserved",
+    "unknown": "No formatting",
+    "bulk_cli": "Skip protected sources before reading their text; report skipped plus skip_reason in apply/check/diff",
+    "controlled_method": "Preserve annotations/header/body/comments/deletion/insertion; reject embedded-query formatting",
+    "ambiguous_conditional_control_boundaries": "Reject without edits"
+  },
+  "contract_changes": {
+    "cli_json": "schema_version=1; additional status=skipped and optional skip_reason",
+    "errors": [
+      "selection_required",
+      "selection_expansion",
+      "change_control_protected"
+    ],
+    "experimental_rust_api": [
+      "Context::check_file returns Access",
+      "WritePlan includes optional source range",
+      "files::preflight receives source range"
+    ],
+    "arbitrary_cli_range": "Not exposed; use IDE/RPC selection. Explicit query selectors remain available."
+  },
+  "checks": {
+    "cargo_fmt_check": "passed",
+    "cargo_check": "passed",
+    "clippy_all_targets_all_features_deny_warnings": "passed",
+    "cargo_test": {
+      "passed": 1261,
+      "failed": 0,
+      "ignored": 17,
+      "targets": 42
+    },
+    "rustdoc_deny_warnings": "passed",
+    "explorer_node": {
+      "passed": 359,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 3,
+      "notes": [
+        "Full suite uses local debug binaries with symbols stripped for archive tests",
+        "Initial concurrent archive test exceeded its 30s timeout with unstripped debug binary; sequential stripped-binary suite passed",
+        "Legacy backend and two optional upstream-analyzer cases were skipped"
+      ]
+    },
+    "real_cli_facade_rpc": {
+      "complete": true,
+      "stand": "/home/akalsin/Documents/Projects/eska-playground/fmt-protection-rpc-y927qd7o",
+      "locales": {
+        "ru-RU": {
+          "facadeParity": true,
+          "bulkApplyCheckDiffSkipSupported": true,
+          "protectedSyntaxNotParsed": true,
+          "supportedSelectionBounded": true,
+          "controlledMethodPreserved": true,
+          "controlledQueryRejected": true,
+          "supportedPrivateQueryFormatted": true,
+          "lockedSha256": "3b0df92c4715e6b06286ae3c22a75c9db4fbe3c66d08365ed634c3dd4ff393ea"
+        },
+        "en-US": {
+          "facadeParity": true,
+          "bulkApplyCheckDiffSkipSupported": true,
+          "protectedSyntaxNotParsed": true,
+          "supportedSelectionBounded": true,
+          "controlledMethodPreserved": true,
+          "controlledQueryRejected": true,
+          "supportedPrivateQueryFormatted": true,
+          "lockedSha256": "3b0df92c4715e6b06286ae3c22a75c9db4fbe3c66d08365ed634c3dd4ff393ea"
+        }
+      }
+    },
+    "native_vscodium": {
+      "en": {
+        "passed": true,
+        "suites": [
+          {
+            "passed": true,
+            "suite": "formatting",
+            "locale": "en",
+            "accepted": [
+              "document_format_native_undo_redo_and_dirty_buffer_without_disk_write",
+              "selection_formats_only_expanded_syntax_unit",
+              "trailing_whitespace_selection_preserves_unselected_bsl_and_returns_valid_coordinates",
+              "incompatible_formatter_identity_rejected_before_edits_without_analyzer_fallback",
+              "native_edit_cancels_obsolete_formatter_reply",
+              "query_format_acknowledged_draft_and_native_undo_redo_without_owner_write",
+              "active_query_rejects_parent_format_from_another_process",
+              "query_crlf_snapshot_matches_acknowledged_lf_checkpoint",
+              "query_format_on_save_only_checkpoints_private_bsl_draft",
+              "controlled_method_remains_byte_identical_while_ordinary_code_formats",
+              "supported_file_rejects_whole_document_and_expansion_but_accepts_exact_selection_with_native_undo",
+              "locked_supplier_file_rejects_selection_without_source_changes",
+              "opt_in_save_formats_and_preserves_bom_crlf",
+              "eska_save_opt_in_respects_language_specific_native_format_on_save",
+              "restarted_formatter_is_idempotent_and_ignores_native_indent_preferences"
+            ],
+            "timings": [
+              {
+                "attempt": "cold",
+                "milliseconds": 225.6076079999998
+              },
+              {
+                "attempt": "repeat",
+                "milliseconds": 97.57581600000003
+              }
+            ]
+          },
+          {
+            "passed": true,
+            "suite": "formatting-restart",
+            "locale": "en",
+            "accepted": [
+              "development_extension_restarted_and_saved_source_remains_idempotent"
+            ],
+            "formatter": {
+              "kind": "formatter",
+              "path": "/home/akalsin/Documents/Projects/eska/target/debug/eska-fmt",
+              "version": "0.18.0"
+            }
+          }
+        ],
+        "artifact": "development extension with local debug formatter/project binaries"
+      },
+      "ru": {
+        "passed": true,
+        "suites": [
+          {
+            "passed": true,
+            "suite": "language-pack-registration",
+            "locale": "en"
+          },
+          {
+            "passed": true,
+            "suite": "formatting",
+            "locale": "ru",
+            "accepted": [
+              "document_format_native_undo_redo_and_dirty_buffer_without_disk_write",
+              "selection_formats_only_expanded_syntax_unit",
+              "trailing_whitespace_selection_preserves_unselected_bsl_and_returns_valid_coordinates",
+              "incompatible_formatter_identity_rejected_before_edits_without_analyzer_fallback",
+              "native_edit_cancels_obsolete_formatter_reply",
+              "query_format_acknowledged_draft_and_native_undo_redo_without_owner_write",
+              "active_query_rejects_parent_format_from_another_process",
+              "query_crlf_snapshot_matches_acknowledged_lf_checkpoint",
+              "query_format_on_save_only_checkpoints_private_bsl_draft",
+              "controlled_method_remains_byte_identical_while_ordinary_code_formats",
+              "supported_file_rejects_whole_document_and_expansion_but_accepts_exact_selection_with_native_undo",
+              "locked_supplier_file_rejects_selection_without_source_changes",
+              "opt_in_save_formats_and_preserves_bom_crlf",
+              "eska_save_opt_in_respects_language_specific_native_format_on_save",
+              "restarted_formatter_is_idempotent_and_ignores_native_indent_preferences"
+            ],
+            "timings": [
+              {
+                "attempt": "cold",
+                "milliseconds": 195.18337699999984
+              },
+              {
+                "attempt": "repeat",
+                "milliseconds": 73.80140699999993
+              }
+            ]
+          },
+          {
+            "passed": true,
+            "suite": "formatting-restart",
+            "locale": "ru",
+            "accepted": [
+              "development_extension_restarted_and_saved_source_remains_idempotent"
+            ],
+            "formatter": {
+              "kind": "formatter",
+              "path": "/home/akalsin/Documents/Projects/eska/target/debug/eska-fmt",
+              "version": "0.18.0"
+            }
+          }
+        ],
+        "artifact": "development extension with local debug formatter/project binaries"
+      }
+    },
+    "cli_human_ru_en": "passed: localized selection error (exit 2), explicit skip reasons in global check (exit 0)"
+  },
+  "reproduction": {
+    "cli_rpc_script": "tests/formatting_protection.py",
+    "evidence_directory": "../eska-playground/fmt-protection-2h6cl24e",
+    "cli_rpc_stand": "eska-playground/fmt-protection-rpc-y927qd7o",
+    "host_test": "../eska-vscode-explorer/test/formatting-host.cjs"
+  },
+  "commits": {
+    "explorer": "8287b6c fix(fmt): Показаны причины запрета форматирования исходников на поддержке"
+  },
+  "limits": [
+    "Synthetic owned Designer exports; user projects were not written",
+    "Native 1C execution was not repeated for policy-only changes",
+    "Windows, macOS, VS Code and Remote were not tested",
+    "Global installed binaries and VSIX were not updated"
+  ]
+}

@@ -25,6 +25,8 @@ pub struct File {
     pub edits: Vec<Edit>,
     pub effective: Effective,
     pub diff: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub skip_reason: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -75,7 +77,14 @@ pub fn write(report: &Report, args: &FmtArgs, localizer: &Localizer) -> io::Resu
         writeln!(output)?;
     } else {
         for file in &report.files {
-            if let Some(diff) = &file.diff {
+            if let Some(reason) = &file.skip_reason {
+                writeln!(
+                    output,
+                    "{}: {} ({reason})",
+                    file.path,
+                    localizer.text("fmt-state-skipped")
+                )?;
+            } else if let Some(diff) = &file.diff {
                 write!(output, "{diff}")?;
             } else if file.changed {
                 writeln!(
@@ -110,6 +119,15 @@ pub fn write(report: &Report, args: &FmtArgs, localizer: &Localizer) -> io::Resu
         )?;
     }
     if let Some(error) = &report.error {
+        let explanation = match error.code.as_str() {
+            "selection_required" => Some("fmt-selection-required"),
+            "selection_expansion" => Some("fmt-selection-expansion"),
+            "change_control_protected" => Some("fmt-change-control-protected"),
+            _ => None,
+        };
+        if let Some(key) = explanation {
+            eprintln!("{}", localizer.text(key));
+        }
         eprintln!(
             "{}",
             localizer.format(

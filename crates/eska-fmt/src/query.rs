@@ -22,6 +22,7 @@ pub fn format_query(
     if eska_project_core::project::metadata_edit::snapshot(input) != snapshot {
         return Err(Error::new("source_conflict", "query"));
     }
+    eska_project_core::formatting::protection::check_query(input, identity)?;
     let query = match identity {
         QueryIdentity::BslLiteral(range) => query::read_bsl(input, range.start),
         _ => query::read_xml(input).and_then(|queries| {

@@ -10,6 +10,7 @@ use eska_project_core::{
         context::Context,
         files::{self, WritePlan},
         migration,
+        protection::Access,
         protocol::{Edit, Range, Request, source_sha256},
     },
     project::{metadata_edit, query},
@@ -113,14 +114,20 @@ fn prepare_sources(
             edits: Vec::new(),
             effective,
             diff: None,
+            skip_reason: None,
         };
         if !file.effective.excluded && !cli.arguments.dump_config() {
+            if !eligible(cli, context, &path, &mut file)? {
+                report.files.push(file);
+                continue;
+            }
             let before = read(
                 &path,
                 cli.arguments.query_at.is_some() || cli.arguments.query_index.is_some(),
             )?;
             file.source_sha256 = Some(source_sha256(&before));
-            let result = files::preflight(context, &path, &before)
+            let range = query_range(cli, &before)?;
+            let result = files::preflight(context, &path, &before, range)
                 .and_then(|()| format(cli, &path, &before, &file));
             let (after, edits) = match result {
                 Ok(value) => value,
@@ -148,12 +155,70 @@ fn prepare_sources(
                     path,
                     before,
                     after,
+                    range,
                 });
             }
         }
         report.files.push(file);
     }
     Ok((plans, indices))
+}
+
+/// Bulk CI formatting skips supplier restrictions before reading or parsing their module text.
+fn eligible(cli: &Cli, context: &mut Context, path: &Path, file: &mut File) -> Result<bool, Error> {
+    let query = cli.arguments.query_at.is_some() || cli.arguments.query_index.is_some();
+    let access = context.check_file(path).and_then(|access| {
+        if access == Access::SelectionOnly && !query {
+            Err(Error::new("selection_required", "range"))
+        } else {
+            Ok(())
+        }
+    });
+    let bulk = !query
+        && cli
+            .arguments
+            .scope
+            .as_ref()
+            .is_none_or(|scope| !cli.project_dir.join(scope).is_file());
+    match access {
+        Ok(()) => Ok(true),
+        Err(error)
+            if bulk
+                && matches!(
+                    error.code.as_str(),
+                    "source_read_only" | "support_unknown" | "selection_required"
+                ) =>
+        {
+            file.status = "skipped";
+            file.skip_reason = Some(error.code);
+            Ok(false)
+        }
+        Err(error) => Err(error),
+    }
+}
+
+/// An explicit query selector authorizes its scalar source span, never the whole supplier module.
+fn query_range(cli: &Cli, input: &str) -> Result<Option<Range>, Error> {
+    let selected = if let Some(offset) = cli.arguments.query_at {
+        Some(
+            query::read_bsl(input, offset)
+                .map_err(|_| Error::new("unsupported_source", "query_at"))?,
+        )
+    } else if let Some(index) = cli.arguments.query_index {
+        Some(
+            query::read_xml(input)
+                .map_err(|_| Error::new("unsupported_source", "query_index"))?
+                .into_iter()
+                .nth(index)
+                .ok_or_else(|| Error::new("invalid_scope", "query_index"))?,
+        )
+    } else {
+        None
+    };
+    Ok(selected.map(|query| Range {
+        start: query.source.start,
+        end: query.source.end,
+    }))
 }
 
 /// Query encoding reuses source maps; ordinary BSL never traverses or regenerates its string values.

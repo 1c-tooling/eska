@@ -37,13 +37,46 @@ pub fn format(request: &Request) -> Result<Response, Error> {
     if !equivalent {
         return Err(Error::new("token_mismatch", "text"));
     }
-    let edits = minimal_edit(&request.text, &text).into_iter().collect();
-    Ok(Response {
+    let edits = edits(request.language, &request.text, &text)?;
+    let response = Response {
         schema_version: SCHEMA_VERSION,
         source_sha256: source_sha256(&request.text),
         edits,
         formatted_range,
-    })
+    };
+    eska_project_core::formatting::protection::check_response(request, &response)?;
+    Ok(response)
+}
+
+/// Protected methods divide the edit stream so native replacements never include their unchanged bytes.
+fn edits(language: Language, before: &str, after: &str) -> Result<Vec<Edit>, Error> {
+    if language != Language::Bsl {
+        return Ok(minimal_edit(before, after).into_iter().collect());
+    }
+    let old = eska_project_core::formatting::protection::controlled_ranges(before)?;
+    let new = eska_project_core::formatting::protection::controlled_ranges(after)?;
+    if old.len() != new.len() {
+        return Err(Error::new("change_control_protected", "method"));
+    }
+    let mut result = Vec::new();
+    let (mut source, mut output) = (0, 0);
+    for (old, new) in old.into_iter().zip(new).chain(std::iter::once((
+        before.len()..before.len(),
+        after.len()..after.len(),
+    ))) {
+        if before[old.clone()] != after[new.clone()] {
+            return Err(Error::new("change_control_protected", "method"));
+        }
+        if let Some(mut edit) = minimal_edit(&before[source..old.start], &after[output..new.start])
+        {
+            edit.range.start += source;
+            edit.range.end += source;
+            result.push(edit);
+        }
+        source = old.end;
+        output = new.end;
+    }
+    Ok(result)
 }
 
 /// Trim only common UTF-8 character boundaries so one native edit remains undoable and exact.

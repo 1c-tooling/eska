@@ -33,10 +33,12 @@ mode=(root/'mode').read_text()
 text=request['text']
 response={'schema_version':1,'source_sha256':hashlib.sha256(text.encode()).hexdigest(),'edits':[], 'formatted_range':{'start':0,'end':len(text.encode())}}
 if mode=='replace': response['edits']=[{'range':{'start':0,'end':len(text.encode())},'text':'A = 1;\n'}]
+if mode=='selection': response['edits']=[{'range':request['range'],'text':'B = 2;\n'}]
 if mode=='bad_hash': response['source_sha256']='0'*64
 if mode=='bad_range': response['edits']=[{'range':{'start':1,'end':2},'text':'X'}]
 if mode=='source_change': (root/'Module.bsl').write_text('external edit')
 if mode=='manifest_change': (root/'eska.toml').write_text("[project]\ntype='configuration'\n")
+if mode=='support_change': (root/'src'/'Ext'/'ParentConfigurations.bin').write_text((root/'editable-rules').read_text())
 print(json.dumps(response))
 "#);
         fs::write(&binary, script).unwrap();
@@ -211,5 +213,105 @@ fn large_document_upload_is_checked_and_released() {
             .call("format/bufferClose", &json!({"bufferId":id}))
             .unwrap()["released"],
         true
+    );
+}
+
+/// Build an owned Designer source with a real supplier rule instead of mocking support in the IDE adapter.
+fn supported_source(fixture: &Fixture, rule: Option<u8>) -> Value {
+    let root = &fixture.directory.0;
+    fs::create_dir_all(root.join("src/Ext")).unwrap();
+    fs::write(root.join("eska.toml"), "[project]\ntype='configuration'\n").unwrap();
+    let uuid = "11111111-1111-1111-1111-111111111111";
+    fs::write(root.join("src/Configuration.xml"), format!("<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='{uuid}'><Properties><Name>Demo</Name></Properties><ChildObjects/></Configuration></MetaDataObject>")).unwrap();
+    let rules = |rule| {
+        format!(
+            "{{6,0,1,{uuid},0,{uuid},\"1\",\"Vendor\",\"Demo\",1,{rule},0,{uuid},{uuid},0,0,{}}}",
+            ["0"; 13].join(",")
+        )
+    };
+    fs::write(
+        root.join("src/Ext/ParentConfigurations.bin"),
+        rule.map_or_else(|| "{6,0,0,0,0,0}".to_owned(), rules),
+    )
+    .unwrap();
+    fs::write(root.join("editable-rules"), rules(1)).unwrap();
+    let source = root.join("src/Ext/ManagedApplicationModule.bsl");
+    fs::write(&source, "A=1;\nB=2;\n").unwrap();
+    json!({"source":{"encoding":"utf-8","value":source},"version":"7","text":"A=1;\nB=2;\n","userReadOnly":false,"formatter":{"encoding":"utf-8","value":fixture.binary}})
+}
+
+/// Whole-document, cursor-only, Select All and widened component plans cannot format supported modules.
+#[test]
+fn supported_documents_only_accept_edits_inside_a_real_selection() {
+    let mut fixture = Fixture::new("selection");
+    let mut input = supported_source(&fixture, Some(1));
+    for range in [
+        Value::Null,
+        json!({"start":0,"end":0}),
+        json!({"start":0,"end":10}),
+    ] {
+        if range.is_null() {
+            input.as_object_mut().unwrap().remove("range");
+        } else {
+            input["range"] = range;
+        }
+        assert_eq!(
+            fixture.call("format/document", &input).unwrap_err()["data"]["details"]["code"],
+            "selection_required"
+        );
+        assert!(!fixture.directory.0.join("input.json").exists());
+    }
+    input["range"] = json!({"start":5,"end":10});
+    assert_eq!(
+        fixture.call("format/document", &input).unwrap()["plan"]["edits"][0]["text"],
+        "B = 2;\n"
+    );
+    fs::write(fixture.directory.0.join("mode"), "replace").unwrap();
+    assert_eq!(
+        fixture.call("format/document", &input).unwrap_err()["data"]["details"]["code"],
+        "selection_expansion"
+    );
+    assert_eq!(
+        fs::read_to_string(
+            fixture
+                .directory
+                .0
+                .join("src/Ext/ManagedApplicationModule.bsl")
+        )
+        .unwrap(),
+        "A=1;\nB=2;\n"
+    );
+}
+
+/// Both a locked source and a late transition to supplier support invalidate formatting before native edits.
+#[test]
+fn supplier_rules_are_enforced_before_and_after_component_execution() {
+    let mut fixture = Fixture::new("replace");
+    let input = supported_source(&fixture, Some(0));
+    assert_eq!(
+        fixture.call("format/document", &input).unwrap_err()["data"]["details"]["code"],
+        "source_read_only"
+    );
+    assert!(!fixture.directory.0.join("input.json").exists());
+    let input = supported_source(&fixture, None);
+    fs::write(fixture.directory.0.join("mode"), "support_change").unwrap();
+    assert_eq!(
+        fixture.call("format/document", &input).unwrap_err()["data"]["details"]["code"],
+        "selection_required"
+    );
+}
+
+/// A formatter predating the policy cannot replace a controlled method in a dirty native snapshot.
+#[test]
+fn component_replies_cannot_touch_change_and_validate_methods() {
+    let mut fixture = Fixture::new("replace");
+    let text = "&ИзменениеИКонтроль(\"Run\")\nПроцедура Run()\nA=1;\nКонецПроцедуры\n";
+    assert_eq!(
+        fixture.document(text).unwrap_err()["data"]["details"]["code"],
+        "change_control_protected"
+    );
+    assert_eq!(
+        fs::read_to_string(fixture.directory.0.join("Module.bsl")).unwrap(),
+        "A=1;"
     );
 }

@@ -1,6 +1,6 @@
 //! Query views retain exact owner coordinates; they never become another source file.
 
-mod bsl;
+pub(crate) mod bsl;
 pub mod constructor;
 mod editing;
 mod formatting;

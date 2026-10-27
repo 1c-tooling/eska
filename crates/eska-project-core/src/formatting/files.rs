@@ -3,6 +3,7 @@
 use super::{
     Error,
     context::{Context, lock_error},
+    protocol::Range,
     protocol::source_sha256,
 };
 use crate::project::source_lock::SourceLease;
@@ -22,6 +23,7 @@ pub struct WritePlan {
     pub path: PathBuf,
     pub before: String,
     pub after: String,
+    pub range: Option<Range>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
@@ -68,7 +70,7 @@ pub fn publish(context: &mut Context, plans: &[WritePlan], cancelled: &AtomicBoo
         let operation = context
             .check_current()
             .and_then(|()| check(plan, cancelled))
-            .and_then(|()| context.check_support(&plan.path, leases.get(index)))
+            .and_then(|()| check_support(context, plan, leases.get(index)))
             .and_then(|()| {
                 fs::rename(&temporary.path, &plan.path)
                     .map_err(|_| Error::new("source_write", plan.path.to_string_lossy()))
@@ -105,7 +107,9 @@ fn prepare(
             return Err(Error::new("invalid_plan", "duplicate_path"));
         }
         check(plan, cancelled)?;
-        context.check_file(&plan.path)?;
+        context
+            .check_file(&plan.path)?
+            .check_range(&plan.before, plan.range)?;
     }
     let mut leases = Vec::new();
     for plan in plans {
@@ -120,7 +124,7 @@ fn prepare(
     let mut temporary = Vec::new();
     for (index, plan) in plans.iter().enumerate() {
         check(plan, cancelled)?;
-        context.check_support(&plan.path, leases.get(index))?;
+        check_support(context, plan, leases.get(index))?;
         temporary.push(write(plan)?);
     }
     Ok((temporary, leases))
@@ -184,12 +188,34 @@ fn write(plan: &WritePlan) -> Result<Prepared, Error> {
 ///
 /// # Errors
 /// Returns stale source, support, permissions or owner conflicts before any publication.
-pub fn preflight(context: &mut Context, path: &Path, before: &str) -> Result<(), Error> {
+pub fn preflight(
+    context: &mut Context,
+    path: &Path,
+    before: &str,
+    range: Option<Range>,
+) -> Result<(), Error> {
     let plan = WritePlan {
         path: path.to_owned(),
         before: before.into(),
         after: String::new(),
+        range,
     };
     check(&plan, &AtomicBool::new(false))?;
-    context.check_file(path)
+    context.check_file(path)?.check_range(before, range)
+}
+
+/// A late supplier-rule change cannot publish an earlier unrestricted formatting plan.
+fn check_support(
+    context: &mut Context,
+    plan: &WritePlan,
+    permit: Option<&SourceLease>,
+) -> Result<(), Error> {
+    context.check_support(&plan.path, permit)?.check_output(
+        &plan.before,
+        &plan.after,
+        plan.range,
+        plan.path
+            .extension()
+            .is_some_and(|extension| extension == "bsl"),
+    )
 }

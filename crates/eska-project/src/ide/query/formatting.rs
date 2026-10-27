@@ -9,6 +9,7 @@ use crate::ide::{
 use eska_project_core::formatting::{
     Error, Language, Patch,
     context::Context,
+    protection,
     protocol::{MAX_TEXT_BYTES, Range, Request, Response, source_sha256},
 };
 use serde::Deserialize;
@@ -161,6 +162,8 @@ impl Server {
             .core
             .check_draft_formatting(project, revision, &text, input.user_read_only)
             .map_err(session_error)?;
+        protection::check_query_owner(project, entry.core.document(), entry.core.identity())
+            .map_err(formatting::failure)?;
         let path = project
             .project()
             .source()
@@ -178,6 +181,8 @@ impl Server {
                 input.user_read_only,
             )
             .map_err(session_error)?;
+        protection::check_query_owner(project, entry.core.document(), entry.core.identity())
+            .map_err(formatting::failure)?;
         context.check_current().map_err(formatting::failure)?;
         Ok(reply(
             input,
@@ -218,12 +223,18 @@ fn format_document(
             result.version.as_deref(),
         ));
     }
-    context.check_file(path).map_err(formatting::failure)?;
+    context
+        .check_file(path)
+        .and_then(|access| access.check_range(&request.0.text, request.0.range))
+        .map_err(formatting::failure)?;
     let disk = fingerprint(path)?;
     let result = execute(&context, request, input, cancelled, closed)?;
     context.check_current().map_err(formatting::failure)?;
     if !result.effective.excluded {
-        context.check_file(path).map_err(formatting::failure)?;
+        context
+            .check_file(path)
+            .and_then(|access| access.check_response(&result.request, &result.response))
+            .map_err(formatting::failure)?;
     }
     if fingerprint(path)? != disk {
         return Err(formatting::failure(Error::new("source_conflict", "source")));

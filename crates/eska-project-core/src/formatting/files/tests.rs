@@ -11,6 +11,7 @@ fn plan(directory: &TestDir, name: &str) -> WritePlan {
         path,
         before: "A=1;".into(),
         after: "A = 1;\n".into(),
+        range: None,
     }
 }
 
@@ -113,4 +114,63 @@ fn changed_style_manifest_rejects_an_obsolete_plan() {
         fs::read_to_string(directory.0.join("src/A.bsl")).unwrap(),
         "A=1;"
     );
+}
+
+/// Supplier policy is reloaded under publication leases, including editable-with-support transitions.
+#[test]
+fn publication_rechecks_support_and_the_exact_selected_source_span() {
+    let directory = TestDir::new();
+    fs::create_dir_all(directory.0.join("src/Ext")).unwrap();
+    fs::write(
+        directory.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    let uuid = "11111111-1111-1111-1111-111111111111";
+    fs::write(directory.0.join("src/Configuration.xml"), format!("<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='{uuid}'><Properties><Name>Demo</Name></Properties><ChildObjects/></Configuration></MetaDataObject>")).unwrap();
+    let path = directory.0.join("src/Ext/ManagedApplicationModule.bsl");
+    fs::write(&path, "A=1;\nB=2;\n").unwrap();
+    let rules = directory.0.join("src/Ext/ParentConfigurations.bin");
+    fs::write(&rules, "{6,0,0,0,0,0}").unwrap();
+    let mut context = Context::open(&directory.0, &[], false).unwrap();
+    assert_eq!(
+        context.check_file(&path).unwrap(),
+        super::super::protection::Access::Unrestricted
+    );
+    fs::write(
+        &rules,
+        format!(
+            "{{6,0,1,{uuid},0,{uuid},\"1\",\"Vendor\",\"Demo\",1,1,0,{uuid},{uuid},0,0,{}}}",
+            ["0"; 13].join(",")
+        ),
+    )
+    .unwrap();
+    for (range, after, code) in [
+        (None, "A = 1;\nB = 2;\n", "selection_required"),
+        (
+            Some(Range { start: 5, end: 10 }),
+            "A = 1;\nB = 2;\n",
+            "selection_expansion",
+        ),
+    ] {
+        let plan = WritePlan {
+            path: path.clone(),
+            before: "A=1;\nB=2;\n".into(),
+            after: after.into(),
+            range,
+        };
+        let result = publish(&mut context, &[plan], &AtomicBool::new(false));
+        assert_eq!(result.error.unwrap().code, code);
+        assert_eq!(result.states, [State::NotApplied]);
+        assert_eq!(fs::read_to_string(&path).unwrap(), "A=1;\nB=2;\n");
+    }
+    let plan = WritePlan {
+        path: path.clone(),
+        before: "A=1;\nB=2;\n".into(),
+        after: "A=1;\nB = 2;\n".into(),
+        range: Some(Range { start: 5, end: 10 }),
+    };
+    let result = publish(&mut context, &[plan], &AtomicBool::new(false));
+    assert!(result.error.is_none(), "{:?}", result.error);
+    assert_eq!(fs::read_to_string(path).unwrap(), "A=1;\nB = 2;\n");
 }

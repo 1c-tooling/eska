@@ -1,5 +1,6 @@
 //! Manifest-aware scope and effective styles are shared by CLI and editor requests.
 
+use super::protection::{self, Access};
 use super::{Config, Effective, Error, Language, Layer, Patch};
 use crate::{
     config::{ManifestConfig, WorkspaceConfig},
@@ -196,7 +197,7 @@ impl Context {
     ///
     /// # Errors
     /// Returns read-only, unresolved source, filesystem and shared-owner failures.
-    pub fn check_file(&mut self, path: &Path) -> Result<(), Error> {
+    pub fn check_file(&mut self, path: &Path) -> Result<Access, Error> {
         let metadata = fs::symlink_metadata(path)
             .map_err(|_| Error::new("source_io", path.to_string_lossy()))?;
         if !metadata.is_file() || metadata.is_symlink() {
@@ -214,14 +215,14 @@ impl Context {
         &mut self,
         path: &Path,
         permit: Option<&SourceLease>,
-    ) -> Result<(), Error> {
+    ) -> Result<Access, Error> {
         let own =
             permit.is_some_and(|permit| permit.owns(self.lock_root(path), path).unwrap_or(false));
         if path
             .extension()
             .is_some_and(|extension| extension == "sdbl")
         {
-            return Ok(());
+            return Ok(Access::Unrestricted);
         }
         if let Some(project) = self
             .projects
@@ -270,10 +271,11 @@ impl Context {
             {
                 return Err(Error::new("source_read_only", path.to_string_lossy()));
             }
+            return protection::support_access(project, relative);
         } else if !self.projects.is_empty() {
             return Err(Error::new("unsupported_source", path.to_string_lossy()));
         }
-        Ok(())
+        Ok(Access::Unrestricted)
     }
 
     /// Canonical project roots keep CLI leases compatible with query sessions from another process.

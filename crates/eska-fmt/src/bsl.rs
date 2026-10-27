@@ -16,7 +16,8 @@ use syntax::{Unit, UnitKind};
 /// Format whole grammar units and report the expanded source range to native editor adapters.
 pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range), Error> {
     let units = syntax::parse(&request.text, tokens)?;
-    let frozen = disabled(&request.text, tokens)?;
+    let mut frozen = disabled(&request.text, tokens)?;
+    frozen.extend(eska_project_core::formatting::protection::controlled_ranges(&request.text)?);
     if units.is_empty() {
         return Ok((
             request.text.clone(),

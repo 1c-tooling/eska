@@ -458,7 +458,7 @@ fn call_comments_keep_their_attachment_and_cannot_swallow_delimiters() {
     }
 }
 
-/// Deleted extension control text is frozen; only inserted active syntax affects indentation.
+/// Every part of a controlled method remains byte-identical, including inserted active syntax.
 #[test]
 fn extension_change_control_preserves_the_deleted_reference_text() {
     let deleted = "#Удаление\n   Если СтароеУсловие Тогда\n#КонецУдаления";
@@ -466,11 +466,40 @@ fn extension_change_control_preserves_the_deleted_reference_text() {
         "&ИзменениеИКонтроль(\"Run\")\nПроцедура НовоеИмя()\n{deleted}\n#Вставка\nесли НовоеУсловие тогда\n#КонецВставки\nА=1;\nКонецЕсли;\nКонецПроцедуры\n"
     );
     let output = formatted(&input, Options::default());
-    assert!(output.contains(deleted));
+    assert_eq!(output, input);
+}
+
+/// Native edits remain disjoint from a controlled method when ordinary code changes on both sides.
+#[test]
+fn control_methods_are_edit_fences_in_document_and_range_formatting() {
+    let protected = "&ChangeAndValidate(\"Run\")\nProcedure Custom()\n   A=1;  // original  \n#Insert\nB= 2;\n#EndInsert\nEndProcedure";
+    let input = format!("X=1;\n{protected}\n\nProcedure Other()\nC=3;\nEndProcedure\n");
+    let start = input.find("&Change").unwrap();
+    let end = start + protected.len();
+    let mut request = Request {
+        schema_version: 1,
+        language: Language::Bsl,
+        text: input.clone(),
+        options: Options::default(),
+        range: None,
+    };
+    let response = super::format(&request).unwrap();
+    let output = apply(&input, &response);
+    assert!(output.starts_with("X = 1;\n"));
+    assert!(output.contains(protected));
+    assert!(output.contains("\tC = 3;"));
     assert!(
-        output.contains("#Вставка\n\tЕсли НовоеУсловие Тогда\n#КонецВставки\n\t\tА = 1;\n"),
-        "{output}"
+        response
+            .edits
+            .iter()
+            .all(|edit| edit.range.end <= start || edit.range.start >= end)
     );
+    let body = input.find("A=1").unwrap();
+    request.range = Some(eska_project_core::formatting::protocol::Range {
+        start: body,
+        end: body + 4,
+    });
+    assert_eq!(super::format(&request).unwrap().edits, Vec::new());
 }
 
 /// Empty operators are legal after a method header and remain separate significant tokens.

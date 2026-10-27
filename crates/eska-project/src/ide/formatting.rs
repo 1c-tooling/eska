@@ -85,7 +85,8 @@ pub(super) fn invoke(
     )?;
     let response: Response = serde_json::from_slice(&output)
         .map_err(|_| failure(Error::new("component_response_invalid", "eska-fmt")))?;
-    response.validate(request).map_err(failure)?;
+    eska_project_core::formatting::protection::check_response(request, &response)
+        .map_err(failure)?;
     Ok((response, version))
 }
 

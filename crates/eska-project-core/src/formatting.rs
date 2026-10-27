@@ -5,6 +5,7 @@ pub mod files;
 pub mod migration;
 mod options;
 mod policy;
+pub mod protection;
 pub mod protocol;
 
 pub use options::{Comments, IndentStyle, KeywordCase, Options, Patch, Wrapping};

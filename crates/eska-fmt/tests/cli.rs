@@ -320,7 +320,7 @@ fn project_support_and_manifest_migration() {
     );
     fs::write(directory.0.join("src/Ext/ParentConfigurations.bin"), rules).unwrap();
     assert_eq!(
-        checked(&run(&directory.0, "ru", &["--format", "json"]), 2)["error"]["code"],
+        checked(&run(&directory.0, "ru", &["--format", "json"]), 0)["files"][0]["skip_reason"],
         "source_read_only"
     );
     fs::write(
@@ -409,4 +409,141 @@ fn query_at_uses_the_checked_owner_source_map() {
         )["files"][0]["changed"],
         false
     );
+}
+
+/// Export only owned metadata fixtures; locked modules deliberately contain syntax the formatter cannot parse.
+fn supported_fixture(directory: &TestDir) -> Vec<(String, String)> {
+    fs::create_dir_all(directory.0.join("src/Ext")).unwrap();
+    fs::write(
+        directory.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n",
+    )
+    .unwrap();
+    let root = "11111111-1111-1111-1111-111111111111";
+    let ids = [
+        "22222222-2222-2222-2222-222222222222",
+        "33333333-3333-3333-3333-333333333333",
+        "44444444-4444-4444-4444-444444444444",
+    ];
+    fs::write(directory.0.join("src/Configuration.xml"), format!("<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='{root}'><Properties><Name>Demo</Name></Properties><ChildObjects><CommonModule>Locked</CommonModule><CommonModule>Supported</CommonModule><CommonModule>Own</CommonModule></ChildObjects></Configuration></MetaDataObject>")).unwrap();
+    let mut sources = Vec::new();
+    for (name, id) in ["Locked", "Supported", "Own"].into_iter().zip(ids) {
+        let module = format!("src/CommonModules/{name}/Ext/Module.bsl");
+        fs::create_dir_all(directory.0.join(&module).parent().unwrap()).unwrap();
+        fs::write(directory.0.join(format!("src/CommonModules/{name}.xml")), format!("<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><CommonModule uuid='{id}'><Properties><Name>{name}</Name></Properties></CommonModule></MetaDataObject>")).unwrap();
+        let text = if name == "Locked" {
+            "invalid \"unterminated"
+        } else {
+            "Procedure Run()\nA=1;\nQ=\"select 1 as A,2 as B\";\nEndProcedure\n"
+        };
+        fs::write(directory.0.join(&module), text).unwrap();
+        sources.push((module, text.to_owned()));
+    }
+    let mut rules = vec![
+        "6",
+        "0",
+        "1",
+        root,
+        "0",
+        root,
+        "\"1\"",
+        "\"Vendor\"",
+        "\"Demo\"",
+        "2",
+    ];
+    rules.extend(["0", "0", ids[0], ids[0], "1", "0", ids[1], ids[1], "0", "0"]);
+    rules.extend(["0"; 13]);
+    fs::write(
+        directory.0.join("src/Ext/ParentConfigurations.bin"),
+        format!("{{{}}}", rules.join(",")),
+    )
+    .unwrap();
+    sources
+}
+
+/// Global CI/check/diff operations skip supplier modules before parsing and still process unrestricted code.
+#[test]
+fn bulk_cli_never_formats_locked_or_editable_with_support_modules() {
+    let directory = TestDir::new();
+    let sources = supported_fixture(&directory);
+    for mode in ["--check", "--diff"] {
+        let args = [mode, "--format", "json"];
+        let ru = checked(
+            &run(&directory.0, "ru", &args),
+            i32::from(mode == "--check"),
+        );
+        let en = checked(
+            &run(&directory.0, "en", &args),
+            i32::from(mode == "--check"),
+        );
+        assert_eq!(ru, en);
+        assert_eq!(ru["files"][0]["skip_reason"], "source_read_only");
+        assert_eq!(ru["files"][2]["skip_reason"], "selection_required");
+        assert!(ru["files"][0]["source_sha256"].is_null());
+        assert!(ru["files"][2]["source_sha256"].is_null());
+        for (path, text) in &sources {
+            assert_eq!(fs::read_to_string(directory.0.join(path)).unwrap(), *text);
+        }
+    }
+    let result = checked(&run(&directory.0, "en", &["--format", "json"]), 0);
+    assert_eq!(result["files"][1]["status"], "applied");
+    for index in [0, 1] {
+        assert_eq!(
+            fs::read_to_string(directory.0.join(&sources[index].0)).unwrap(),
+            sources[index].1
+        );
+    }
+    assert!(
+        fs::read_to_string(directory.0.join(&sources[2].0))
+            .unwrap()
+            .contains("\tA = 1;")
+    );
+    for (index, code) in [(0, "source_read_only"), (1, "selection_required")] {
+        for locale in ["ru", "en"] {
+            let output = run(
+                &directory.0,
+                locale,
+                &[&sources[index].0, "--format", "json"],
+            );
+            assert_eq!(checked(&output, 2)["error"]["code"], code);
+        }
+    }
+}
+
+/// A query is an explicit source fragment, while a controlled method prohibits even that narrow operation.
+#[test]
+fn query_formatting_respects_supplier_selection_and_control_annotations() {
+    let directory = TestDir::new();
+    let sources = supported_fixture(&directory);
+    let (path, before) = &sources[1];
+    let offset = before.find("select").unwrap().to_string();
+    checked(
+        &run(
+            &directory.0,
+            "en",
+            &[path, "--query-at", &offset, "--format", "json"],
+        ),
+        0,
+    );
+    let after = fs::read_to_string(directory.0.join(path)).unwrap();
+    assert!(after.contains("A=1;"));
+    assert!(after.contains("SELECT"));
+    let controlled = format!("&ChangeAndValidate(\"Run\")\n{before}");
+    fs::write(directory.0.join(path), &controlled).unwrap();
+    let offset = controlled.find("select").unwrap().to_string();
+    for locale in ["ru", "en"] {
+        let result = checked(
+            &run(
+                &directory.0,
+                locale,
+                &[path, "--query-at", &offset, "--format", "json"],
+            ),
+            2,
+        );
+        assert_eq!(result["error"]["code"], "change_control_protected");
+        assert_eq!(
+            fs::read_to_string(directory.0.join(path)).unwrap(),
+            controlled
+        );
+    }
 }
