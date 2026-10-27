@@ -5,7 +5,7 @@
     fi
     if [ "$(basename "$_eska_bin_dir")" = bin ]; then
         local _eska_component
-        for _eska_component in eska eska-project eska-check eska-build eska-vcs; do
+        for _eska_component in eska eska-project eska-check eska-build eska-vcs eska-fmt; do
             local _eska_receipt="$_eska_bin_dir/../components/$_eska_component.json"
             if [ -e "$_eska_receipt" ] || [ -L "$_eska_receipt" ]; then
                 case "${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}" in

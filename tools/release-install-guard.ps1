@@ -2,7 +2,7 @@
   $eska_bin_dir = [System.IO.Path]::GetFullPath($dest_dir)
   if ((Split-Path -Path $eska_bin_dir -Leaf) -eq "bin") {
     $eska_components = Join-Path (Split-Path -Path $eska_bin_dir -Parent) "components"
-    foreach ($eska_component in @("eska", "eska-project", "eska-check", "eska-build", "eska-vcs")) {
+    foreach ($eska_component in @("eska", "eska-project", "eska-check", "eska-build", "eska-vcs", "eska-fmt")) {
       if (Test-Path -LiteralPath (Join-Path $eska_components "$eska_component.json")) {
         if ($PSUICulture -like "ru*") {
           throw "component-installation-conflict: Компонент $eska_component установлен через Explorer/components.py. Обновите его тем же способом или задайте отдельный каталог ESKA_INSTALL_DIR для полного комплекта."

@@ -2,7 +2,7 @@
 members = ["dist:target/release-bundle"]
 
 # tools/release_bundle.py derives this bundle from the Cargo workspace version.
-# One legacy installer still installs all five binaries; selective ZIPs are separate.
+# The full installer includes all six binaries; selective ZIPs remain independent.
 [dist]
 cargo-dist-version = "0.32.0"
 installers = ["shell", "powershell"]

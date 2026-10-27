@@ -170,7 +170,7 @@ def notes(version):
 
 ## Установка
 
-Полный комплект содержит `eska`, `eska-project`, `eska-check`, `eska-build` и `eska-vcs`.
+Полный комплект содержит `eska`, `eska-project`, `eska-check`, `eska-build`, `eska-vcs` и `eska-fmt`.
 
 Linux и macOS:
 
@@ -187,7 +187,7 @@ irm https://github.com/1c-tooling/eska/releases/download/v{version}/eska-install
 Из исходников через Cargo:
 
 ```sh
-cargo install eska-project eska-check eska-build eska-vcs eska --version {version} --locked
+cargo install eska-project eska-check eska-build eska-vcs eska-fmt eska --version {version} --locked
 ```
 
 ## Отдельные компоненты

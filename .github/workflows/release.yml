@@ -75,7 +75,7 @@ jobs:
         run: |
           cargo build --workspace --bins --locked --profile dist --target "$TARGET"
           python -B tools/package_components.py --bin-dir "target/$TARGET/dist" --output target/components \
-            --component eska --component eska-project --component eska-check --component eska-build --component eska-vcs
+            --component eska --component eska-project --component eska-check --component eska-build --component eska-vcs --component eska-fmt
           python -B tools/release_bundle.py prepare --bin-dir "target/$TARGET/dist" --components target/components
           mkdir -p target/distrib
           dist build --artifacts=local --target "$TARGET" --no-local-paths --output-format=json > target/local-dist-manifest.json

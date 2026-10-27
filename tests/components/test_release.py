@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import subprocess
 import tempfile
@@ -152,6 +153,27 @@ class ReleaseTests(unittest.TestCase):
         """A successful single runner is not a complete multi-platform release."""
         with self.assertRaises(Failure):
             release_bundle.collect(self.root, self.root / "output")
+
+    def test_release_workflow_packages_every_component(self):
+        """A component added to the bundle must also be selected in the native build jobs."""
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertEqual(set(re.findall(r"--component ([a-z-]+)", workflow)), set(release_bundle.TOOLS))
+
+    @unittest.skipIf(os.name == "nt", "Shell guard runs on Unix; native Windows installer has its own release gate")
+    def test_full_installer_preserves_independently_installed_formatter(self):
+        """A formatter receipt alone must reject a full install before destination writes."""
+        prefix = self.root / "installation"
+        (prefix / "bin").mkdir(parents=True)
+        (prefix / "components").mkdir()
+        receipt = prefix / "components/eska-fmt.json"
+        receipt.write_text('{"managed": "independent formatter"}', encoding="utf-8")
+        guard = (ROOT / "tools/release-install-guard.sh").read_text(encoding="utf-8")
+        script = 'err() { printf "%s\\n" "$*" >&2; exit 9; }\ninstall() {\nlocal _install_dir="$1"\n' + guard + '\n}\ninstall "$1"\n'
+        result = subprocess.run(["sh", "-c", script, "guard", str(prefix / "bin")], text=True, capture_output=True)
+        self.assertEqual(result.returncode, 9, result)
+        self.assertIn("component-installation-conflict", result.stderr)
+        self.assertIn("eska-fmt", result.stderr)
+        self.assertEqual(receipt.read_text(), '{"managed": "independent formatter"}')
 
     def matrix_parts(self):
         """Model Linux and Windows artifact layouts with distinct bytes and common bootstrap files."""

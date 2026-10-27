@@ -72,7 +72,7 @@ Save сохраняет черновик; «Применить» меняет м
 | Версия проекта | `eska version` | `eska-project version` |
 
 Это альтернативные входы для одного проекта и одного `eska.toml`.
-Полный комплект содержит оболочку и четыре компонента: `eska` запускает
+Полный комплект содержит оболочку и пять компонентов, включая `eska-fmt`: `eska` запускает
 нужный executable, поэтому установка только crate `eska` не заменяет установку
 владельцев операций. Мини-программы работают без оболочки.
 
@@ -99,7 +99,7 @@ Save сохраняет черновик; «Применить» меняет м
 С Rust/Cargo можно установить нужный компонент или весь набор:
 
 ```sh
-cargo install --locked eska-project eska-check eska-build eska-vcs eska
+cargo install --locked eska-project eska-check eska-build eska-vcs eska-fmt eska
 ```
 
 Для сборки checkout из корня этого репозитория, с Rust из `rust-toolchain.toml`:
