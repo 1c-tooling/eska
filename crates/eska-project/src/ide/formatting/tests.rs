@@ -186,6 +186,13 @@ fn capability_and_methods_are_gated_by_api_minor() {
 #[test]
 fn large_document_upload_is_checked_and_released() {
     let mut fixture = Fixture::new("none");
+    let rejected = fixture
+        .call(
+            "format/bufferBegin",
+            &json!({"bytes":4*1024*1024+1,"snapshot":source_sha256("")}),
+        )
+        .unwrap_err();
+    assert_eq!(rejected["data"]["details"]["code"], "text_too_large");
     let text = "A=1;\n".repeat(24_000);
     let opened = fixture
         .call(

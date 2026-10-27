@@ -9,7 +9,7 @@ use crate::ide::{
 use eska_project_core::formatting::{
     Error, Language, Patch,
     context::Context,
-    protocol::{Range, Request, Response, source_sha256},
+    protocol::{MAX_TEXT_BYTES, Range, Request, Response, source_sha256},
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -56,7 +56,15 @@ impl Server {
     ) -> Result<Value, Value> {
         let key = buffer_key();
         match method {
-            "format/bufferBegin" => return self.queries.begin_buffer(&key, args),
+            "format/bufferBegin" => {
+                if args["bytes"]
+                    .as_u64()
+                    .is_some_and(|bytes| bytes > MAX_TEXT_BYTES as u64)
+                {
+                    return Err(formatting::failure(Error::new("text_too_large", "text")));
+                }
+                return self.queries.begin_buffer(&key, args);
+            }
             "format/bufferAppend" => return self.queries.append_buffer(&key, args),
             "format/bufferClose" => return self.queries.close("query/bufferClose", &key, args),
             _ => {}
