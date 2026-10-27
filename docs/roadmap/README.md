@@ -8,7 +8,7 @@
 
 По запросу от **2026-10-27** следующее направление — самостоятельный
 **`eska-fmt` и `eska fmt`**, профиль 1С по умолчанию и гибкая конфигурация
-в `eska.toml`. **T120–T122 — `DONE`, T123 — `NEXT`**; далее **T123 → T144**.
+в `eska.toml`. **T120–T122 — `DONE`, T123 — `IN-PROGRESS`**; далее **T123 → T144**.
 Форматтер принадлежит ESKA и не зависит от bsl-analyzer. T144 добавлена для
 поставки отдельного компонента; T26 остаётся сводной задачей.
 [Уточнённый план для проверки](22-configurable-formatting.md).
@@ -523,7 +523,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T120 | DONE | Профиль 1С, схема, наследование и миграция настроек форматирования (F1) | [22-configurable-formatting.md](22-configurable-formatting.md#t120--политика-и-схема-настроек-форматирования-f1) |
 | T121 | DONE | Самостоятельный форматтер BSL в ESKA (F2) | [22-configurable-formatting.md](22-configurable-formatting.md#t121--гибкий-форматтер-bsl-f2) |
 | T122 | DONE | Форматтер SDBL и встроенных запросов в ESKA (F3) | [22-configurable-formatting.md](22-configurable-formatting.md#t122--гибкий-форматтер-sdbl-и-встроенных-запросов-f3) |
-| T123 | NEXT | `eska-fmt`, делегирование `eska fmt` и интеграция IDE/CI (F4) | [22-configurable-formatting.md](22-configurable-formatting.md#t123--единый-fmt-для-cli-ci-и-explorer-f4) |
+| T123 | IN-PROGRESS | `eska-fmt`, делегирование `eska fmt` и интеграция IDE/CI (F4) | [22-configurable-formatting.md](22-configurable-formatting.md#t123--единый-fmt-для-cli-ci-и-explorer-f4) |
 | T124 | PLANNED | Происхождение компонентов и права на выбранные редакторы (L1) | [23-metadata-editors.md](23-metadata-editors.md#t124--происхождение-компонентов-и-права-на-выбранные-редакторы-l1) |
 | T125 | PLANNED | Создание, копирование и удаление метаданных (E1) | [23-metadata-editors.md](23-metadata-editors.md#t125--создание-копирование-и-удаление-метаданных-e1) |
 | T126 | PLANNED | Редактор прав ролей (E2) | [23-metadata-editors.md](23-metadata-editors.md#t126--редактор-прав-ролей-e2) |

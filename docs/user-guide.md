@@ -992,6 +992,47 @@ JSON и его ключи не зависят от `--lang ru|en`. Язык со
 задаётся его политикой. `validate`, полный статический анализ и компиляция
 платформой — разные проверки; ни одна не подтверждает бизнес-поведение в базе.
 
+### Форматирование BSL и запросов
+
+Самостоятельный `eska-fmt` и общий вход `eska fmt` используют одну политику
+из `[format]` в `eska.toml`. Для них не нужен анализатор. В текущем исходном коде
+CLI уже доступен; подключение к Explorer и отдельная поставка завершаются в T123/T144.
+
+```sh
+eska-fmt Module.bsl --check --format json
+eska fmt src/Catalogs/Items --diff
+eska fmt --member MyExtension
+eska fmt --workspace --check
+```
+
+Без `--check`/`--diff` команда применяет полный проверенный план. `--check` ничего
+не пишет: код 1 означает необходимые изменения, 2 — ошибку. По умолчанию используется
+профиль 1С версии 1; `--dump-config` показывает все значения и их происхождение.
+Правила поддержки, права и query-сессии блокируют запрещённые правки одинаково.
+Настройки IDE не меняют стиль проекта автоматически.
+
+```toml
+[format]
+profile = "1c"
+profile_version = 1
+
+[format.bsl]
+indent_style = "tab"
+indent_width = 4
+column_limit = 120
+
+[format.sdbl]
+select_items = "one_per_line"
+condition_items = "one_per_line"
+```
+
+Обычный BSL fmt сохраняет строковые значения. Встроенный запрос форматируется
+явно: `eska-fmt Module.bsl --query-at BYTE` или
+`eska-fmt Schema.xml --query-index 0`. Соседние BSL/XML-данные остаются прежними.
+`eska-fmt --migrate-config` показывает перенос старых настроек анализатора,
+`--apply-migration` применяет его с backup. Конфликт старого и нового стиля
+нужно устранить явно. [Опции, наследование и ограничения](formatting.md).
+
 <a id="daily-work"></a>
 
 ## 9. Ведите задачу в Git

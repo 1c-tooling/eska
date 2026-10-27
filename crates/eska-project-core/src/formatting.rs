@@ -1,5 +1,7 @@
 //! IDE-independent formatting policy, source snapshots and checked text contracts.
 
+pub mod context;
+pub mod files;
 pub mod migration;
 mod options;
 mod policy;

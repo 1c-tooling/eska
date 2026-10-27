@@ -288,6 +288,12 @@ impl ProjectSession {
         permit: Option<&super::source_protection::SourceRestriction>,
     ) -> Result<(), QueryDocumentError> {
         if self.source_protections.blocks(&document.path, permit)
+            || (permit.is_none()
+                && crate::project::source_lock::SourceLease::check(
+                    self.project().root(),
+                    &self.project().source().join(&document.path),
+                )
+                .is_err())
             || !self.check_query_read(document, revision)?
         {
             return Err(QueryDocumentError::ReadOnly);

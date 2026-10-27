@@ -21,6 +21,7 @@ use std::{io, path::PathBuf};
 pub enum Component {
     Project,
     Check,
+    Fmt,
     Build,
     Vcs,
 }
@@ -32,6 +33,7 @@ impl Component {
         match self {
             Self::Project => "eska-project",
             Self::Check => "eska-check",
+            Self::Fmt => "eska-fmt",
             Self::Build => "eska-build",
             Self::Vcs => "eska-vcs",
         }
@@ -43,6 +45,7 @@ impl Component {
         match self {
             Self::Project => "ESKA_PROJECT_BINARY",
             Self::Check => "ESKA_CHECK_BINARY",
+            Self::Fmt => "ESKA_FMT_BINARY",
             Self::Build => "ESKA_BUILD_BINARY",
             Self::Vcs => "ESKA_VCS_BINARY",
         }

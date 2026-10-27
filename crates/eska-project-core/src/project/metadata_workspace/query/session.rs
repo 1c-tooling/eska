@@ -153,9 +153,11 @@ impl QuerySession {
         project.check_query_read(&document, revision(&document))?;
         let application = context.context.name().map(|name| name.as_str().to_owned());
         let base: Arc<str> = query.text.into();
+        let root = project.project().root().to_owned();
+        let source = project.project().source().to_owned();
         let source_restriction = project
             .source_protections
-            .acquire(&document.path, &document.descriptor)
+            .acquire(&root, &source, &document.path, &document.descriptor)
             .ok_or(QuerySessionError::OwnerBusy)?;
         let session = Self {
             document,
@@ -219,9 +221,11 @@ impl QuerySession {
             .map(|prepared| restore_pending(&document, &saved.identity, format, prepared))
             .transpose()?;
         let plan_serial = pending.as_ref().map_or(0, |pending| pending.token);
+        let root = project.project().root().to_owned();
+        let source = project.project().source().to_owned();
         let source_restriction = project
             .source_protections
-            .acquire(&document.path, &document.descriptor)
+            .acquire(&root, &source, &document.path, &document.descriptor)
             .ok_or(QuerySessionError::OwnerBusy)?;
         Ok(Self {
             document,

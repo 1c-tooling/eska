@@ -154,6 +154,36 @@ mod unix {
         assert_eq!(record["args"], serde_json::json!(expected));
     }
 
+    /// The fmt facade strips only its command; option values and the child status stay exact.
+    #[test]
+    fn fmt_delegates_without_reinterpreting_scope_or_check_status() {
+        let directory = TestDir::new();
+        let record = directory.0.join("fmt-arguments.json");
+        let output = Command::new(env!("CARGO_BIN_EXE_eska"))
+            .current_dir(&directory.0)
+            .env("ESKA_FMT_BINARY", fixture())
+            .env("ESKA_COMPONENT_FIXTURE_ARGS", &record)
+            .args([
+                "--project-dir",
+                "fmt",
+                "fmt",
+                "fmt",
+                "--check",
+                "--format",
+                "json",
+            ])
+            .stdin(Stdio::null())
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(197));
+        let actual: Value = serde_json::from_slice(&fs::read(record).unwrap()).unwrap();
+        let expected: Vec<_> = ["--project-dir", "fmt", "fmt", "--check", "--format", "json"]
+            .into_iter()
+            .map(|argument| hex(argument.as_bytes()))
+            .collect();
+        assert_eq!(actual["args"], serde_json::json!(expected));
+    }
+
     /// Strip only the actual check command, preserving native option values and child status.
     #[test]
     fn check_command_is_removed_without_changing_its_option_values() {
