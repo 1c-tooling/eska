@@ -138,6 +138,31 @@ mod unix {
             "version":env!("CARGO_PKG_VERSION"),"provider":{"source":"cargo-dist","version":"0.32.0"}}).to_string()).unwrap();
     }
 
+    /// A legacy bundle must not add an optional formatter over files owned by the selective installer.
+    #[test]
+    fn bundle_update_refuses_separately_owned_optional_formatter() {
+        let directory = TestDir::new();
+        installation(&directory.0);
+        fs::create_dir(directory.0.join("components")).unwrap();
+        let receipt = directory.0.join("components/eska-fmt.json");
+        fs::write(&receipt, "independent formatter receipt").unwrap();
+        let before = fs::read(directory.0.join("bin/eska")).unwrap();
+        let server = Server::new("99.0.0", false);
+        for locale in ["ru-RU", "en-US"] {
+            let output = run(&directory.0, &server, &["--check", "--lang", locale]);
+            assert!(!output.status.success());
+            let value: Value = serde_json::from_slice(&output.stdout).unwrap();
+            assert_eq!(value["status"], "unsupported-installation");
+            assert_eq!(value["method"], "unknown");
+            assert_eq!(output.stderr, [] as [u8; 0]);
+        }
+        assert_eq!(fs::read(directory.0.join("bin/eska")).unwrap(), before);
+        assert_eq!(
+            fs::read_to_string(receipt).unwrap(),
+            "independent formatter receipt"
+        );
+    }
+
     /// Route only this child process to the fake release server, never mutate the test runner's environment.
     fn run(root: &Path, server: &Server, args: &[&str]) -> std::process::Output {
         Command::new(root.join("bin/eska"))

@@ -19,6 +19,23 @@ pub(super) fn detect(
     {
         return Ok(None);
     }
+    // A bundle update can add optional binaries. Never overwrite a separately receipt-owned component.
+    if let Some(root) = executable.parent().and_then(Path::parent) {
+        for tool in [
+            "eska",
+            "eska-project",
+            "eska-check",
+            "eska-build",
+            "eska-vcs",
+            "eska-fmt",
+        ] {
+            match std::fs::symlink_metadata(root.join("components").join(format!("{tool}.json"))) {
+                Ok(_) => return Ok(None),
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => (),
+                Err(_) => return Err(Error::Io),
+            }
+        }
+    }
     let mut updater = AxoUpdater::new_for("eska");
     if updater.load_receipt().is_err() {
         return Ok(None);

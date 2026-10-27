@@ -9,7 +9,7 @@ use std::{
 
 pub const SCHEMA_VERSION: u64 = 2;
 pub const TARGET: &str = env!("ESKA_BUILD_TARGET");
-pub const CONFIG_SCHEMA: &str = "designer-xml-3";
+pub const CONFIG_SCHEMA: &str = "designer-xml-4";
 pub const BRIDGE_SCHEMA: u64 = 1;
 
 /// Answer only the exact machine entry, before locale, discovery, signals or native probes.

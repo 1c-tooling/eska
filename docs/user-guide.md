@@ -911,7 +911,7 @@ eska-project analyzer-config prepare --application accounting --analyzer /path/t
 `extensions[].depends_on` — это `project.name` расширений; область установки
 задаётся в той же записи через `scope` и по умолчанию равна `InfoBase`. Старая структура
 `members = [...]` вместе с `[applications]` не поддерживается: нужна сборка
-ESKA и Explorer с контрактом `designer-xml-3`.
+ESKA и Explorer с контрактом `designer-xml-4`.
 
 Для внешней обработки, использующей БСП из другой базы:
 

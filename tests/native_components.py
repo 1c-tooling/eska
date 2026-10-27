@@ -87,7 +87,7 @@ def matrix(repo, bundle, stand, analyzer):
     if analyzer is None or not analyzer.is_file():
         raise ValueError("complete package acceptance requires the real analyzer executable")
     release = json.loads((bundle / "release.json").read_bytes())
-    selected = ("eska-project", "eska-check", "eska-build", "eska-vcs", "eska")
+    selected = ("eska-project", "eska-check", "eska-build", "eska-vcs", "eska", "eska-fmt")
     assert set(release["components"]) == set(selected)
     checksums = {}
     for line in (bundle / "SHA256SUMS").read_text().splitlines():
@@ -143,7 +143,8 @@ def matrix(repo, bundle, stand, analyzer):
     source = project / "Исходники"
     (source / "Ext").mkdir(parents=True, exist_ok=True)
     (source / "Configuration.xml").write_bytes(('\ufeff<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses"><Configuration uuid="11111111-1111-1111-1111-111111111111"><Properties><Name>Приёмка</Name><Version>1.2.3.4</Version><CompatibilityMode>Version8_3_27</CompatibilityMode></Properties><ChildObjects/></Configuration></MetaDataObject>\r\n').encode())
-    (source / "Ext/ObjectModule.bsl").write_bytes("\ufeffПроцедура Пример()\r\n    Значение = 1;\r\nКонецПроцедуры\r\n".encode())
+    (source / "Ext/ManagedApplicationModule.bsl").write_bytes("\ufeffПроцедура Пример()\r\n    Значение = 1;\r\nКонецПроцедуры\r\n".encode())
+    (source / "Ext/ParentConfigurations.bin").write_text("{6,0,0,0,0,0}")
     with (project / "eska.toml").open("a", encoding="utf-8") as stream:
         stream.write("\n[vcs.workflow]\npreset=\"trunk\"\n\n[tools.eska-check]\nmax_errors=1000\nmax_warnings=1000\n")
     original = {str(path.relative_to(project)): digest(path) for path in [project / "eska.toml", *source.rglob("*")] if path.is_file()}
@@ -153,6 +154,13 @@ def matrix(repo, bundle, stand, analyzer):
         assert replies[1]["result"]["server"]["name"] == "eska-project" and 2 in replies
         assert replies[1]["result"]["apiVersion"] == release["components"]["eska-project"]["contract"]["metadata_api"]
         call("build-clean-" + locale, [profiles["eska-build"], "--lang", locale, "--project-dir", project, "clean"])
+
+    for locale in ("ru", "en"):
+        formatted = call("formatter-only-check-" + locale, [profiles["eska-fmt"], "--lang", locale, "--project-dir", project,
+                         "Исходники/Ext/ManagedApplicationModule.bsl", "--check", "--format", "json"], codes=(1,))
+        value = json.loads(formatted.stdout)
+        assert value["error"] is None and value["files"][0]["changed"] is True
+        assert value["files"][0]["effective"]["profile_version"] == 1
 
     missing = call("shell-missing-project", [profiles["eska"], "--project-dir", project, "version", "--format", "json"], codes=(1,),
                    env={**base, "ESKA_PROJECT_BINARY": str(stand / "missing-project")})
@@ -165,6 +173,13 @@ def matrix(repo, bundle, stand, analyzer):
         direct = call("version-direct-" + locale, [binaries["eska-project"], "--lang", locale, "--project-dir", project, "version", "--format", "json"])
         wrapper = call("version-wrapper-" + locale, [binaries["eska"], "--lang", locale, "--project-dir", project, "version", "--format", "json"])
         assert (direct.stdout, direct.stderr) == (wrapper.stdout, wrapper.stderr)
+    for locale in ("ru", "en"):
+        direct = call("formatter-direct-" + locale, [binaries["eska-fmt"], "--lang", locale, "--project-dir", project,
+                      "Исходники/Ext/ManagedApplicationModule.bsl", "--check", "--format", "json"], codes=(1,))
+        wrapper = call("formatter-wrapper-" + locale, [binaries["eska"], "--lang", locale, "--project-dir", project,
+                       "fmt", "Исходники/Ext/ManagedApplicationModule.bsl", "--check", "--format", "json"], codes=(1,))
+        assert (direct.stdout, direct.stderr) == (wrapper.stdout, wrapper.stderr)
+
     if analyzer is not None:
         installed_analyzer = stand / "external" / analyzer.name
         installed_analyzer.parent.mkdir()
