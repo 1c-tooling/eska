@@ -363,6 +363,14 @@ Node: 359 passed, 1 legacy skipped; Python components: 40 passed; VSIX: 1331 fil
 Публикация, глобальная установка и сайт на main не изменялись;
 Windows/macOS/VS Code/Remote остаются непроверенными.
 
+Ревью после T144: исправлены координаты выделения в конце BSL, общий лимит
+вывода, сохранение хвостовых пробелов и BOM-маркеров SDBL, освобождение source
+leases и языковые настройки format-on-save в Explorer. Общая обработка пробелов
+и ограничение результата вынесены в модули `eska-fmt`. Полный Rust: 1248 passed,
+17 ignored; Node: 360 passed, 1 skipped. Корпус 40 модулей и Linux/VSCodium ru/en
+с перезапуском прошли. Проверялись debug-компоненты и development host;
+пользовательские установки не обновлялись. [Находки, проверки и commits](../measurements/t144-formatting-review.json).
+
 ## Связь со сводной задачей
 
 **T120 → T121 → T122 → T123 → T144**. T26 получает `DONE` только после завершения этой

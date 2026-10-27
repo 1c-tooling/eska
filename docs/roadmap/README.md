@@ -189,7 +189,7 @@ VS Code extension для навигации по Designer XML.
   на Windows/macOS и приёмки с настоящей платформой 1С;
 - `NEEDS-SPEC`: `T53` — завершение задачи после squash/rebase;
 - `PLANNED`: `T37` — `sync` / `continue` / `abort` после T57;
-- `PLANNED`: `T26` — сводная `eska-fmt` / `eska fmt`; следующая очередь начинается с T120;
+- `IN-PROGRESS`: `T26` — сводная `eska-fmt` / `eska fmt`; T120–T123/T144 реализованы, пользовательская приёмка ожидается;
 - `DONE`: `T60` — модель метаданных и логическая identity;
 - `DONE`: `T61` — Designer resolver и открытие через обязательный manifest;
 - `DONE`: `T62` — fixtures, матрица типов и большой стенд;
