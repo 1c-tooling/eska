@@ -42,7 +42,7 @@ def main():
     repository = Path(__file__).resolve().parent.parent
     playground = Path(os.environ["ESKA_TEST_ROOT"]).resolve()
     assert playground == (repository.parent / "eska-playground").resolve()
-    tools = {"eska", "eska-project", "eska-check", "eska-build", "eska-vcs"}
+    tools = {"eska", "eska-project", "eska-check", "eska-build", "eska-vcs", "eska-fmt"}
     suffix = ".exe" if os.name == "nt" else ""
     command = (["pwsh", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", artifacts / "eska-installer.ps1"]
                if os.name == "nt" else ["sh", artifacts / "eska-installer.sh"])
@@ -77,15 +77,19 @@ def main():
                 metadata_session(prefix / ("eska-project" + suffix), locale, stand, environment, [])
             components = prefix.parent / "components"
             components.mkdir()
-            (components / "eska-project.json").write_text('{"managed": "component fixture"}', encoding="utf-8")
-            before = {path.relative_to(stand): path.read_bytes() for path in stand.rglob("*") if path.is_file()}
-            for locale in ("ru_RU.UTF-8", "en_US.UTF-8"):
-                rejected = subprocess.run(command, cwd=stand,
-                                          env={**environment, "LC_ALL": locale}, capture_output=True, text=True, timeout=120)
-                # cargo-dist's PowerShell catch writes diagnostics to the information/stdout stream.
-                assert rejected.returncode != 0, rejected
-                assert "component-installation-conflict" in rejected.stdout + rejected.stderr, rejected
-                assert {path.relative_to(stand): path.read_bytes() for path in stand.rglob("*") if path.is_file()} == before
+            for tool in ("eska-project", "eska-fmt"):
+                component_receipt = components / f"{tool}.json"
+                component_receipt.write_text('{"managed": "component fixture"}', encoding="utf-8")
+                before = {path.relative_to(stand): path.read_bytes() for path in stand.rglob("*") if path.is_file()}
+                for locale in ("ru_RU.UTF-8", "en_US.UTF-8"):
+                    rejected = subprocess.run(command, cwd=stand,
+                                              env={**environment, "LC_ALL": locale}, capture_output=True, text=True, timeout=120)
+                    # cargo-dist's PowerShell catch writes diagnostics to the information/stdout stream.
+                    assert rejected.returncode != 0, rejected
+                    assert "component-installation-conflict" in rejected.stdout + rejected.stderr, rejected
+                    assert tool in rejected.stdout + rejected.stderr, rejected
+                    assert {path.relative_to(stand): path.read_bytes() for path in stand.rglob("*") if path.is_file()} == before
+                component_receipt.unlink()
             print(json.dumps({"passed": True, "version": version, "components": sorted(tools),
                               "receipt_isolated": True, "component_ownership_preserved": True,
                               "verified_assets": verified_assets}))

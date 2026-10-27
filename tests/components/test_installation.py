@@ -29,7 +29,7 @@ TARGET = ("aarch64" if platform.machine().lower() in ("arm64", "aarch64") else "
 def capabilities(tool="eska-project", release="1.0.0"):
     """Process fixtures declare the same public installation schemas as actual binaries."""
     return {"schema_version": 2, "tool": tool, "version": release, "target": TARGET,
-            "config_schema": "designer-xml-3", "bridge_schema": 1,
+            "config_schema": "designer-xml-4", "bridge_schema": 1,
             "metadata_api": {"major": 1, "minor": 12} if tool == "eska-project" else None}
 
 
@@ -110,6 +110,40 @@ class InstallationTests(unittest.TestCase):
         self.assertTrue((self.root / "bin/eska-vcs").is_file())
         self.assertEqual((self.root / "share/eska/eska-project/user.txt").read_bytes(), b"user note")
         self.assertEqual(list(self.root.glob(".eska-component-*")), [])
+
+    def test_formatter_is_optional_and_updates_only_its_owned_namespace(self):
+        """A formatter-only install neither requires nor adopts its independent sibling components."""
+        self.apply("eska-fmt")
+        self.assertEqual(sorted(path.name for path in (self.root / "bin").iterdir()), ["eska-fmt"])
+        self.apply("eska-project")
+        self.apply("eska-vcs")
+        previous = snapshot(self.root)
+        self.assertEqual(self.apply("eska-fmt", release="1.1.0")["status"], "updated")
+        for name, value in previous.items():
+            if "eska-fmt" not in name:
+                self.assertEqual(snapshot(self.root)[name], value)
+        self.assertEqual(installation.remove(self.root, "eska-fmt")["status"], "removed")
+        self.assertTrue((self.root / "bin/eska-project").is_file())
+        self.assertTrue((self.root / "bin/eska-vcs").is_file())
+
+    def test_formatter_failed_published_probe_restores_old_receipt_and_siblings(self):
+        """Rollback restores the installed formatter and preserves every project/VCS byte."""
+        self.apply("eska-project")
+        self.apply("eska-fmt")
+        previous = snapshot(self.root)
+        self.failure("incompatible", lambda: self.apply("eska-fmt", release="1.1.0", after_publish=True))
+        self.assertEqual(snapshot(self.root), previous)
+
+    def test_older_configuration_contract_blocks_formatter_before_writes(self):
+        """An old manifest consumer cannot be silently mixed with the format-aware configuration cohort."""
+        self.apply("eska-project")
+        receipt = self.root / "components/eska-project.json"
+        value = json.loads(receipt.read_bytes())
+        value["package"]["contract"]["config_schema"] = "designer-xml-3"
+        receipt.write_bytes(package.json_bytes(value))
+        previous = snapshot(self.root)
+        self.failure("incompatible", lambda: self.apply("eska-fmt"))
+        self.assertEqual(snapshot(self.root), previous)
 
     def test_check_and_unknown_installation_do_not_write(self):
         """A preview stays read-only; --force never adopts an unmanaged executable."""

@@ -719,3 +719,58 @@ fn support_snapshot_survives_restart_and_validates_rules_xml_and_file_inventory(
             .any(|file| file.path.extension().is_some_and(|ext| ext == "bsl"))
     );
 }
+
+/// An extension edits its own source independently of its base configuration's supplier support.
+#[test]
+fn extension_without_supplier_file_keeps_native_source_writable_but_honours_explicit_rules() {
+    use crate::backend::project::metadata_workspace::SourceAccessRequest;
+    let directory = TestDir::new();
+    fixture(&directory.0);
+    let path = Path::new("Catalogs/Items/Ext/ObjectModule.bsl").to_owned();
+    let request = SourceAccessRequest {
+        path,
+        user_read_only: false,
+    };
+    let mut configuration = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let protection = configuration
+        .project_mut(&ProjectScope::Standalone)
+        .unwrap()
+        .source_protection(std::slice::from_ref(&request), true)
+        .unwrap();
+    assert!(protection[0].support.unknown);
+    assert!(!protection[0].writable());
+    fs::write(
+        directory.0.join("eska.toml"),
+        "[project]\ntype='extension'\n",
+    )
+    .unwrap();
+    let descriptor = directory.0.join("src/Configuration.xml");
+    let xml = fs::read_to_string(&descriptor).unwrap().replace(
+        "</Properties>",
+        "<ConfigurationExtensionPurpose>Customization</ConfigurationExtensionPurpose></Properties>",
+    );
+    fs::write(descriptor, xml).unwrap();
+    let mut workspace = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let protection = project
+        .source_protection(std::slice::from_ref(&request), true)
+        .unwrap();
+    assert!(protection[0].writable(), "{protection:?}");
+    let user = SourceAccessRequest {
+        user_read_only: true,
+        ..request.clone()
+    };
+    assert!(!project.source_protection(&[user], true).unwrap()[0].writable());
+    let policy = directory.0.join("src/Ext/ParentConfigurations.bin");
+    fs::write(&policy, rules(0, 0)).unwrap();
+    assert!(
+        !project
+            .source_protection(std::slice::from_ref(&request), true)
+            .unwrap()[0]
+            .writable()
+    );
+    fs::write(&policy, "damaged").unwrap();
+    let protection = project.source_protection(&[request], true).unwrap();
+    assert!(protection[0].support.unknown);
+    assert!(!protection[0].writable());
+}

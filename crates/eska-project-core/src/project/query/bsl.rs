@@ -5,16 +5,16 @@ use std::ops::Range;
 use super::{Query, QueryError, QueryIdentity, SourceComment, mapping::MappedText};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum Kind {
+pub enum Kind {
     Word,
     String,
     Punctuation(u8),
     Other,
 }
 
-struct Token {
-    kind: Kind,
-    range: Range<usize>,
+pub struct Token {
+    pub kind: Kind,
+    pub range: Range<usize>,
 }
 
 enum Piece {
@@ -78,7 +78,7 @@ pub fn read_bsl(input: &str, offset: usize) -> Result<Query, QueryError> {
 }
 
 /// Skip source trivia and dates so quotes in comments cannot masquerade as editable literals.
-fn tokens(input: &str) -> Result<Vec<Token>, QueryError> {
+pub fn tokens(input: &str) -> Result<Vec<Token>, QueryError> {
     let mut result = Vec::new();
     let mut offset = 0;
     while offset < input.len() {

@@ -10,7 +10,7 @@ name = "eska"
 git_tag_enable = true
 git_tag_name = "v{{ version }}"
 changelog_update = true
-changelog_include = ["eska-analyzer", "eska-build", "eska-build-runtime", "eska-check", "eska-presentation", "eska-project", "eska-project-core", "eska-terminal", "eska-tool-runtime", "eska-vcs"]
+changelog_include = ["eska-analyzer", "eska-build", "eska-build-runtime", "eska-check", "eska-fmt", "eska-presentation", "eska-project", "eska-project-core", "eska-terminal", "eska-tool-runtime", "eska-vcs"]
 
 [changelog]
 header = """

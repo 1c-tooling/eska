@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from urllib.parse import quote
 
 from component_package import digest, require
 
@@ -21,6 +22,17 @@ def find_release(tag):
     """Include drafts: GitHub's release-by-tag endpoint only returns published releases."""
     pages = json.loads(gh("api", f"repos/{REPOSITORY}/releases", "--paginate", "--slurp"))
     return next((item for page in pages for item in page if item["tag_name"] == tag), None)
+
+
+def create_draft(tag, notes):
+    """Use the POST response because a newly created draft can be absent from listings."""
+    gh("api", f"repos/{REPOSITORY}/git/ref/tags/{quote(tag, safe='')}", "--silent")
+    release = json.loads(gh("api", f"repos/{REPOSITORY}/releases", "--method", "POST",
+                            "--raw-field", f"tag_name={tag}", "--raw-field", f"name=ESKA {tag}",
+                            "--field", f"body=@{notes}", "--field", "draft=true"))
+    require(release.get("tag_name") == tag and release.get("draft") is True
+            and type(release.get("id")) is int and release["id"] > 0, "release-response", tag)
+    return release
 
 
 def remote_assets(release_id):
@@ -56,9 +68,7 @@ def publish(directory, tag):
     require(set(checksums) == set(local) - {"SHA256SUMS"}, "checksums")
     release = find_release(tag)
     if release is None:
-        gh("release", "create", tag, "--repo", REPOSITORY, "--verify-tag", "--draft", "--title", f"ESKA {tag}", "--notes-file", str(notes))
-        release = find_release(tag)
-        require(release is not None, "release-not-found", tag)
+        release = create_draft(tag, notes)
     remote = remote_assets(release["id"])
     verified_assets(local, remote)
     missing = sorted(set(local) - set(remote))
@@ -66,11 +76,13 @@ def publish(directory, tag):
         require(not missing, "published-incomplete", missing)
         return
     for name in missing:
-        gh("release", "upload", tag, str(local[name]), "--repo", REPOSITORY)
+        gh("api", f"https://uploads.github.com/repos/{REPOSITORY}/releases/{release['id']}/assets?name={quote(name, safe='')}",
+           "--method", "POST", "--header", "Content-Type: application/octet-stream", "--input", str(local[name]))
     remote = remote_assets(release["id"])
     verified_assets(local, remote)
     require(set(local) == set(remote), "incomplete-assets")
-    gh("release", "edit", tag, "--repo", REPOSITORY, "--notes-file", str(notes), "--draft=false", "--latest")
+    gh("api", f"repos/{REPOSITORY}/releases/{release['id']}", "--method", "PATCH",
+       "--field", f"body=@{notes}", "--field", "draft=false", "--raw-field", "make_latest=true")
 
 
 if __name__ == "__main__":

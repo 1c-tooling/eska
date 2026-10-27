@@ -8,6 +8,7 @@ use std::ops::Range;
 use super::{Comparison, Error, Model, lex};
 
 pub(super) use edits::plan;
+pub(super) use scan::format_model;
 
 /// Only documented DCS positions can acquire typed edit authority.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]

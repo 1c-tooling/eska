@@ -3,7 +3,9 @@
 import json
 import os
 from pathlib import Path
+import re
 import sys
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -85,37 +87,93 @@ class ReleaseTests(unittest.TestCase):
                    json.dumps([self.remote[:1]]), "", json.dumps([self.remote]), ""]
         with patch.dict(os.environ, self.environment), patch.object(publish_release, "gh", side_effect=replies) as gh:
             publish_release.publish(self.root, "v1.2.3")
-            self.assertEqual(gh.call_args.args[:2], ("release", "edit"))
-            self.assertIn("--draft=false", gh.call_args.args)
-            self.assertEqual(sum(call.args[:2] == ("release", "upload") for call in gh.call_args_list), 1)
+            self.assertEqual(gh.call_args.args[:4], ("api", f"repos/{publish_release.REPOSITORY}/releases/7", "--method", "PATCH"))
+            self.assertIn("draft=false", gh.call_args.args)
+            self.assertEqual(sum(call.args[1].startswith("https://uploads.github.com/") for call in gh.call_args_list), 1)
 
     def test_new_release_stays_draft_until_all_assets_are_verified(self):
-        """Find a new draft through paginated listings; the published-tag endpoint returns 404."""
-        releases = [[{"tag_name": "v1.2.2", "draft": False, "id": 6}],
-                    [{"tag_name": "v1.2.3", "draft": True, "id": 7}]]
-        replies = ["[[]]", "", json.dumps(releases),
+        """Create a draft against an existing tag and publish only after checking uploaded bytes."""
+        release = {"tag_name": "v1.2.3", "draft": True, "id": 7}
+        replies = ["[[]]", "", json.dumps(release),
                    "[[]]", "", "", json.dumps([self.remote]), ""]
         with patch.dict(os.environ, self.environment), patch.object(publish_release, "gh", side_effect=replies) as gh:
             publish_release.publish(self.root, "v1.2.3")
-            create = gh.call_args_list[1].args
-            self.assertIn("--draft", create)
-            self.assertIn("--verify-tag", create)
-            self.assertEqual(gh.call_args_list[2].args,
-                             ("api", f"repos/{publish_release.REPOSITORY}/releases", "--paginate", "--slurp"))
-            self.assertEqual(gh.call_args.args[:2], ("release", "edit"))
-            self.assertIn("--draft=false", gh.call_args.args)
+            self.assertEqual(gh.call_args_list[1].args,
+                             ("api", f"repos/{publish_release.REPOSITORY}/git/ref/tags/v1.2.3", "--silent"))
+            create = gh.call_args_list[2].args
+            self.assertEqual(create[:4], ("api", f"repos/{publish_release.REPOSITORY}/releases", "--method", "POST"))
+            self.assertIn("draft=true", create)
+            self.assertIn("draft=false", gh.call_args.args)
 
-    def test_created_draft_missing_from_listing_stops_before_upload(self):
-        """A missing create result must stop safely rather than upload to an unidentified release."""
-        with patch.dict(os.environ, self.environment), patch.object(publish_release, "gh", side_effect=["[[]]", "", "[[]]"]) as gh:
-            with self.assertRaisesRegex(Failure, "release-not-found"):
-                publish_release.publish(self.root, "v1.2.3")
-            self.assertEqual(gh.call_count, 3)
+    def test_invalid_create_response_stops_before_upload(self):
+        """Never upload to an unidentified release or a different tag returned by the forge."""
+        for response in ({}, {"id": 7, "tag_name": "v1.2.4", "draft": True},
+                         {"id": 7, "tag_name": "v1.2.3", "draft": False}):
+            with self.subTest(response=response), patch.dict(os.environ, self.environment), \
+                    patch.object(publish_release, "gh", side_effect=["[[]]", "", json.dumps(response)]) as gh:
+                with self.assertRaisesRegex(Failure, "release-response"):
+                    publish_release.publish(self.root, "v1.2.3")
+                self.assertEqual(gh.call_count, 3)
+
+    def test_missing_tag_or_api_failure_never_creates_a_release(self):
+        """Authentication and missing-tag failures cannot become implicit tag creation."""
+        for replies in ([subprocess.CalledProcessError(1, "gh")],
+                        ["[[]]", subprocess.CalledProcessError(1, "gh")]):
+            with self.subTest(replies=replies), patch.dict(os.environ, self.environment), \
+                    patch.object(publish_release, "gh", side_effect=replies) as gh:
+                with self.assertRaises(subprocess.CalledProcessError):
+                    publish_release.publish(self.root, "v1.2.3")
+                self.assertFalse(any("POST" in call.args for call in gh.call_args_list))
+
+    def test_created_draft_uses_response_without_waiting_for_release_listing(self):
+        """A stale listing after POST must not require a second workflow attempt."""
+        created = {"tag_name": "v1.2.3", "draft": True, "id": 7}
+        uploaded = []
+
+        def forge(*args):
+            """Keep list releases stale while the created release ID is fully usable."""
+            if args == ("api", f"repos/{publish_release.REPOSITORY}/releases", "--paginate", "--slurp"):
+                return "[[]]"
+            if args[:4] == ("api", f"repos/{publish_release.REPOSITORY}/releases", "--method", "POST"):
+                return json.dumps(created)
+            if args[:2] == ("api", f"repos/{publish_release.REPOSITORY}/releases/7/assets"):
+                return json.dumps([uploaded])
+            if args[0] == "api" and args[1].startswith("https://uploads.github.com/"):
+                uploaded.append(next(item for item in self.remote if args[1].endswith("name=" + item["name"])))
+            return ""
+
+        with patch.dict(os.environ, self.environment), patch.object(publish_release, "gh", side_effect=forge) as gh:
+            publish_release.publish(self.root, "v1.2.3")
+            listing = ("api", f"repos/{publish_release.REPOSITORY}/releases", "--paginate", "--slurp")
+            self.assertEqual(sum(call.args == listing for call in gh.call_args_list), 1)
+            self.assertEqual(gh.call_args.args[:4],
+                             ("api", f"repos/{publish_release.REPOSITORY}/releases/7", "--method", "PATCH"))
 
     def test_missing_target_prevents_release_assembly(self):
         """A successful single runner is not a complete multi-platform release."""
         with self.assertRaises(Failure):
             release_bundle.collect(self.root, self.root / "output")
+
+    def test_release_workflow_packages_every_component(self):
+        """A component added to the bundle must also be selected in the native build jobs."""
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertEqual(set(re.findall(r"--component ([a-z-]+)", workflow)), set(release_bundle.TOOLS))
+
+    @unittest.skipIf(os.name == "nt", "Shell guard runs on Unix; native Windows installer has its own release gate")
+    def test_full_installer_preserves_independently_installed_formatter(self):
+        """A formatter receipt alone must reject a full install before destination writes."""
+        prefix = self.root / "installation"
+        (prefix / "bin").mkdir(parents=True)
+        (prefix / "components").mkdir()
+        receipt = prefix / "components/eska-fmt.json"
+        receipt.write_text('{"managed": "independent formatter"}', encoding="utf-8")
+        guard = (ROOT / "tools/release-install-guard.sh").read_text(encoding="utf-8")
+        script = 'err() { printf "%s\\n" "$*" >&2; exit 9; }\ninstall() {\nlocal _install_dir="$1"\n' + guard + '\n}\ninstall "$1"\n'
+        result = subprocess.run(["sh", "-c", script, "guard", str(prefix / "bin")], text=True, capture_output=True)
+        self.assertEqual(result.returncode, 9, result)
+        self.assertIn("component-installation-conflict", result.stderr)
+        self.assertIn("eska-fmt", result.stderr)
+        self.assertEqual(receipt.read_text(), '{"managed": "independent formatter"}')
 
     def matrix_parts(self):
         """Model Linux and Windows artifact layouts with distinct bytes and common bootstrap files."""

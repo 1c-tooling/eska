@@ -1,0 +1,384 @@
+{
+  "task": "T144",
+  "date": "2026-10-27",
+  "status": "DONE",
+  "scope": [
+    "T120",
+    "T121",
+    "T122",
+    "T123",
+    "T144"
+  ],
+  "umbrella_T26": "implementation complete; user acceptance pending",
+  "architecture": {
+    "policy_source": "eska.toml [format], profile 1c@1",
+    "policy_source_protection_and_query_maps": "eska-project-core",
+    "algorithm_and_standalone_cli": "eska-fmt",
+    "facade": "eska fmt",
+    "rpc": "eska-project Metadata API 1.33; plan-only, native version and source hash",
+    "ide": "Explorer provides transport and native edits, without style rules or analyzer formatting providers",
+    "analyzer": "optional syntax/semantic validation only; formatter does not require it"
+  },
+  "contracts": {
+    "tool_schema": 2,
+    "config_schema": "designer-xml-4",
+    "bridge_schema": 1,
+    "format_schema": 1,
+    "profile_version": 1,
+    "metadata_api": "1.33"
+  },
+  "validation": {
+    "rust": {
+      "fmt": "passed",
+      "check": "passed",
+      "strict_clippy_all_targets_all_features": "passed",
+      "tests_passed": 1242,
+      "tests_ignored": 17,
+      "rustdoc_warnings_denied": "passed"
+    },
+    "explorer": {
+      "typecheck": "passed",
+      "node_passed": 359,
+      "node_skipped": 1,
+      "skip": "explicit legacy backend integration, outside formatter scope",
+      "scoped_final_path_validation_tests_passed": 19
+    },
+    "component_tests": {
+      "passed": 40
+    },
+    "installed_cli": {
+      "report": "../eska-playground/t97-installed-x1pds_bv/report.json",
+      "commands": 87,
+      "minimal_profiles": [
+        "eska-fmt",
+        "eska + eska-fmt",
+        "eska-project + eska-fmt without analyzer",
+        "six ESKA components + independent analyzer"
+      ],
+      "source_preserved": true,
+      "cli_facade_ru_en_parity": true
+    },
+    "installed_rpc": {
+      "report": "../eska-playground/t123-fmt-rpc-rikd6i23/report.json",
+      "locales": [
+        "ru-RU",
+        "en-US"
+      ],
+      "cli_rpc_parity": true,
+      "query_parent_lease": true
+    },
+    "vsix": {
+      "file": "../eska-playground/t144-fmt-delivery-r5xax91v/eska-explorer-formatting-current.vsix",
+      "verified_files": 1331,
+      "bundle_sha256": "65f41f204b20319cb64e38306dbc25967c193e7e9f07f92f4500b2a471d4b5c5",
+      "ru_minimal": [
+        {
+          "installedVsix": "/home/akalsin/Documents/Projects/eska-playground/t144-fmt-delivery-r5xax91v/eska-explorer-formatting-current.vsix",
+          "installedBundle": "/home/akalsin/Documents/Projects/eska-playground/explorer-host-lNoQs6/extensions/1c-tooling.eska-explorer-0.1.1/out/extension.js",
+          "bundleSha256": "65f41f204b20319cb64e38306dbc25967c193e7e9f07f92f4500b2a471d4b5c5"
+        },
+        {
+          "passed": true,
+          "suite": "language-pack-registration",
+          "locale": "en"
+        },
+        {
+          "passed": true,
+          "suite": "formatting",
+          "locale": "ru",
+          "accepted": [
+            "document_format_native_undo_redo_and_dirty_buffer_without_disk_write",
+            "selection_formats_only_expanded_syntax_unit",
+            "incompatible_formatter_identity_rejected_before_edits_without_analyzer_fallback",
+            "native_edit_cancels_obsolete_formatter_reply",
+            "query_format_acknowledged_draft_and_native_undo_redo_without_owner_write",
+            "active_query_rejects_parent_format_from_another_process",
+            "query_crlf_snapshot_matches_acknowledged_lf_checkpoint",
+            "query_format_on_save_only_checkpoints_private_bsl_draft",
+            "opt_in_save_formats_and_preserves_bom_crlf",
+            "restarted_formatter_is_idempotent_and_ignores_native_indent_preferences"
+          ],
+          "timings": [
+            {
+              "attempt": "cold",
+              "milliseconds": 281.94140400000015
+            },
+            {
+              "attempt": "repeat",
+              "milliseconds": 130.28574600000002
+            }
+          ]
+        },
+        {
+          "passed": true,
+          "suite": "formatting-restart",
+          "locale": "ru",
+          "accepted": [
+            "installed_vsix_restarted_and_saved_source_remains_idempotent"
+          ],
+          "formatter": {
+            "kind": "formatter",
+            "path": "/home/akalsin/Documents/Projects/eska-playground/t144-fmt-delivery-r5xax91v/ide-minimal/bin/eska-fmt",
+            "version": "0.18.0"
+          }
+        }
+      ],
+      "en_full": [
+        {
+          "installedVsix": "/home/akalsin/Documents/Projects/eska-playground/t144-fmt-delivery-r5xax91v/eska-explorer-formatting-current.vsix",
+          "installedBundle": "/home/akalsin/Documents/Projects/eska-playground/explorer-host-zB1DIw/extensions/1c-tooling.eska-explorer-0.1.1/out/extension.js",
+          "bundleSha256": "65f41f204b20319cb64e38306dbc25967c193e7e9f07f92f4500b2a471d4b5c5"
+        },
+        {
+          "passed": true,
+          "suite": "formatting",
+          "locale": "en",
+          "accepted": [
+            "full_set_keeps_independent_analyzer_hover_and_single_eska_formatter",
+            "document_format_native_undo_redo_and_dirty_buffer_without_disk_write",
+            "selection_formats_only_expanded_syntax_unit",
+            "incompatible_formatter_identity_rejected_before_edits_without_analyzer_fallback",
+            "native_edit_cancels_obsolete_formatter_reply",
+            "query_format_acknowledged_draft_and_native_undo_redo_without_owner_write",
+            "active_query_rejects_parent_format_from_another_process",
+            "query_crlf_snapshot_matches_acknowledged_lf_checkpoint",
+            "query_format_on_save_only_checkpoints_private_bsl_draft",
+            "opt_in_save_formats_and_preserves_bom_crlf",
+            "restarted_formatter_is_idempotent_and_ignores_native_indent_preferences"
+          ],
+          "timings": [
+            {
+              "attempt": "cold",
+              "milliseconds": 304.8961370000002
+            },
+            {
+              "attempt": "repeat",
+              "milliseconds": 158.43785799999978
+            }
+          ]
+        },
+        {
+          "passed": true,
+          "suite": "formatting-restart",
+          "locale": "en",
+          "accepted": [
+            "installed_vsix_restarted_and_saved_source_remains_idempotent"
+          ],
+          "formatter": {
+            "kind": "formatter",
+            "path": "/home/akalsin/Documents/Projects/eska-playground/t144-fmt-delivery-r5xax91v/full/bin/eska-fmt",
+            "version": "0.18.0"
+          }
+        }
+      ],
+      "native_profile_lifecycle": "isolated editor profiles are removed by the host harness after shutdown; component installations remain in delivery stand"
+    },
+    "same_version_build_update": {
+      "same_version_explicit_force": true,
+      "formatter_changed": true,
+      "project_unchanged_by_formatter_update": true,
+      "formatter_unchanged_by_project_update": true,
+      "all_profiles_updated": true
+    },
+    "rollback": "Python real-process fixtures restore old formatter receipts and all sibling bytes after a failed published probe; Node journal recovery and ownership tests passed"
+  },
+  "performance": {
+    "report": "../eska-playground/t144-fmt-performance-trfuaypy/report.json",
+    "system": "Linux-7.2.11-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "first_process_note": "OS caches were not flushed; every CLI repeat starts a new process",
+    "records": [
+      {
+        "case": "small-bsl",
+        "source_bytes": 171,
+        "files": 1,
+        "first_process_ms": 4.315748003136832,
+        "repeat_ms": [
+          4.0635920013301075,
+          3.7581710057565942,
+          3.6467359968810342,
+          3.6520100038615055,
+          3.4593189993756823,
+          4.305082999053411,
+          4.206846002489328
+        ],
+        "repeat_median_ms": 3.7581710057565942,
+        "repeat_max_ms": 4.305082999053411,
+        "facade_ms": 7.588449996546842,
+        "parity": true,
+        "source_unchanged": true
+      },
+      {
+        "case": "large-real-bsl",
+        "source_bytes": 199931,
+        "files": 1,
+        "first_process_ms": 16.153665994352195,
+        "repeat_ms": [
+          19.46058199973777,
+          17.068825000023935,
+          18.686582006921526,
+          20.214528005453758,
+          17.633404000662267,
+          20.677808999607805,
+          17.62450599926524
+        ],
+        "repeat_median_ms": 18.686582006921526,
+        "repeat_max_ms": 20.677808999607805,
+        "facade_ms": 22.128707998490427,
+        "parity": true,
+        "source_unchanged": true
+      },
+      {
+        "case": "query-package-60-statements",
+        "source_bytes": 4510,
+        "files": 1,
+        "first_process_ms": 14.731946001120377,
+        "repeat_ms": [
+          12.80681500065839,
+          12.16201799979899,
+          12.107181006285828,
+          11.922906000108924,
+          11.718243003997486,
+          10.736285999882966,
+          9.80944000184536
+        ],
+        "repeat_median_ms": 11.922906000108924,
+        "repeat_max_ms": 12.80681500065839,
+        "facade_ms": 15.77044299483532,
+        "parity": true,
+        "source_unchanged": true
+      },
+      {
+        "case": "real-extension-copy-module",
+        "source_bytes": 615,
+        "files": 1,
+        "first_process_ms": 8.79494699620409,
+        "repeat_ms": [
+          5.691042999387719,
+          5.240664002485573,
+          6.252705999941099,
+          5.396417996962555,
+          4.900552004983183,
+          6.114417003118433,
+          5.801462000817992
+        ],
+        "repeat_median_ms": 5.691042999387719,
+        "repeat_max_ms": 6.252705999941099,
+        "facade_ms": 8.92349200148601,
+        "parity": true,
+        "source_unchanged": true
+      },
+      {
+        "case": "real-extension-copy-project",
+        "source_bytes": 251009,
+        "files": 25,
+        "first_process_ms": 52.66616099834209,
+        "repeat_ms": [
+          49.3897959968308,
+          46.761101999436505,
+          47.44176899839658,
+          45.8821399952285,
+          49.032666996936314,
+          46.453011003904976,
+          49.53396099881502
+        ],
+        "repeat_median_ms": 47.44176899839658,
+        "repeat_max_ms": 49.53396099881502,
+        "facade_ms": 51.16820299735991,
+        "parity": true,
+        "source_unchanged": true
+      }
+    ],
+    "local_initial_budgets_ms": {
+      "small_bsl_cli_first_and_median": 25,
+      "large_200kb_bsl_cli_first_and_median": 75,
+      "query_package_cli_first_and_median": 50,
+      "25_file_extension_cli_first_and_median": 200,
+      "vscodium_document_first": 750,
+      "vscodium_document_repeat": 400
+    },
+    "budget_scope": "Initial limits derived from this Linux/VSCodium baseline, not portable CI limits or T143 constructor budgets",
+    "real_project": {
+      "original": "../../BasesXML/buhmfo/src/dzp_ЗаполнениеБанковскихВыписок",
+      "copy": "../eska-playground/t144-fmt-performance-trfuaypy/real-project-copy",
+      "scope": "CommonModules/зв_ОбщегоНазначения/Ext/Module.bsl",
+      "copied_files": 107,
+      "original_selected_unchanged": true,
+      "original_full_tree_unchanged": true,
+      "applied_copy_and_repeat_check_clean": true,
+      "metadata_unchanged": true
+    }
+  },
+  "diagnostics": {
+    "tool": "bsl-analyzer-app 0.4.0 CLI; workspace MCP unavailable",
+    "files_before": 25,
+    "files_after": 25,
+    "syntax_errors_before": 0,
+    "syntax_errors_after": 0,
+    "diagnostics_before": 868,
+    "diagnostics_after": 474,
+    "limitation": "Extension analyzed without the main configuration; remaining style/context diagnostics are not a clean full-configuration analysis"
+  },
+  "implementation_commits": {
+    "eska": [
+      {
+        "hash": "0bb5ba71",
+        "message": "feat(fmt): Добавлены профиль 1С и наследуемые настройки форматирования"
+      },
+      {
+        "hash": "8b32180c",
+        "message": "feat(fmt): Добавлен настраиваемый форматтер BSL без анализатора"
+      },
+      {
+        "hash": "5646bd4e",
+        "message": "feat(fmt): Добавлено форматирование запросов и точечная запись в BSL и XML"
+      },
+      {
+        "hash": "f7753a3f",
+        "message": "feat(fmt): Добавлены CLI и безопасная запись с общей блокировкой исходников"
+      },
+      {
+        "hash": "6cd0cb5b",
+        "message": "feat(fmt): Добавлены планы форматирования документов и черновиков через RPC"
+      },
+      {
+        "hash": "b33349aa",
+        "message": "fix(fmt): Учтены переводы строк нативного черновика при проверке сессии"
+      },
+      {
+        "hash": "e531b18e",
+        "message": "feat(fmt): Добавлена выборочная поставка и защита независимой установки форматтера"
+      },
+      {
+        "hash": "eb2afae5",
+        "message": "fix(project): Разрешены исходники расширения без собственных правил поставщика"
+      },
+      {
+        "hash": "7e1c72cb",
+        "message": "fix(fmt): Ограничена загрузка буфера объявленным размером форматтера"
+      }
+    ],
+    "explorer": [
+      {
+        "hash": "da0a1ae",
+        "message": "feat(fmt): Подключено форматирование ESKA с нативным Undo и защитой черновиков"
+      },
+      {
+        "hash": "f770cd9",
+        "message": "feat(fmt): Добавлено независимое управление установкой форматтера в Explorer"
+      }
+    ]
+  },
+  "artifacts": {
+    "components": "../eska-playground/t144-fmt-delivery-r5xax91v/packages-final",
+    "installed_profiles": "../eska-playground/t144-fmt-delivery-r5xax91v",
+    "performance": "../eska-playground/t144-fmt-performance-trfuaypy"
+  },
+  "limits": [
+    "Linux/Fedora 44 x86_64 + VSCodium accepted; Windows, macOS, Microsoft VS Code and Remote unverified",
+    "No public release, Git push or global user installation update performed",
+    "Whole buhmfo bulk formatting not claimed; file input is limited to 4 MiB and prepared plan to 128 MiB",
+    "Native 1C behavior checks remain T121/T122 evidence; the complete real extension business behavior was not run",
+    "Documentation site remains untouched on main; canonical repository guide updated"
+  ],
+  "uncommitted_changes_at_completion": "none in eska or Explorer; all task changes committed; existing user content preserved"
+}

@@ -150,6 +150,7 @@ impl ProjectConfig {
             AnalysisSettings::parse_with_names(document.analysis, document.tools, false, &[])
                 .map_err(|error| ProjectConfigError::InvalidAnalysis(Box::new(error)))?;
         configuration = configuration.with_analysis_settings(analysis);
+        configuration = configuration.with_formatting_settings(document.format.unwrap_or_default());
         Ok(Self {
             name,
             source: document.project.source,
@@ -213,6 +214,8 @@ impl ProjectConfig {
                 .then_some(self.configuration.analysis_settings().options()),
             tools: (!self.configuration.analysis_settings().tools().is_empty())
                 .then_some(self.configuration.analysis_settings().tools()),
+            format: (!self.configuration.formatting_settings().is_empty())
+                .then_some(self.configuration.formatting_settings()),
         };
 
         toml::to_string_pretty(&document)

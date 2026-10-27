@@ -19,6 +19,7 @@ struct Restriction {
     id: NonZeroU64,
     owner: PathBuf,
     descriptor: PathBuf,
+    _shared: crate::project::source_lock::SourceLease,
 }
 
 /// A public description is not the owned capability required to bypass this backend restriction.
@@ -51,17 +52,29 @@ impl SourceProtections {
             .collect()
     }
 
-    /// Only a checked source document can acquire a restriction; no filesystem or IDE setting is changed.
-    pub(super) fn acquire(&mut self, owner: &Path, descriptor: &Path) -> Option<SourceRestriction> {
+    /// A checked source acquires shared coordination state; source permissions and native editor flags stay intact.
+    pub(super) fn acquire(
+        &mut self,
+        root: &Path,
+        source: &Path,
+        owner: &Path,
+        descriptor: &Path,
+    ) -> Option<SourceRestriction> {
         self.owners.retain(|_, entry| entry.strong_count() != 0);
         if self.owners.len() >= 16 || self.owners.contains_key(owner) {
             return None;
         }
         let id = NonZeroU64::new(self.serial.checked_add(1)?)?;
+        let shared = crate::project::source_lock::SourceLease::acquire(
+            root,
+            &[source.join(owner), source.join(descriptor)],
+        )
+        .ok()?;
         let restriction = Arc::new(Restriction {
             id,
             owner: owner.to_path_buf(),
             descriptor: descriptor.to_path_buf(),
+            _shared: shared,
         });
         self.serial = id.get();
         self.owners

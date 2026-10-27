@@ -1,15 +1,15 @@
 # Выборочная поставка компонентов
 
 T97 — `DONE` для принятой Linux-матрицы; остальные ОС/Remote отмечены в T89. Общая версия релиза не заменяет проверку контрактов.
-`eska`, `eska-project`, `eska-check`, `eska-build` и `eska-vcs` отвечают на точный
+`eska`, `eska-project`, `eska-check`, `eska-build`, `eska-vcs` и `eska-fmt` отвечают на точный
 машинный вход `__tool-contract` одной JSON-строкой, без project discovery,
 других executables, сети, локализации и native probes:
 
 ```json
-{"schema_version":2,"tool":"eska-project","target":"x86_64-unknown-linux-gnu","version":"0.14.3","config_schema":"designer-xml-3","bridge_schema":1,"metadata_api":{"major":1,"minor":12}}
+{"schema_version":2,"tool":"eska-project","target":"x86_64-unknown-linux-gnu","version":"0.18.0","config_schema":"designer-xml-4","bridge_schema":1,"metadata_api":{"major":1,"minor":33}}
 ```
 
-У остальных четырёх инструментов `metadata_api: null`. `config_schema` обозначает
+У остальных пяти инструментов `metadata_api: null`. `config_schema` обозначает
 совместимую семью `eska.toml`, а не новый ключ внутри пользовательского manifest.
 `bridge_schema` относится к внутренним process-запросам; Metadata API согласуется
 отдельно. Приёмник требует точную identity, полный schema-2 документ, стабильную
@@ -199,3 +199,38 @@ ESKA_TEST_ROOT="$(realpath ../eska-playground)" python3 -B -m unittest discover 
 маленькие fixtures; Windows/macOS/Remote, host runner, клиент 1С, native build
 `buhmfo` и отказ питания этим результатом не подтверждены. Release assets
 на момент этой приёмки не публиковались, существующая automation тогда не менялась.
+
+## Опциональный форматтер
+
+`eska-fmt` — самостоятельный компонент: его CLI использует общий project core,
+без установленного `eska-project`, анализатора, сборщика или VCS.
+Для общего входа нужны `eska` + `eska-fmt`; для Explorer — `eska-project`
+с API 1.33 + `eska-fmt`. Полный набор может дополнительно использовать независимый
+BSL Analyzer. Настройки стиля — [format](formatting.md).
+
+Локальная упаковка `--component eska-fmt` создаёт тот же ZIP/manifest/receipt,
+что остальные инструменты. Выборочная установка:
+
+```sh
+python3 components.py install --manifest release.json --component eska-fmt --root ./eska-tools --check
+python3 components.py install --manifest release.json --component eska-fmt --root ./eska-tools
+python3 components.py status --component eska-fmt --root ./eska-tools --format json
+```
+
+Новый `[format]` входит в семью `designer-xml-4`: прежние consumers схемы 3
+отклоняют секцию. Номер внутри `eska.toml` добавлять не нужно. Несовместимые
+соседние receipts останавливают выборочную установку до записи. Разворачивайте
+согласованный набор в отдельном корне либо обновляйте полный комплект его
+исходным способом; отдельный установщик не присваивает чужие файлы.
+Полный updater отказывается перезаписывать независимо управляемые компоненты.
+Версии инструментов могут различаться при совпадении поддерживаемых контрактов.
+
+Explorer показывает отдельный статус `eska-fmt`, имеет команды проверки обновления
+и восстановления установки. По явно настроенному пути файлы остаются
+пользовательскими. Нет перехода на форматирование анализатором при отсутствии
+или несовместимости `eska-fmt`. Публичный asset проверяется по точному имени,
+размеру и SHA-256; отсутствующий asset явно показывается как недоступный.
+Workflow `Release` публикует `eska-fmt` для каждой целевой платформы отдельным ZIP
+и включает его в полный комплект. Полный установщик проверяет также квитанцию
+отдельно установленного форматтера до записи файлов. Локальная упаковка сама
+ничего не публикует.

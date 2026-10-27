@@ -310,7 +310,43 @@ fn source_restriction_capability_is_bound_to_its_project_session() {
     let mut session = xml_session(project, &node, &path, owner);
     let mut replacement = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
     let fresh = replacement.project_mut(&ProjectScope::Standalone).unwrap();
-    let other = xml_session(fresh, &node, &path, owner);
+    let document = fresh.query_document(&node, &path, 7, Some(owner)).unwrap();
+    let selected = crate::backend::project::query::read_xml(owner).unwrap()[0]
+        .identity
+        .clone();
+    assert!(matches!(
+        QuerySession::open(
+            fresh,
+            document,
+            selected,
+            None,
+            QueryOwnerFormat::Editor,
+            QueryOwnerRestrictions::default()
+        ),
+        Err(QuerySessionError::OwnerBusy)
+    ));
+    let second_path = PathBuf::from("Ext/ManagedApplicationModule.bsl");
+    fs::write(directory.0.join("src").join(&second_path), INPUT).unwrap();
+    let NodeId::Object(root) = fresh.root().clone() else {
+        panic!("root");
+    };
+    let second_node = NodeId::Module {
+        owner: root,
+        role: ModuleRole::ManagedApplication,
+    };
+    let document = fresh
+        .query_document(&second_node, &second_path, 7, Some(INPUT))
+        .unwrap();
+    let selected = identity(&document);
+    let other = QuerySession::open(
+        fresh,
+        document,
+        selected,
+        None,
+        QueryOwnerFormat::Source,
+        QueryOwnerRestrictions::default(),
+    )
+    .unwrap();
     assert_eq!(
         session.source_restriction_id(),
         other.source_restriction_id()
@@ -376,4 +412,88 @@ fn source_restriction_release_preserves_current_support_policy() {
         ),
         Err(QueryDocumentError::ReadOnly)
     ));
+}
+
+/// Another backend sees the same physical query owner as read-only until the owning session releases it.
+#[test]
+fn source_session_restriction_is_shared_with_an_independent_workspace() {
+    use crate::backend::project::metadata_workspace::SourceAccessRequest;
+    let (directory, mut workspace, node, path) = setup();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let document = project.query_document(&node, &path, 7, None).unwrap();
+    let selected = identity(&document);
+    let mut session = QuerySession::open(
+        project,
+        document,
+        selected,
+        None,
+        QueryOwnerFormat::Source,
+        QueryOwnerRestrictions::default(),
+    )
+    .unwrap();
+    let mut independent = MetadataWorkspace::open(&directory.0, &[], false).unwrap();
+    let project = independent.project_mut(&ProjectScope::Standalone).unwrap();
+    let requests = [SourceAccessRequest {
+        path: path.clone(),
+        user_read_only: false,
+    }];
+    let protection = project.source_protection(&requests, true).unwrap();
+    assert!(protection[0].shared_read_only);
+    assert!(!protection[0].writable());
+    session.close();
+    let protection = project.source_protection(&requests, true).unwrap();
+    assert!(!protection[0].shared_read_only);
+    assert!(protection[0].writable());
+}
+
+/// Draft formatting cannot borrow constructor ownership, stale native text or an obsolete support permission.
+#[test]
+fn draft_formatting_requires_current_owned_and_writable_session() {
+    let (directory, mut workspace, node, path) = setup();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let document = project.query_document(&node, &path, 7, None).unwrap();
+    let selected = identity(&document);
+    let mut session = QuerySession::open(
+        project,
+        document,
+        selected,
+        None,
+        QueryOwnerFormat::Source,
+        QueryOwnerRestrictions::default(),
+    )
+    .unwrap();
+    session
+        .check_draft_formatting(project, session.revision(), session.draft(), false)
+        .unwrap();
+    session
+        .set_draft(session.revision(), Arc::from("SELECT\n1 AS Value"))
+        .unwrap();
+    session
+        .check_draft_formatting(project, session.revision(), "SELECT\r\n1 AS Value", false)
+        .unwrap();
+    assert!(matches!(
+        session.check_draft_formatting(project, session.revision(), "different draft", false),
+        Err(QuerySessionError::StaleDraft)
+    ));
+    assert!(matches!(
+        session.check_draft_formatting(project, session.revision(), session.draft(), true),
+        Err(QuerySessionError::UserReadOnly)
+    ));
+    let token = session.open_constructor(session.revision()).unwrap();
+    assert!(matches!(
+        session.check_draft_formatting(project, session.revision(), session.draft(), false),
+        Err(QuerySessionError::ConstructorBusy)
+    ));
+    session.cancel_constructor(token).unwrap();
+    let root = "11111111-1111-1111-1111-111111111111";
+    fs::write(directory.0.join("src/Ext/ParentConfigurations.bin"),format!("{{6,0,1,{root},0,{root},\"1\",\"Vendor\",\"Test\",1,0,0,{root},{root},0,0,0,1,0,0,0,1,0,1,0,1,1,1,1}}")).unwrap();
+    assert!(
+        session
+            .check_draft_formatting(project, session.revision(), session.draft(), false)
+            .is_err()
+    );
+    assert_eq!(
+        fs::read_to_string(directory.0.join("src").join(path)).unwrap(),
+        INPUT
+    );
 }

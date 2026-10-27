@@ -379,6 +379,7 @@ fn process_one(
                     && !server.closing
                     && (super::metadata::is_method(method)
                         || super::analyzer::is_method(method)
+                        || super::formatting::is_method(method)
                         || super::query::is_method(method)
                         || matches!(
                             method,
@@ -450,6 +451,9 @@ fn commits_state(method: &str) -> bool {
             | "analyzer/migrationApply"
             | "analyzer/acquire"
             | "analyzer/release"
+            | "format/bufferBegin"
+            | "format/bufferAppend"
+            | "format/bufferClose"
             | "query/bufferBegin"
             | "query/bufferAppend"
             | "query/bufferClose"

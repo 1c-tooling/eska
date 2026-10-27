@@ -34,6 +34,14 @@ pub use visual::{Aggregate, Comparison, Expression, SourceBinding};
 /// One set is bounded by the same maximum used for adding metadata fields.
 pub const MAX_ITEM_SET_ITEMS: usize = 512;
 
+/// Return a read-only clause projection for formatting CASE/DCS without granting edit authority.
+///
+/// # Errors
+/// Rejects the same bounded lexical/model failures as the constructor; opaque statements stay marked.
+pub fn formatting_model(input: &str) -> Result<Model, Error> {
+    dcs::format_model(input)
+}
+
 /// Destinations are gaps in the immutable clause: zero precedes the first item, length follows the last.
 #[derive(Clone, Copy, Debug, serde::Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]

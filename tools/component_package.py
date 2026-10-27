@@ -16,7 +16,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 
-TOOLS = ("eska", "eska-project", "eska-check", "eska-build", "eska-vcs")
+TOOLS = ("eska", "eska-project", "eska-check", "eska-build", "eska-vcs", "eska-fmt")
 TARGETS = ("aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "aarch64-unknown-linux-musl",
            "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl",
            "x86_64-pc-windows-msvc")
@@ -82,7 +82,7 @@ def contract(value, tool, target=None):
     require(tool in TOOLS and value["tool"] == tool and value["target"] in TARGETS, "incompatible", tool)
     require(target is None or value["target"] == target, "target", value["target"])
     version(value["version"])
-    require(value["config_schema"] == "designer-xml-3" and type(value["bridge_schema"]) is int
+    require(value["config_schema"] == "designer-xml-4" and type(value["bridge_schema"]) is int
             and value["bridge_schema"] == 1, "incompatible", tool)
     api = value["metadata_api"]
     if tool == "eska-project":

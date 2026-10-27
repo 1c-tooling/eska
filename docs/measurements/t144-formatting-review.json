@@ -1,0 +1,291 @@
+{
+  "task": "T120-T123/T144 review and refactoring",
+  "date": "2026-10-27",
+  "complete": true,
+  "scope": "Форматтер BSL/SDBL, политика и безопасная запись, общие source leases, RPC и интеграция Explorer.",
+  "base": {
+    "eska": "4a64686d",
+    "explorer": "f770cd9",
+    "branch": "codex/design-xml-analyzer",
+    "initial_worktrees": "clean"
+  },
+  "findings": [
+    {
+      "id": "R1",
+      "priority": "P1",
+      "status": "fixed",
+      "title": "Общий результат мог превысить лимит 16 MiB",
+      "before": "Лимит печати проверялся для отдельных конструкций; итоговый BSL-модуль собирался без ограничения. 127 уровней, 4200 коротких присваиваний и indent_width=32 проходили форматирование с результатом больше лимита.",
+      "after": "Общая функция append проверяет размер до наращивания буфера BSL/SDBL. Лимит взят из одного определения протокола. CLI отклоняет всю подготовленную операцию до записи файлов.",
+      "regressions": [
+        "output_limit_covers_all_bsl_units",
+        "excessive_output_keeps_the_complete_batch_unchanged"
+      ],
+      "files": [
+        "crates/eska-fmt/src/output.rs",
+        "crates/eska-project-core/src/formatting/protocol.rs"
+      ]
+    },
+    {
+      "id": "R2",
+      "priority": "P2",
+      "status": "fixed",
+      "title": "Выделение хвостовых пробелов BSL давало недопустимые координаты",
+      "before": "Правка начиналась раньше formatted_range.start, поэтому RPC/IDE отклоняли корректное форматирование в конце файла.",
+      "after": "Фактический диапазон учитывает хвост файла даже без выбранной синтаксической конструкции. Невыделенный код сохраняется.",
+      "regressions": [
+        "trailing_trivia_ranges_have_valid_coordinates",
+        "trailing_whitespace_selection_preserves_unselected_bsl_and_returns_valid_coordinates"
+      ],
+      "files": [
+        "crates/eska-fmt/src/bsl.rs"
+      ]
+    },
+    {
+      "id": "R3",
+      "priority": "P2",
+      "status": "fixed",
+      "title": "SDBL терял сохраняемые пробелы последней строки",
+      "before": "При trim_trailing_whitespace=false и insert_final_newline=true последняя строка из пробелов могла исчезнуть.",
+      "after": "Оба языка используют общую обработку хвостовых пробелов, пустых строк и LF/CRLF с сохранением действующего max_empty_lines.",
+      "regressions": [
+        "query_tail_preserves_whitespace_with_final_newline"
+      ],
+      "files": [
+        "crates/eska-fmt/src/trivia.rs",
+        "crates/eska-fmt/src/sdbl.rs"
+      ]
+    },
+    {
+      "id": "R4",
+      "priority": "P2",
+      "status": "fixed",
+      "title": "BOM скрывал начальный маркер отключения SDBL",
+      "before": "eska-fmt off в первой строке после BOM не распознавался; парный on вызывал invalid_directive.",
+      "after": "BOM учитывается отдельно от отступа комментария. Отключённый запрос сохраняется побайтно.",
+      "regressions": [
+        "bom_preserves_disabled_query_bytes"
+      ],
+      "files": [
+        "crates/eska-fmt/src/sdbl.rs"
+      ]
+    },
+    {
+      "id": "R5",
+      "priority": "P2",
+      "status": "fixed",
+      "title": "Форматирование при сохранении игнорировало языковые настройки IDE",
+      "before": "Чтение editor.formatOnSave только с URI не учитывало секции [bsl]/[sdbl]; возможны повторный запуск или пропуск ESKA opt-in.",
+      "after": "Explorer читает настройки в контексте TextDocument. Решение о стиле и вычисление правок остаются в ESKA.",
+      "regressions": [
+        "save formatting respects language-specific editor settings in both directions",
+        "eska_save_opt_in_respects_language_specific_native_format_on_save"
+      ],
+      "files": [
+        "../eska-vscode-explorer/src/formatting/service.ts"
+      ]
+    },
+    {
+      "id": "R6",
+      "priority": "P2",
+      "status": "fixed",
+      "title": "Освобождённый source lease мог оставаться заблокированным",
+      "before": "В полном тестовом прогоне проверка после drop(owner) вернула WouldBlock. Отдельный тест с File::try_clone детерминированно подтвердил: close сохраняет flock, пока жив дубликат open-file description.",
+      "after": "LockedFile явно вызывает unlock при Drop; guard используется для длительных leases, частичного захвата и кратких проверок. Неуспешный захват не получает права unlock.",
+      "evidence_limit": "Наследование дескриптора при конкурентном fork соответствует механизму; конкретный дочерний процесс исходного случайного сбоя не трассировался.",
+      "regressions": [
+        "released_lease_does_not_wait_for_a_duplicate_descriptor_to_close",
+        "shared_lease_failure_cannot_leave_a_file_locked"
+      ],
+      "files": [
+        "crates/eska-project-core/src/project/source_lock.rs"
+      ]
+    }
+  ],
+  "architecture": {
+    "shared_trivia": "crates/eska-fmt/src/trivia.rs",
+    "bounded_output": "crates/eska-fmt/src/output.rs",
+    "source_lock_owner": "eska-project-core",
+    "ide": "Native settings and TextEdits only",
+    "new_dependencies": false,
+    "protocol_schema_changed": false
+  },
+  "checks": {
+    "cargo_fmt_check": "passed",
+    "cargo_check": "passed",
+    "clippy_all_targets_all_features_deny_warnings": "passed",
+    "rustdoc_deny_warnings": "passed",
+    "cargo_test": {
+      "passed": 1248,
+      "failed": 0,
+      "ignored": 17,
+      "targets": 42,
+      "log": "cargo-test-final.log"
+    },
+    "explorer_typecheck": "passed",
+    "explorer_compile": "passed",
+    "node": {
+      "passed": 360,
+      "failed": 0,
+      "skipped": 1,
+      "skip_reason": "legacy backend integration",
+      "log": "node-test.log"
+    },
+    "corpus": {
+      "modules": 40,
+      "bytes": 1016434,
+      "failed": 0,
+      "idempotence_and_token_preservation": true,
+      "report": "corpus/corpus-result-1793079316277016184.json",
+      "original_source_untouched": true
+    },
+    "cli_rpc": {
+      "locales": [
+        "ru-RU",
+        "en-US"
+      ],
+      "facade_parity": true,
+      "policy_and_edits_parity": true,
+      "query_draft_and_parent_lease": true,
+      "report": "../eska-playground/t123-fmt-rpc-dc11nezd/report.json"
+    },
+    "native": {
+      "en": {
+        "development_host": true,
+        "installed_vsix": false,
+        "build": "debug",
+        "runs": [
+          {
+            "passed": true,
+            "suite": "formatting",
+            "locale": "en",
+            "accepted": [
+              "document_format_native_undo_redo_and_dirty_buffer_without_disk_write",
+              "selection_formats_only_expanded_syntax_unit",
+              "trailing_whitespace_selection_preserves_unselected_bsl_and_returns_valid_coordinates",
+              "incompatible_formatter_identity_rejected_before_edits_without_analyzer_fallback",
+              "native_edit_cancels_obsolete_formatter_reply",
+              "query_format_acknowledged_draft_and_native_undo_redo_without_owner_write",
+              "active_query_rejects_parent_format_from_another_process",
+              "query_crlf_snapshot_matches_acknowledged_lf_checkpoint",
+              "query_format_on_save_only_checkpoints_private_bsl_draft",
+              "opt_in_save_formats_and_preserves_bom_crlf",
+              "eska_save_opt_in_respects_language_specific_native_format_on_save",
+              "restarted_formatter_is_idempotent_and_ignores_native_indent_preferences"
+            ],
+            "timings": [
+              {
+                "attempt": "cold",
+                "milliseconds": 132.58331900000007
+              },
+              {
+                "attempt": "repeat",
+                "milliseconds": 60.49389599999995
+              }
+            ]
+          },
+          {
+            "passed": true,
+            "suite": "formatting-restart",
+            "locale": "en",
+            "accepted": [
+              "development_extension_restarted_and_saved_source_remains_idempotent"
+            ],
+            "formatter": {
+              "kind": "formatter",
+              "path": "/home/akalsin/Documents/Projects/eska/target/debug/eska-fmt",
+              "version": "0.18.0"
+            }
+          }
+        ],
+        "log": "host-en-final.log"
+      },
+      "ru": {
+        "development_host": true,
+        "installed_vsix": false,
+        "build": "debug",
+        "runs": [
+          {
+            "passed": true,
+            "suite": "formatting",
+            "locale": "ru",
+            "accepted": [
+              "document_format_native_undo_redo_and_dirty_buffer_without_disk_write",
+              "selection_formats_only_expanded_syntax_unit",
+              "trailing_whitespace_selection_preserves_unselected_bsl_and_returns_valid_coordinates",
+              "incompatible_formatter_identity_rejected_before_edits_without_analyzer_fallback",
+              "native_edit_cancels_obsolete_formatter_reply",
+              "query_format_acknowledged_draft_and_native_undo_redo_without_owner_write",
+              "active_query_rejects_parent_format_from_another_process",
+              "query_crlf_snapshot_matches_acknowledged_lf_checkpoint",
+              "query_format_on_save_only_checkpoints_private_bsl_draft",
+              "opt_in_save_formats_and_preserves_bom_crlf",
+              "eska_save_opt_in_respects_language_specific_native_format_on_save",
+              "restarted_formatter_is_idempotent_and_ignores_native_indent_preferences"
+            ],
+            "timings": [
+              {
+                "attempt": "cold",
+                "milliseconds": 274.7100110000001
+              },
+              {
+                "attempt": "repeat",
+                "milliseconds": 134.268646
+              }
+            ]
+          },
+          {
+            "passed": true,
+            "suite": "formatting-restart",
+            "locale": "ru",
+            "accepted": [
+              "development_extension_restarted_and_saved_source_remains_idempotent"
+            ],
+            "formatter": {
+              "kind": "formatter",
+              "path": "/home/akalsin/Documents/Projects/eska/target/debug/eska-fmt",
+              "version": "0.18.0"
+            }
+          }
+        ],
+        "log": "host-ru.log"
+      }
+    },
+    "red_green": {
+      "formatter": "regressions-before.log: 32 passed / 4 failed, then fixed",
+      "source_lease": "lease-before.log failed, lease-after.log passed",
+      "explorer": "explorer-regression-before.log: 3 passed / 1 failed; explorer-regression-after.log: 4 passed"
+    }
+  },
+  "implementation_commits": [
+    {
+      "repository": "eska",
+      "hash": "e06ab2bd",
+      "subject": "fix(fmt): Исправлены диапазоны правок, сохранение пробелов и общий лимит вывода"
+    },
+    {
+      "repository": "eska",
+      "hash": "c179f18a",
+      "subject": "fix(project): Блокировка исходника снимается при освобождении её владельца"
+    },
+    {
+      "repository": "eska-vscode-explorer",
+      "hash": "5ba7e43",
+      "subject": "fix(fmt): Учтены языковые настройки форматирования при сохранении"
+    }
+  ],
+  "evidence_root": "../eska-playground/fmt-review-p9d37_jz",
+  "references": [
+    "https://doc.rust-lang.org/std/string/struct.String.html",
+    "https://doc.rust-lang.org/std/fs/struct.File.html#method.unlock",
+    "https://man7.org/linux/man-pages/man2/flock.2.html",
+    "https://code.visualstudio.com/api/references/vscode-api#ConfigurationScope"
+  ],
+  "limitations": [
+    "В этом ревью проверены debug-компоненты и development Extension Host. Новые release-архивы/VSIX и глобальные пользовательские установки не обновлялись.",
+    "Windows, macOS, VS Code и Remote в этом прогоне не проверялись.",
+    "Нативные семантические сценарии платформы 1С из T121/T122 повторно не запускались; проверки текущих правок включают корпус, CLI/RPC и VSCodium.",
+    "Тайминги development host не являются сравнением производительности release-сборок.",
+    "T26 по-прежнему ожидает пользовательской приёмки; публикация и соседние milestones не входят в ревью."
+  ]
+}

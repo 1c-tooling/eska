@@ -69,6 +69,7 @@ pub struct ProjectConfiguration {
     build: BuildSettings,
     workflow: Option<WorkflowSettings>,
     analysis: AnalysisSettings,
+    formatting: Box<crate::formatting::Config>,
 }
 
 impl ProjectConfiguration {
@@ -80,6 +81,7 @@ impl ProjectConfiguration {
             build: BuildSettings::default(),
             workflow: None,
             analysis: AnalysisSettings::default(),
+            formatting: Box::default(),
         }
     }
 
@@ -139,6 +141,19 @@ impl ProjectConfiguration {
     #[must_use]
     pub fn with_analysis_settings(mut self, analysis: AnalysisSettings) -> Self {
         self.analysis = analysis;
+        self
+    }
+
+    /// Return the sparse member policy; workspace inheritance is resolved per formatted source.
+    #[must_use]
+    pub const fn formatting_settings(&self) -> &crate::formatting::Config {
+        &self.formatting
+    }
+
+    /// Preserve explicit formatter settings through discovery and manifest round trips.
+    #[must_use]
+    pub fn with_formatting_settings(mut self, formatting: crate::formatting::Config) -> Self {
+        self.formatting = Box::new(formatting);
         self
     }
 }

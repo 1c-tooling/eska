@@ -1,8 +1,9 @@
 //! Query views retain exact owner coordinates; they never become another source file.
 
-mod bsl;
+pub(crate) mod bsl;
 pub mod constructor;
 mod editing;
+mod formatting;
 mod mapping;
 pub mod recovery;
 pub mod virtual_tables;
@@ -10,6 +11,7 @@ mod xml;
 
 pub use bsl::read_bsl;
 pub use editing::{CommentPlacement, LineEnding, plan};
+pub use formatting::format_plan;
 pub use mapping::{Affinity, Mapping, Position, SourceMap, byte_position, position_byte};
 pub use xml::read_xml;
 pub(crate) use xml::{XmlKind, read_with_kind as read_xml_with_kind};

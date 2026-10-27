@@ -11,7 +11,9 @@ const TERMINATE: i32 = signal_hook::consts::signal::SIGTERM;
 const TERMINATE: i32 = 0;
 
 use std::{
+    io::{self, Write},
     process::{Command, Output, Stdio},
+    sync::atomic::{AtomicBool, Ordering},
     sync::mpsc,
     thread,
     time::Instant,
@@ -49,11 +51,60 @@ pub fn run(
         .spawn()
         .map_err(|source| Error::Process { component, source })?;
     let mut child = OwnedChild(child);
-    let result = receive(component, &mut child, scope, policy);
+    let result = receive(component, &mut child, scope, None, policy);
     if result.is_err() && !matches!(child.0.try_wait(), Ok(Some(_))) {
         on_failure();
     }
     result
+}
+
+/// Send one owned request while draining both child streams under timeout and RPC cancellation.
+///
+/// # Errors
+/// Returns process/pipe failures, cancellation and bounded-output failures; the exact child is reaped.
+pub fn capture_input(
+    component: Component,
+    command: &mut Command,
+    input: Vec<u8>,
+    policy: QueryPolicy,
+    cancelled: &AtomicBool,
+    closed: &AtomicBool,
+) -> Result<Output, Error> {
+    if cancelled.load(Ordering::Acquire) || closed.load(Ordering::Acquire) {
+        return Err(Error::Cancelled);
+    }
+    let child = command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|source| Error::Process { component, source })?;
+    let mut child = OwnedChild(child);
+    let mut stdin = child.0.stdin.take().ok_or(Error::InvalidResponse)?;
+    let writer = thread::Builder::new()
+        .name("eska-component-input".into())
+        .spawn(move || stdin.write_all(&input))
+        .map_err(|source| Error::Process { component, source })?;
+    let result = receive(
+        component,
+        &mut child,
+        None,
+        Some((cancelled, closed)),
+        policy,
+    );
+    drop(child);
+    let written = writer
+        .join()
+        .map_err(|_| Error::Process {
+            component,
+            source: io::Error::other("input writer failed"),
+        })
+        .and_then(|result| result.map_err(|source| Error::Process { component, source }));
+    let output = result?;
+    if output.status.success() {
+        written?;
+    }
+    Ok(output)
 }
 
 /// Drain both pipes concurrently; a graceful owner can clean descendants before its own exit.
@@ -61,6 +112,7 @@ fn receive(
     component: Component,
     child: &mut OwnedChild,
     scope: Option<&Operation>,
+    request: Option<(&AtomicBool, &AtomicBool)>,
     policy: QueryPolicy,
 ) -> Result<Output, Error> {
     let stdout = child.0.stdout.take().ok_or(Error::InvalidResponse)?;
@@ -92,7 +144,10 @@ fn receive(
                 Stream::Stderr => stderr = Some(result?),
             }
         }
-        let cancelled = scope.is_some_and(Operation::is_cancelled);
+        let cancelled = scope.is_some_and(Operation::is_cancelled)
+            || request.is_some_and(|(cancelled, closed)| {
+                cancelled.load(Ordering::Acquire) || closed.load(Ordering::Acquire)
+            });
         if stopping.is_none() && (cancelled || started.elapsed() >= policy.timeout) {
             if policy.cancellation_grace.is_zero() {
                 return Err(reason(cancelled));
@@ -159,4 +214,68 @@ fn signal(child: &OwnedChild, signal: i32) -> Result<(), Error> {
 #[cfg(not(unix))]
 fn signal(child: &mut OwnedChild, _: i32) -> Result<(), Error> {
     child.0.kill().map_err(Error::Signal)
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    use crate::test_support::TestDir;
+    use std::{sync::Arc, time::Duration};
+
+    /// Cancellation also releases a writer blocked by a component that never consumes its input.
+    #[test]
+    fn cancelling_a_blocked_input_reaps_the_child_and_writer() {
+        let directory = TestDir::new();
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let signal = Arc::clone(&cancelled);
+        let trigger = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(50));
+            signal.store(true, Ordering::Release);
+        });
+        let mut command = Command::new("python3");
+        command
+            .args(["-c", "import time; time.sleep(30)"])
+            .current_dir(&directory.0);
+        let start = Instant::now();
+        let result = capture_input(
+            Component::Fmt,
+            &mut command,
+            vec![b'x'; 1024 * 1024],
+            QueryPolicy {
+                timeout: Duration::from_secs(3),
+                output_limit: 1024,
+                cancellation_grace: Duration::ZERO,
+            },
+            &cancelled,
+            &AtomicBool::new(false),
+        );
+        trigger.join().unwrap();
+        assert!(matches!(result, Err(Error::Cancelled)));
+        assert!(start.elapsed() < Duration::from_secs(2));
+    }
+
+    /// Both pipes drain while the complete input is sent; no partial response or broken-pipe success is accepted.
+    #[test]
+    fn input_and_output_are_complete_with_bounded_streams() {
+        let directory = TestDir::new();
+        let input = vec![b'a'; 256 * 1024];
+        let mut command = Command::new("python3");
+        command.args(["-c","import sys; data=sys.stdin.buffer.read(); sys.stderr.buffer.write(b'checked'); sys.stdout.buffer.write(data)"]).current_dir(&directory.0);
+        let output = capture_input(
+            Component::Fmt,
+            &mut command,
+            input.clone(),
+            QueryPolicy {
+                timeout: Duration::from_secs(3),
+                output_limit: 1024 * 1024,
+                cancellation_grace: Duration::ZERO,
+            },
+            &AtomicBool::new(false),
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert!(output.status.success());
+        assert_eq!(output.stdout, input);
+        assert_eq!(output.stderr, b"checked");
+    }
 }

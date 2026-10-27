@@ -153,9 +153,11 @@ impl QuerySession {
         project.check_query_read(&document, revision(&document))?;
         let application = context.context.name().map(|name| name.as_str().to_owned());
         let base: Arc<str> = query.text.into();
+        let root = project.project().root().to_owned();
+        let source = project.project().source().to_owned();
         let source_restriction = project
             .source_protections
-            .acquire(&document.path, &document.descriptor)
+            .acquire(&root, &source, &document.path, &document.descriptor)
             .ok_or(QuerySessionError::OwnerBusy)?;
         let session = Self {
             document,
@@ -219,9 +221,11 @@ impl QuerySession {
             .map(|prepared| restore_pending(&document, &saved.identity, format, prepared))
             .transpose()?;
         let plan_serial = pending.as_ref().map_or(0, |pending| pending.token);
+        let root = project.project().root().to_owned();
+        let source = project.project().source().to_owned();
         let source_restriction = project
             .source_protections
-            .acquire(&document.path, &document.descriptor)
+            .acquire(&root, &source, &document.path, &document.descriptor)
             .ok_or(QuerySessionError::OwnerBusy)?;
         Ok(Self {
             document,
@@ -421,6 +425,42 @@ impl QuerySession {
             self.draft = draft;
         }
         Ok(())
+    }
+
+    /// Authorize only a formatting plan for the acknowledged draft; no source-application token is issued.
+    ///
+    /// # Errors
+    /// Rejects stale drafts, constructor ownership, paused/applying sessions and current source restrictions.
+    pub fn check_draft_formatting(
+        &self,
+        project: &mut ProjectSession,
+        expected: u64,
+        native_draft: &str,
+        user_read_only: bool,
+    ) -> Result<(), QuerySessionError> {
+        self.check_revision(expected)?;
+        self.check_constructor_idle()?;
+        match self.phase {
+            Phase::Ready => (),
+            Phase::Applying(_) | Phase::Recovering(_) => return Err(QuerySessionError::ApplyBusy),
+            _ => return Err(QuerySessionError::ResumeRequired),
+        }
+        if !self.draft_writable() || user_read_only {
+            return Err(QuerySessionError::UserReadOnly);
+        }
+        // Recovery stores editor LF text; a native view may use CRLF without changing its acknowledged draft.
+        if self.draft.as_ref() != native_draft.replace("\r\n", "\n").replace('\r', "\n") {
+            return Err(QuerySessionError::StaleDraft);
+        }
+        self.check_project(project)?;
+        self.check_context(project, self.application.as_deref())?;
+        project
+            .check_query_source(
+                &self.document,
+                revision(&self.document),
+                self.source_restriction.as_ref(),
+            )
+            .map_err(Into::into)
     }
 
     /// Project a checked BSL draft for analysis; no apply token, checkpoint mutation or source-write permission is issued.

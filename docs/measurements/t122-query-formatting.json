@@ -1,0 +1,78 @@
+{
+  "task": "T122",
+  "complete": true,
+  "formatterUnitTests": 32,
+  "sdblUnitTests": 10,
+  "coreUnitTests": 315,
+  "coreIgnored": 1,
+  "native": {
+    "platform": "8.3.27.2325",
+    "sourcePairs": 20,
+    "queryPairs": 7,
+    "passed": true,
+    "stand": "/home/akalsin/Documents/Projects/eska-playground/fmt-native-f3yfsvwj",
+    "steps": [
+      {
+        "name": "build",
+        "exitCode": 0,
+        "seconds": 4.369
+      },
+      {
+        "name": "platform-version",
+        "exitCode": 0,
+        "seconds": 0.198
+      },
+      {
+        "name": "create",
+        "exitCode": 0,
+        "seconds": 3.444
+      },
+      {
+        "name": "client",
+        "exitCode": 0,
+        "seconds": 1.925
+      }
+    ]
+  },
+  "nativeMetadata": {
+    "queryPairs": 16,
+    "executed": 32,
+    "passed": true,
+    "stand": "/home/akalsin/Documents/Projects/eska-playground/t122-native-queries-kyb1wu3o",
+    "scenarios": [
+      "dcs_filters",
+      "dcs_optional_join",
+      "dcs_optional_join_used",
+      "dcs_select",
+      "dcs_virtual_arguments",
+      "having",
+      "nested",
+      "temporary_chain",
+      "totals",
+      "totals_grouping_levels",
+      "union",
+      "union_all",
+      "union_all_duplicates",
+      "union_duplicates",
+      "virtual_balance",
+      "virtual_balance_period"
+    ]
+  },
+  "diagnostics": {
+    "analyzer": "0.4.0",
+    "files": 41,
+    "failed": 0,
+    "syntaxDiagnostics": [],
+    "totalDiagnostics": 438,
+    "scope": "Supplementary CLI check; style and environment diagnostics are not claimed clean."
+  },
+  "checks": {
+    "strictClippy": true,
+    "finalWorkspaceValidation": "required after T144"
+  },
+  "limits": [
+    "Linux and native platform 8.3.27.2325 verified; other environments unverified",
+    "No execution against a user business database",
+    "Structural validation is not a type checker"
+  ]
+}

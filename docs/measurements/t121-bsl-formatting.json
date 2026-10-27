@@ -1,0 +1,113 @@
+{
+  "task": "T121",
+  "corpus": {
+    "complete": true,
+    "sampleCount": 40,
+    "failed": 0,
+    "sourceFilesUnchanged": 40,
+    "bytes": 1016434,
+    "roles": {
+      "ExternalSystems": 7,
+      "buhmfo": 7,
+      "dzp_АвтоматическаяЗагрузкаВыписок": 5,
+      "dzp_АдаптацияКодаТиповойКонфигурации": 7,
+      "dzp_ЗаполнениеБанковскихВыписок": 7,
+      "dzp_ИсправлениеОшибокКонфигурации": 7
+    },
+    "report": "/home/akalsin/Documents/Projects/eska-playground/t121-corpus-knagu5ks/corpus-result-1793055334688769201.json",
+    "verification": "significant token preservation, same grammar after formatting, idempotent second pass; original user sources not written",
+    "previousFailedReports": [
+      "corpus-result-1793054939262187068.json",
+      "corpus-result-1793055096604157534.json",
+      "corpus-result-1793055159351508443.json"
+    ]
+  },
+  "native": {
+    "complete": true,
+    "platform": "8.3.27.2325",
+    "caseCount": 13,
+    "steps": [
+      {
+        "name": "build",
+        "exitCode": 0,
+        "seconds": 3.872
+      },
+      {
+        "name": "platform-version",
+        "exitCode": 0,
+        "seconds": 0.17
+      },
+      {
+        "name": "create",
+        "exitCode": 0,
+        "seconds": 3.275
+      },
+      {
+        "name": "client",
+        "exitCode": 0,
+        "seconds": 1.689
+      }
+    ],
+    "evaluated": [
+      "PASS empty_statements: 1",
+      "PASS call_comments: 3",
+      "PASS loops_ru: 6",
+      "PASS loops_en: 6",
+      "PASS omitted_arguments: 14",
+      "PASS precedence: 14",
+      "PASS conditions: 42",
+      "PASS try_except: 7",
+      "PASS dates: 2026",
+      "PASS multiline_literal: 5",
+      "PASS constructors: 2",
+      "PASS preprocessor: 11",
+      "PASS disabled_range: 2"
+    ],
+    "artifactSha256": "268e673f9ce0f74964e2f0a1c6921e6ac68087bd789f78c48696a5edd4050959",
+    "builderSha256": "ed5eb8ea4ce5341a0af105fc32372a96922ecd154064ef087a51dcc6cc168061"
+  },
+  "nativeStand": "/home/akalsin/Documents/Projects/eska-playground/t121-native-ur2atk8k",
+  "diagnostics": {
+    "analyzer": "0.4.0",
+    "sourceFiles": 27,
+    "failedFiles": 0,
+    "syntaxDiagnostics": [],
+    "totalDiagnostics": 355,
+    "diagnosticCounts": {
+      "CommonModuleInvalidType": 26,
+      "CommonModuleMissingAPI": 26,
+      "CommonModuleNameClient": 26,
+      "CanonicalSpellingKeywords": 49,
+      "CodeOutOfRegion": 25,
+      "MissingReturnedValueDescription": 24,
+      "EmptyStatement": 6,
+      "IncorrectLineBreak": 6,
+      "MissingSpace": 78,
+      "OneStatementPerLine": 22,
+      "MagicNumber": 28,
+      "ExtraCommas": 2,
+      "MissingCodeTryCatchEx": 2,
+      "UnreachableCode": 2,
+      "NonStandardRegion": 2,
+      "CognitiveComplexity": 1,
+      "CyclomaticComplexity": 1,
+      "UnavailableInEnvironment": 28,
+      "DuplicateStringLiteral": 1
+    },
+    "complete": true,
+    "stand": "/home/akalsin/Documents/Projects/eska-playground/t121-native-ur2atk8k",
+    "scope": "Additional syntax diagnostic check; fixture style and environment diagnostics are not claimed clean."
+  },
+  "checks": {
+    "formatterUnitTests": 22,
+    "coreUnitTests": 314,
+    "nativeCases": 13,
+    "corpusModules": 40,
+    "rustCheck": true,
+    "strictClippy": [
+      "eska-fmt",
+      "eska-project-core"
+    ],
+    "finalWorkspaceValidation": "required after T144"
+  }
+}

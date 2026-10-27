@@ -152,6 +152,9 @@ impl Server {
                 self.closing = true;
                 Ok(Value::Null)
             }
+            method if super::formatting::is_method(method) && self.client_minor >= 33 => {
+                self.formatting(method, args, cancelled, connection_closed)
+            }
             method if super::metadata::is_method(method) => self.metadata(method, args, events),
             method if super::query::is_recovery_method(method) => {
                 if self.client_minor < 14
@@ -258,6 +261,9 @@ impl Server {
         }
         if self.client_minor >= 20 {
             result["capabilities"]["queryProjections"] = super::query::projection_capability();
+        }
+        if self.client_minor >= 33 {
+            result["capabilities"]["formatting"] = super::formatting::capability();
         }
         if self.client_minor >= 21 {
             result["capabilities"]["queryConstructor"] =

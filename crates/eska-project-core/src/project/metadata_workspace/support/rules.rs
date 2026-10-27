@@ -30,13 +30,17 @@ impl RuleCache {
         unchanged
     }
 
-    /// External artifacts have no configuration support; configuration rules still require bytes.
+    /// Extension-owned source does not inherit its base's supplier rules; an explicit rules file still takes precedence.
     pub(super) fn read(
         &mut self,
         root: &Path,
         kind: ProjectType,
     ) -> (Option<Arc<Support>>, Vec<String>) {
-        if matches!(kind, ProjectType::Processing | ProjectType::Report) {
+        let extension_without_rules = kind == ProjectType::Extension
+            && std::fs::symlink_metadata(root.join("Ext/ParentConfigurations.bin"))
+                .is_err_and(|error| error.kind() == std::io::ErrorKind::NotFound);
+        if matches!(kind, ProjectType::Processing | ProjectType::Report) || extension_without_rules
+        {
             return (
                 Some(Arc::new(Support {
                     suppliers: Vec::new(),

@@ -26,6 +26,7 @@ pub struct SourceAccessRequest {
 pub struct SourceProtection {
     pub support: FileSupport,
     pub restrictions: Vec<SourceRestrictionInfo>,
+    pub shared_read_only: bool,
     pub user_read_only: bool,
     pub filesystem: SourceFileState,
     pub support_enforced: bool,
@@ -48,6 +49,7 @@ impl SourceProtection {
             && !self.support.objects.is_empty()
             && !self.user_read_only
             && self.restrictions.is_empty()
+            && !self.shared_read_only
             && (!self.support_enforced
                 || (!self.support.read_only
                     && !self.support.unknown
@@ -148,6 +150,7 @@ impl SourceSnapshot {
                 unknown: true,
             },
             restrictions: Vec::new(),
+            shared_read_only: true,
             user_read_only: false,
             filesystem: if metadata.permissions().readonly() {
                 SourceFileState::ReadOnly
@@ -280,9 +283,15 @@ impl ProjectSession {
                     Some(_) => SourceFileState::Writable,
                 };
                 let restrictions = self.source_protections.describe(&file.path);
+                let shared_read_only = restrictions.is_empty()
+                    && physical.as_ref().is_some_and(|path| {
+                        crate::project::source_lock::SourceLease::check(self.project().root(), path)
+                            .is_err()
+                    });
                 Ok(SourceProtection {
                     support: file,
                     restrictions,
+                    shared_read_only,
                     user_read_only: request.user_read_only,
                     filesystem,
                     support_enforced: enforce_support,
