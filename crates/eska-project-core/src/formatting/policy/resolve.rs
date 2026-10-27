@@ -1,6 +1,8 @@
 //! Ordered policy layers are resolved once per source, without global mutable configuration.
 
-use super::{Config, Effective, Language, Profile, defaults, matches, relative_path};
+use super::{
+    Config, Effective, Language, Profile, builtin_profile, defaults, matches, relative_path,
+};
 use crate::formatting::{Error, IndentStyle, Options, Patch};
 use std::{collections::BTreeMap, path::Path};
 
@@ -136,7 +138,8 @@ fn apply_profile(
     stack: &mut Vec<String>,
     result: &mut Effective,
 ) -> Result<(), Error> {
-    if name == "1c" {
+    if let Some(patch) = builtin_profile(name, result.language) {
+        apply(&patch, result, &format!("profile:{name}@1"));
         return Ok(());
     }
     if stack.len() >= 32 || stack.iter().any(|item| item == name) {

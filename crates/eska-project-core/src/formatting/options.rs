@@ -99,8 +99,16 @@ options! {
     wrap_binary: Wrapping = Wrapping::Fit,
     break_before_binary_operators: bool = true,
     align_assignments: bool = false,
+    #[serde(default)]
+    align_call_arguments: bool = false,
+    #[serde(default)]
+    closing_parenthesis_on_new_line: bool = false,
+    #[serde(default)]
+    preserve_existing_line_breaks: bool = false,
     max_empty_lines: u16 = 1,
     blank_lines_between_methods: u16 = 1,
+    #[serde(default)]
+    blank_lines_inside_methods: u16 = 0,
     trim_trailing_whitespace: bool = true,
     insert_final_newline: bool = true,
     comments: Comments = Comments::IndentOnly,
@@ -164,6 +172,12 @@ impl Options {
             (
                 "blank_lines_between_methods",
                 self.blank_lines_between_methods,
+                0,
+                16,
+            ),
+            (
+                "blank_lines_inside_methods",
+                self.blank_lines_inside_methods,
                 0,
                 16,
             ),

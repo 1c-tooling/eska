@@ -68,7 +68,7 @@ pub struct WorkspaceConfig {
     build: BuildSettings,
     workflow: Option<WorkflowSettings>,
     analysis: AnalysisSettings,
-    formatting: crate::formatting::Config,
+    formatting: Box<crate::formatting::Config>,
 }
 
 impl WorkspaceConfig {
@@ -119,7 +119,7 @@ impl WorkspaceConfig {
             build,
             workflow,
             analysis,
-            formatting: document.format.unwrap_or_default(),
+            formatting: Box::new(document.format.unwrap_or_default()),
         })
     }
 

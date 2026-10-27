@@ -121,7 +121,7 @@ impl Config {
             based_on: None,
         })?;
         for (name, profile) in &self.profiles {
-            if name == "1c" || name.is_empty() || name.len() > 128 {
+            if matches!(name.as_str(), "1c" | "eska") || name.is_empty() || name.len() > 128 {
                 return Err(Error::new("invalid_profile", name));
             }
             validate_profile(profile)?;
@@ -156,7 +156,12 @@ fn validate_profile(profile: &Profile) -> Result<(), Error> {
 
 /// Known options for another language fail instead of becoming silently ignored configuration.
 pub(super) fn validate_patch(patch: &Patch, language: Option<Language>) -> Result<(), Error> {
-    let bsl_only = patch.align_assignments.is_some() || patch.blank_lines_between_methods.is_some();
+    let bsl_only = patch.align_assignments.is_some()
+        || patch.align_call_arguments.is_some()
+        || patch.closing_parenthesis_on_new_line.is_some()
+        || patch.preserve_existing_line_breaks.is_some()
+        || patch.blank_lines_between_methods.is_some()
+        || patch.blank_lines_inside_methods.is_some();
     let sdbl_only = patch.select_items.is_some()
         || patch.clause_newlines.is_some()
         || patch.align_aliases.is_some()
@@ -253,5 +258,22 @@ pub(super) fn defaults(language: Language) -> Options {
             KeywordCase::Canonical
         },
         ..Options::default()
+    }
+}
+
+/// Built-ins are immutable sparse layers over the pinned 1C defaults for each language.
+pub(super) fn builtin_profile(name: &str, language: Language) -> Option<Patch> {
+    match name {
+        "eska" if language == Language::Bsl => Some(Patch {
+            column_limit: Some(150),
+            preserve_existing_line_breaks: Some(true),
+            align_assignments: Some(true),
+            align_call_arguments: Some(true),
+            closing_parenthesis_on_new_line: Some(true),
+            blank_lines_inside_methods: Some(1),
+            ..Patch::default()
+        }),
+        "1c" | "eska" => Some(Patch::default()),
+        _ => None,
     }
 }

@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-27",
+  "scope": "Built-in eska formatting preset from two supplied BSL samples",
+  "profile": {
+    "name": "eska",
+    "version": 1,
+    "bsl": {
+      "column_limit": 150,
+      "indent_style": "tab",
+      "tab_width": 4,
+      "align_assignments": true,
+      "align_call_arguments": true,
+      "closing_parenthesis_on_new_line": true,
+      "preserve_existing_line_breaks": true,
+      "blank_lines_inside_methods": 1
+    },
+    "sdbl": "unchanged 1c v1"
+  },
+  "column_budget": {
+    "tab_width": 4,
+    "code_lines": 464,
+    "maximum_code_columns": 150,
+    "code_lines_over_120": 16,
+    "code_lines_over_150": 0,
+    "maximum_comment_columns": 173,
+    "maximum_literal_columns": 194,
+    "limit_is_soft": true
+  },
+  "samples": [
+    {
+      "example": 1,
+      "source_sha256": "8130a90357ed809ea021f77a9be55c9b7e70ecd158030923a9b168681f4464c8",
+      "formatted_sha256": "7d710685e492a0bf56cfc79980473d9ee385d3d303dfc968a486d4113f4222e8",
+      "source_lines": 994,
+      "formatted_lines": 999
+    },
+    {
+      "example": 2,
+      "source_sha256": "9d440a3e4356f5a63af229d7787e126f0bdb3624c1ab420efa05397f36186296",
+      "formatted_sha256": "705223f450c8c7a17042eac59632d3b8ae715a97288b024cc4e02e3cd51164fb",
+      "source_lines": 368,
+      "formatted_lines": 368
+    }
+  ],
+  "checks": {
+    "rust": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 1.4
+      },
+      {
+        "command": [
+          "cargo",
+          "check"
+        ],
+        "exit_code": 0,
+        "seconds": 0.36
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 0.57
+      },
+      {
+        "command": [
+          "cargo",
+          "test"
+        ],
+        "exit_code": 0,
+        "seconds": 36.88
+      },
+      {
+        "command": [
+          "cargo",
+          "doc",
+          "--no-deps"
+        ],
+        "exit_code": 0,
+        "seconds": 48.7
+      }
+    ],
+    "tests": {
+      "passed": 1273,
+      "failed": 0,
+      "ignored": 17,
+      "targets": 42
+    },
+    "cli_facade_rpc": {
+      "ru-RU": {
+        "cli_facade_rpc_parity": true,
+        "idempotent": true,
+        "crlf_preserved": true,
+        "cli_apply_matches_plan": true
+      },
+      "en-US": {
+        "cli_facade_rpc_parity": true,
+        "idempotent": true,
+        "crlf_preserved": true,
+        "cli_apply_matches_plan": true
+      }
+    },
+    "native": {
+      "application": "VSCodium",
+      "version": "1.109.51242",
+      "platform": "Linux",
+      "runs": [
+        {
+          "passed": true,
+          "suite": "eska-preset",
+          "locale": "en",
+          "adapter": "unchanged Explorer development host",
+          "native_format_matches_cli_rpc": true,
+          "undo_redo": true,
+          "idempotent": true,
+          "source_unchanged": true
+        },
+        {
+          "passed": true,
+          "suite": "eska-preset",
+          "locale": "ru",
+          "adapter": "unchanged Explorer development host",
+          "native_format_matches_cli_rpc": true,
+          "undo_redo": true,
+          "idempotent": true,
+          "source_unchanged": true
+        }
+      ]
+    },
+    "schema_positive_negative_cases": "passed",
+    "documentation_local_links": "passed",
+    "git_diff_check": "passed",
+    "original_attachments_unchanged": true
+  },
+  "architecture": {
+    "policy": "eska-project-core",
+    "layout": "eska-fmt",
+    "ide_adapter": "unchanged",
+    "workspace_formatting_storage": "boxed like ProjectConfiguration to keep manifest variant sizes bounded"
+  },
+  "evidence_root": "../eska-playground/fmt-eska-preset-8c7ijz5p",
+  "limits": {
+    "installation_updated": false,
+    "release_published": false,
+    "unverified": [
+      "Windows",
+      "macOS",
+      "VS Code",
+      "Remote"
+    ],
+    "literal_and_comment_bodies": "preserved; may exceed 150 columns"
+  }
+}
