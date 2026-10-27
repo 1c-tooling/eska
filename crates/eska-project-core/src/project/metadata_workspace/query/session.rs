@@ -448,7 +448,8 @@ impl QuerySession {
         if !self.draft_writable() || user_read_only {
             return Err(QuerySessionError::UserReadOnly);
         }
-        if self.draft.as_ref() != native_draft {
+        // Recovery stores editor LF text; a native view may use CRLF without changing its acknowledged draft.
+        if self.draft.as_ref() != native_draft.replace("\r\n", "\n").replace('\r', "\n") {
             return Err(QuerySessionError::StaleDraft);
         }
         self.check_project(project)?;

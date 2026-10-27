@@ -1,0 +1,73 @@
+{
+  "task": "T123",
+  "date": "2026-10-27",
+  "platform": "Linux/VSCodium",
+  "analyzer_required": false,
+  "checks": {
+    "rpc": "t123-fmt-rpc-bdeg0zb3, ru-RU/en-US, public CLI/RPC parity, owner lease",
+    "node": {
+      "passed": 353,
+      "skipped": 3
+    },
+    "metadata_rpc_integration": {
+      "passed": 44,
+      "ignored": 1
+    },
+    "formatter_server_unit": 34
+  },
+  "native": [
+    {
+      "passed": true,
+      "suite": "formatting",
+      "locale": "en",
+      "accepted": [
+        "document_format_native_undo_redo_and_dirty_buffer_without_disk_write",
+        "selection_formats_only_expanded_syntax_unit",
+        "query_format_acknowledged_draft_and_native_undo_redo_without_owner_write",
+        "active_query_rejects_parent_format_from_another_process",
+        "query_crlf_snapshot_matches_acknowledged_lf_checkpoint",
+        "opt_in_save_formats_and_preserves_bom_crlf",
+        "restarted_formatter_is_idempotent_and_ignores_native_indent_preferences"
+      ],
+      "timings": [
+        {
+          "attempt": "cold",
+          "milliseconds": 201.99809400000004
+        },
+        {
+          "attempt": "repeat",
+          "milliseconds": 47.81979799999999
+        }
+      ]
+    },
+    {
+      "passed": true,
+      "suite": "formatting",
+      "locale": "ru",
+      "accepted": [
+        "document_format_native_undo_redo_and_dirty_buffer_without_disk_write",
+        "selection_formats_only_expanded_syntax_unit",
+        "query_format_acknowledged_draft_and_native_undo_redo_without_owner_write",
+        "active_query_rejects_parent_format_from_another_process",
+        "query_crlf_snapshot_matches_acknowledged_lf_checkpoint",
+        "opt_in_save_formats_and_preserves_bom_crlf",
+        "restarted_formatter_is_idempotent_and_ignores_native_indent_preferences"
+      ],
+      "timings": [
+        {
+          "attempt": "cold",
+          "milliseconds": 169.686234
+        },
+        {
+          "attempt": "repeat",
+          "milliseconds": 47.73420699999997
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "debug timings are observations, not a performance budget",
+    "installed component matrix and VSIX restart acceptance follow in T144",
+    "Windows/macOS/VS Code/Remote unverified"
+  ]
+}

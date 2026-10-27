@@ -465,6 +465,12 @@ fn draft_formatting_requires_current_owned_and_writable_session() {
     session
         .check_draft_formatting(project, session.revision(), session.draft(), false)
         .unwrap();
+    session
+        .set_draft(session.revision(), Arc::from("SELECT\n1 AS Value"))
+        .unwrap();
+    session
+        .check_draft_formatting(project, session.revision(), "SELECT\r\n1 AS Value", false)
+        .unwrap();
     assert!(matches!(
         session.check_draft_formatting(project, session.revision(), "different draft", false),
         Err(QuerySessionError::StaleDraft)

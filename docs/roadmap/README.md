@@ -8,7 +8,7 @@
 
 По запросу от **2026-10-27** следующее направление — самостоятельный
 **`eska-fmt` и `eska fmt`**, профиль 1С по умолчанию и гибкая конфигурация
-в `eska.toml`. **T120–T122 — `DONE`, T123 — `IN-PROGRESS`**; далее **T123 → T144**.
+в `eska.toml`. **T120–T123 — `DONE`, T144 — `IN-PROGRESS`**; далее **T144**.
 Форматтер принадлежит ESKA и не зависит от bsl-analyzer. T144 добавлена для
 поставки отдельного компонента; T26 остаётся сводной задачей.
 [Уточнённый план для проверки](22-configurable-formatting.md).
@@ -274,7 +274,7 @@ T115–T119 и релизов анализатора. Семантические
 | Направление | Задачи | Зависимости внутри направления | Подробности |
 | --- | --- | --- | --- |
 | Типы, диагностики и панель запросов (Q1–Q5) | T115–T119 | T115 → T116; T118 и T119 требуют T116/T117 | [21-query-analysis.md](21-query-analysis.md) |
-| Гибкий fmt (F1–F5), декомпозиция T26 | T120–T123, T144 | T120–T122 DONE; NEXT: T123 → T144 | [22-configurable-formatting.md](22-configurable-formatting.md) |
+| Гибкий fmt (F1–F5), декомпозиция T26 | T120–T123, T144 | T120–T123 DONE; IN-PROGRESS: T144 | [22-configurable-formatting.md](22-configurable-formatting.md) |
 | Права на компоненты, редакторы и помощники (L1, E1–E8), XDTO | T124–T133 | T128 требует T125; T129 требует T116/T119; T130–T132 требуют T124 и уточнения scope | [23-metadata-editors.md](23-metadata-editors.md) |
 | Компактный конструктор запросов | T134–T142 | T134 → T135; T136 требует T116/T117; T142 объединяет UI и семантическую приёмку | [24-compact-query-constructor.md](24-compact-query-constructor.md) |
 | Скорость компактного конструктора | T143 | DONE; согласованные допуски 400/150 мс выполнены | [25-compact-constructor-performance.md](25-compact-constructor-performance.md) |
@@ -523,7 +523,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T120 | DONE | Профиль 1С, схема, наследование и миграция настроек форматирования (F1) | [22-configurable-formatting.md](22-configurable-formatting.md#t120--политика-и-схема-настроек-форматирования-f1) |
 | T121 | DONE | Самостоятельный форматтер BSL в ESKA (F2) | [22-configurable-formatting.md](22-configurable-formatting.md#t121--гибкий-форматтер-bsl-f2) |
 | T122 | DONE | Форматтер SDBL и встроенных запросов в ESKA (F3) | [22-configurable-formatting.md](22-configurable-formatting.md#t122--гибкий-форматтер-sdbl-и-встроенных-запросов-f3) |
-| T123 | IN-PROGRESS | `eska-fmt`, делегирование `eska fmt` и интеграция IDE/CI (F4) | [22-configurable-formatting.md](22-configurable-formatting.md#t123--единый-fmt-для-cli-ci-и-explorer-f4) |
+| T123 | DONE | `eska-fmt`, делегирование `eska fmt` и интеграция IDE/CI (F4) | [22-configurable-formatting.md](22-configurable-formatting.md#t123--единый-fmt-для-cli-ci-и-explorer-f4) |
 | T124 | PLANNED | Происхождение компонентов и права на выбранные редакторы (L1) | [23-metadata-editors.md](23-metadata-editors.md#t124--происхождение-компонентов-и-права-на-выбранные-редакторы-l1) |
 | T125 | PLANNED | Создание, копирование и удаление метаданных (E1) | [23-metadata-editors.md](23-metadata-editors.md#t125--создание-копирование-и-удаление-метаданных-e1) |
 | T126 | PLANNED | Редактор прав ролей (E2) | [23-metadata-editors.md](23-metadata-editors.md#t126--редактор-прав-ролей-e2) |
@@ -544,7 +544,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T141 | DONE | Связанный текст, комментарии и просмотр изменений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t141--связанный-текст-комментарии-и-просмотр-изменений) |
 | T142 | IN-PROGRESS | Приёмка компактного конструктора | [24-compact-query-constructor.md](24-compact-query-constructor.md#t142--приёмка-компактного-конструктора) |
 | T143 | DONE | Скорость компактного конструктора; 240,09/50,59 мс в пределах допуска | [25-compact-constructor-performance.md](25-compact-constructor-performance.md) |
-| T144 | PLANNED | Поставка и приёмка отдельного `eska-fmt` (F5) | [22-configurable-formatting.md](22-configurable-formatting.md#t144--поставка-и-приёмка-отдельного-eska-fmt-f5) |
+| T144 | IN-PROGRESS | Поставка и приёмка отдельного `eska-fmt` (F5) | [22-configurable-formatting.md](22-configurable-formatting.md#t144--поставка-и-приёмка-отдельного-eska-fmt-f5) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в
