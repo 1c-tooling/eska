@@ -74,3 +74,48 @@ pub struct Response {
     pub edits: Vec<Edit>,
     pub formatted_range: Range,
 }
+
+impl Response {
+    /// Validate component output before an adapter converts offsets or applies a native edit.
+    ///
+    /// # Errors
+    /// Rejects wrong snapshots, future schemas, unsafe/overlapping ranges and oversized output.
+    pub fn validate(&self, request: &Request) -> Result<(), Error> {
+        request.validate()?;
+        if self.schema_version != SCHEMA_VERSION
+            || self.source_sha256 != source_sha256(&request.text)
+        {
+            return Err(Error::new("invalid_response", "snapshot"));
+        }
+        let actual = self.formatted_range;
+        if actual.start > actual.end
+            || !request.text.is_char_boundary(actual.start)
+            || !request.text.is_char_boundary(actual.end)
+            || self.edits.len() > 1024
+        {
+            return Err(Error::new("invalid_response", "formatted_range"));
+        }
+        let mut previous = None;
+        let mut length = request.text.len();
+        for edit in &self.edits {
+            if edit.range.start < actual.start
+                || edit.range.end > actual.end
+                || edit.range.start > edit.range.end
+                || !request.text.is_char_boundary(edit.range.start)
+                || !request.text.is_char_boundary(edit.range.end)
+                || previous.is_some_and(|range: Range| {
+                    range.end > edit.range.start || range.start == edit.range.start
+                })
+            {
+                return Err(Error::new("invalid_response", "edits"));
+            }
+            length = length
+                .checked_sub(edit.range.end - edit.range.start)
+                .and_then(|length| length.checked_add(edit.text.len()))
+                .filter(|length| *length <= 16 * 1024 * 1024)
+                .ok_or_else(|| Error::new("invalid_response", "output_size"))?;
+            previous = Some(edit.range);
+        }
+        Ok(())
+    }
+}

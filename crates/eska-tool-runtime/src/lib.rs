@@ -9,7 +9,7 @@ mod query;
 mod resolver;
 pub mod vcs;
 
-pub use capture::capture;
+pub use capture::{capture, capture_input};
 pub use exchange::{Operation, exchange};
 pub use process::delegate;
 pub use query::{QueryPolicy, query, query_with_policy};

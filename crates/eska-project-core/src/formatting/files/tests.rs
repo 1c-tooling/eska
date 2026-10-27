@@ -92,3 +92,25 @@ fn cancellation_before_preflight_does_not_write_sources_or_lock_storage() {
         "A=1;"
     );
 }
+
+/// A configuration change during formatting invalidates the complete plan before publication.
+#[test]
+fn changed_style_manifest_rejects_an_obsolete_plan() {
+    let directory = TestDir::new();
+    fs::create_dir(directory.0.join("src")).unwrap();
+    let manifest = directory.0.join("eska.toml");
+    fs::write(&manifest, "[project]\ntype='configuration'\n").unwrap();
+    let source = plan(&directory, "src/A.bsl");
+    let mut context = Context::open(&directory.0, &[], false).unwrap();
+    fs::write(
+        &manifest,
+        "[project]\ntype='configuration'\n[format.bsl]\ncolumn_limit=80\n",
+    )
+    .unwrap();
+    let result = publish(&mut context, &[source], &AtomicBool::new(false));
+    assert_eq!(result.error.unwrap().code, "config_conflict");
+    assert_eq!(
+        fs::read_to_string(directory.0.join("src/A.bsl")).unwrap(),
+        "A=1;"
+    );
+}

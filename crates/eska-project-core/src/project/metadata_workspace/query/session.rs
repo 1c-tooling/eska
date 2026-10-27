@@ -427,6 +427,41 @@ impl QuerySession {
         Ok(())
     }
 
+    /// Authorize only a formatting plan for the acknowledged draft; no source-application token is issued.
+    ///
+    /// # Errors
+    /// Rejects stale drafts, constructor ownership, paused/applying sessions and current source restrictions.
+    pub fn check_draft_formatting(
+        &self,
+        project: &mut ProjectSession,
+        expected: u64,
+        native_draft: &str,
+        user_read_only: bool,
+    ) -> Result<(), QuerySessionError> {
+        self.check_revision(expected)?;
+        self.check_constructor_idle()?;
+        match self.phase {
+            Phase::Ready => (),
+            Phase::Applying(_) | Phase::Recovering(_) => return Err(QuerySessionError::ApplyBusy),
+            _ => return Err(QuerySessionError::ResumeRequired),
+        }
+        if !self.draft_writable() || user_read_only {
+            return Err(QuerySessionError::UserReadOnly);
+        }
+        if self.draft.as_ref() != native_draft {
+            return Err(QuerySessionError::StaleDraft);
+        }
+        self.check_project(project)?;
+        self.check_context(project, self.application.as_deref())?;
+        project
+            .check_query_source(
+                &self.document,
+                revision(&self.document),
+                self.source_restriction.as_ref(),
+            )
+            .map_err(Into::into)
+    }
+
     /// Project a checked BSL draft for analysis; no apply token, checkpoint mutation or source-write permission is issued.
     ///
     /// # Errors

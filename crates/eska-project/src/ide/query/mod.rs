@@ -4,6 +4,7 @@ mod buffers;
 mod constructors;
 mod documents;
 mod dto;
+mod formatting;
 mod params;
 mod projections;
 mod recovery;

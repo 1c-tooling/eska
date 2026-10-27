@@ -65,7 +65,9 @@ pub fn publish(context: &mut Context, plans: &[WritePlan], cancelled: &AtomicBoo
         }
     };
     for (index, (plan, temporary)) in plans.iter().zip(&temporary).enumerate() {
-        let operation = check(plan, cancelled)
+        let operation = context
+            .check_current()
+            .and_then(|()| check(plan, cancelled))
             .and_then(|()| context.check_support(&plan.path, leases.get(index)))
             .and_then(|()| {
                 fs::rename(&temporary.path, &plan.path)
@@ -89,6 +91,7 @@ fn prepare(
     plans: &[WritePlan],
     cancelled: &AtomicBool,
 ) -> Result<(Vec<Prepared>, Vec<SourceLease>), Error> {
+    context.check_current()?;
     let mut bytes = 0_usize;
     let mut paths = std::collections::BTreeSet::new();
     for plan in plans {

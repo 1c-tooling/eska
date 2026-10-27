@@ -24,6 +24,9 @@ fn formatted(input: &str, options: Options) -> String {
         range: None,
     };
     let response = super::format(&request).unwrap_or_else(|error| panic!("{error}: {input:?}"));
+    response
+        .validate(&request)
+        .expect("safe response coordinates");
     let output = apply(input, &response);
     request.text.clone_from(&output);
     assert!(

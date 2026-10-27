@@ -242,6 +242,39 @@ fn component_contract_checks_schema_and_utf8_ranges() {
     );
 }
 
+/// A formatter reply cannot authorize stale text, split UTF-8 codepoints or overlapping native edits.
+#[test]
+fn component_response_rejects_stale_or_unsafe_coordinate_plans() {
+    let request = protocol::Request {
+        schema_version: 1,
+        language: Language::Bsl,
+        text: "Я=1;".into(),
+        options: super::Options::default(),
+        range: None,
+    };
+    let mut response = protocol::Response {
+        schema_version: 1,
+        source_sha256: protocol::source_sha256(&request.text),
+        edits: vec![protocol::Edit {
+            range: protocol::Range { start: 2, end: 3 },
+            text: " = ".into(),
+        }],
+        formatted_range: protocol::Range {
+            start: 0,
+            end: request.text.len(),
+        },
+    };
+    response.validate(&request).unwrap();
+    response.edits[0].range.start = 1;
+    assert_eq!(response.validate(&request).unwrap_err().field, "edits");
+    response.edits[0].range.start = 2;
+    response.edits.push(response.edits[0].clone());
+    assert_eq!(response.validate(&request).unwrap_err().field, "edits");
+    response.edits.pop();
+    response.source_sha256 = "0".repeat(64);
+    assert_eq!(response.validate(&request).unwrap_err().field, "snapshot");
+}
+
 /// Filesystem migration owns a backup, preserves bytes and detects intervening edits.
 #[test]
 fn migration_writes_only_the_reviewed_snapshot_and_keeps_a_recovery_copy() {

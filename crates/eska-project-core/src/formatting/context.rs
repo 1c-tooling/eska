@@ -101,6 +101,23 @@ impl Context {
         &self.root
     }
 
+    /// Keep a planned style bound to the exact manifests that supplied it.
+    ///
+    /// # Errors
+    /// Rejects a newly introduced, removed or edited manifest before applying an obsolete policy.
+    pub fn check_current(&self) -> Result<(), Error> {
+        if self.layers.is_empty() && has_manifest(&self.root)? {
+            return Err(Error::new("config_conflict", "eska.toml"));
+        }
+        for layer in &self.layers {
+            let path = layer.root.join("eska.toml");
+            if fs::read_to_string(&path).ok().as_ref() != Some(&layer.manifest) {
+                return Err(Error::new("config_conflict", path.to_string_lossy()));
+            }
+        }
+        Ok(())
+    }
+
     /// Resolve the same workspace/member layers for a native buffer, query owner or disk file.
     ///
     /// # Errors

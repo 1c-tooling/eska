@@ -281,7 +281,7 @@ fn describe(state: &SourceProtection) -> Value {
     json!({"path":dto::path(&state.support.path),"objects":state.support.objects,"supportReadOnly":state.support.read_only,
         "supportReason":state.support.reason,"supportUnknown":state.support.unknown,"mixed":state.support.mixed,
         "supportEnforced":state.support_enforced,"userReadOnly":state.user_read_only,"filesystemReadOnly":state.filesystem_read_only(),
-        "exists":state.exists(),"writable":state.writable(),"diagnostics":state.diagnostics,
+        "exists":state.exists(),"writable":state.writable(),"diagnostics":state.diagnostics,"sharedReadOnly":state.shared_read_only,
         "restrictions":state.restrictions.iter().map(|owner|json!({"id":owner.id.to_string(),"source":dto::path(&owner.source)})).collect::<Vec<_>>()})
 }
 

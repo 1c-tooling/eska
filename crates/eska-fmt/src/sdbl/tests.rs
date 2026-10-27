@@ -15,6 +15,9 @@ fn formatted(input: &str, options: Options) -> String {
         range: None,
     };
     let response = crate::format(&request).unwrap_or_else(|error| panic!("{error}: {input}"));
+    response
+        .validate(&request)
+        .expect("safe response coordinates");
     let mut output = input.to_owned();
     for edit in response.edits.iter().rev() {
         output.replace_range(edit.range.start..edit.range.end, &edit.text);

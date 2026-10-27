@@ -445,3 +445,49 @@ fn source_session_restriction_is_shared_with_an_independent_workspace() {
     assert!(!protection[0].shared_read_only);
     assert!(protection[0].writable());
 }
+
+/// Draft formatting cannot borrow constructor ownership, stale native text or an obsolete support permission.
+#[test]
+fn draft_formatting_requires_current_owned_and_writable_session() {
+    let (directory, mut workspace, node, path) = setup();
+    let project = workspace.project_mut(&ProjectScope::Standalone).unwrap();
+    let document = project.query_document(&node, &path, 7, None).unwrap();
+    let selected = identity(&document);
+    let mut session = QuerySession::open(
+        project,
+        document,
+        selected,
+        None,
+        QueryOwnerFormat::Source,
+        QueryOwnerRestrictions::default(),
+    )
+    .unwrap();
+    session
+        .check_draft_formatting(project, session.revision(), session.draft(), false)
+        .unwrap();
+    assert!(matches!(
+        session.check_draft_formatting(project, session.revision(), "different draft", false),
+        Err(QuerySessionError::StaleDraft)
+    ));
+    assert!(matches!(
+        session.check_draft_formatting(project, session.revision(), session.draft(), true),
+        Err(QuerySessionError::UserReadOnly)
+    ));
+    let token = session.open_constructor(session.revision()).unwrap();
+    assert!(matches!(
+        session.check_draft_formatting(project, session.revision(), session.draft(), false),
+        Err(QuerySessionError::ConstructorBusy)
+    ));
+    session.cancel_constructor(token).unwrap();
+    let root = "11111111-1111-1111-1111-111111111111";
+    fs::write(directory.0.join("src/Ext/ParentConfigurations.bin"),format!("{{6,0,1,{root},0,{root},\"1\",\"Vendor\",\"Test\",1,0,0,{root},{root},0,0,0,1,0,0,0,1,0,1,0,1,1,1,1}}")).unwrap();
+    assert!(
+        session
+            .check_draft_formatting(project, session.revision(), session.draft(), false)
+            .is_err()
+    );
+    assert_eq!(
+        fs::read_to_string(directory.0.join("src").join(path)).unwrap(),
+        INPUT
+    );
+}

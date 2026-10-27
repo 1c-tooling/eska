@@ -1971,3 +1971,65 @@ FOR UPDATE разрешён для отдельного корневого SELEC
 грамматики требует анализатора/платформы и этим capability не заявляется.
 Ошибка оставляет текущий текст и ревизию неизменными. Успех публикует одну
 ревизию; запрет поддержки и проверка владельца общие со всеми действиями.
+
+### API 1.33: независимое форматирование документа и query-черновика
+
+Capability `formatting` доступна при handshake 1.33:
+`{schemaVersion:1,component:"eska-fmt",protocolVersion:1,planOnly:true,
+writesOwner:false,languages:["bsl","sdbl"],document:true,range:true,
+queryDraft:true,formatOnSave:"opt_in",maxTextBytes:4194304,maxInlineBytes:131072}`.
+Capability не обещает установленный компонент. Сервер проверяет его tool-contract,
+вызывает `eska-fmt __format-text` и проверяет snapshot/координаты ответа.
+Копия алгоритма и запуск анализатора для этого не используются.
+
+Все методы request-only. `format/document` работает после initialize без
+workspace/open. Параметры: `{source:Path,version:string,userReadOnly:boolean,
+text?:string,bufferId?:string,range?:{start:number,end:number},formatter?:Path}`.
+`source` — абсолютный существующий BSL/SDBL-файл внутри обслуживаемого каталога
+процесса либо открытого metadata project. Ровно один text/bufferId обязателен.
+Version — положительный native u64 counter, range — UTF-8 bytes в переданном тексте.
+`formatter` явно выбирает executable; иначе действует обычный resolver компонентов.
+Нативные tab/indent options не заменяют стиль из `eska.toml`.
+
+Обычный документ может быть dirty: переданный текст является native-снимком.
+Сервер проверяет поддержку/права/общие source leases, дисковый fingerprint и
+неизменность manifest до выдачи плана. Адаптер повторно проверяет версию/текст
+своего буфера и применяет byte edits штатным Undo/Redo. Сервер не сохраняет файл
+и не обещает видеть несохранённый буфер другой IDE. Исключённый файл возвращает
+пустой план без чтения тела дискового файла и запуска компонента.
+
+`format/query` принимает те же version/text/bufferId/range/userReadOnly/formatter
+и `{...context,querySessionId,revision}` вместо source. Контекст и revision
+идентифицируют уже подтверждённый query-черновик. Текст должен побайтно совпадать
+с draft этой ревизии; адаптер сначала завершает pending checkpoint. Нужны
+возобновлённая writable-сессия, актуальные источник/поддержка и отсутствие
+активного конструктора. Форматирование не обновляет draft/checkpoint само:
+после native edit адаптер использует прежний путь сохранения черновика.
+Владелец, источник и формат хранения запроса при этом не меняются.
+
+Для больших текстов без metadata session:
+`format/bufferBegin:{bytes:number,snapshot:string}` → `{bufferId,receivedBytes,ready}`;
+`format/bufferAppend:{bufferId,offset:number,text:string}` → тот же прогресс;
+`format/bufferClose:{bufferId}` → `{released:boolean}`.
+Это отдельное пространство имён существующего bounded query storage: chunk
+до 128 KiB, upload до 8 MiB, общий connection budget 32 MiB/64 entries.
+Полный форматируемый текст ограничен 4 MiB. Snapshot — SHA-256 точных UTF-8 bytes;
+offset последовательный. Cleanup обязателен и после отмены. Workspace close,
+shutdown и EOF освобождают handles. Buffer mutations сохраняют acknowledgement
+при поздней отмене; сами formatting plans не считаются записью состояния.
+
+Ответ обоих методов: `{schemaVersion:1,version,plan,effective,formatterVersion}`.
+`plan` — Response [чистого протокола форматтера](formatting.md), с `source_sha256`,
+`edits` и расширенным `formatted_range`; его внутренние ключи snake_case.
+Effective содержит полный стиль и origins. `formatterVersion` — фактически
+проверенная версия или null для исключённого файла. Смена источника/config,
+невалидные координаты, несовместимость или отсутствие executable отвергают план.
+Domain `formatting_failed` содержит `details:{code,field,offset?}`; причины
+query-сессии сохраняют существующий domain `query_failed`. Отмена/EOF завершают
+только принадлежащий запросу процесс, без правок исходника и analyzer fallback.
+
+`Protection` дополнен необязательным для старых клиентов `sharedReadOnly:boolean`.
+Он обозначает блокировку другим backend-процессом или недоступную координацию;
+`writable` по-прежнему определяет core. Пустые `.eska/source-locks/*.lock` —
+постоянные inode для OS leases: закрытие последнего handle/процесса снимает
+владение, сами имена не удаляются. Числовой ID другой сессии права не предоставляет.
