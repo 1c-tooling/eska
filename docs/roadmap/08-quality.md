@@ -22,7 +22,7 @@ tasks. Код команды, собственный test runner и новая d
 
 ## T26 — `eska fmt`
 
-**Статус:** `PLANNED`
+**Статус:** `IN-PROGRESS`
 **Зависит от:** T03, T19, T144
 
 Режимы `fmt`, `fmt <scope>`, `fmt --check`; project/object-aware scope,
@@ -36,7 +36,8 @@ tasks. Код команды, собственный test runner и новая d
 и поставка отдельного компонента. Уточнение от 2026-10-27: самостоятельный
 `eska-fmt`, делегирование `eska fmt`, профиль 1С по умолчанию и первичный
 `eska.toml`. Алгоритм форматирования принадлежит ESKA и не требует bsl-analyzer.
-T120–T123 — `DONE`, T144 — `IN-PROGRESS`; T26 завершается после приёмки T144.
+T120–T123 и T144 — `DONE` для локальной поставки и Linux/VSCodium ru/en.
+T26 ожидает пользовательской приёмки; [отчёт](../measurements/t144-formatting.json).
 
 ## T27 — `eska check`
 

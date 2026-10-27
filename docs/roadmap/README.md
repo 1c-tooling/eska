@@ -6,13 +6,12 @@
 
 ## Текущее состояние
 
-По запросу от **2026-10-27** следующее направление — самостоятельный
-**`eska-fmt` и `eska fmt`**, профиль 1С по умолчанию и гибкая конфигурация
-в `eska.toml`. **T120–T123 — `DONE`, T144 — `IN-PROGRESS`**; далее **T144**.
-Форматтер принадлежит ESKA и не зависит от bsl-analyzer. T144 добавлена для
-поставки отдельного компонента; T26 остаётся сводной задачей.
-[Уточнённый план для проверки](22-configurable-formatting.md).
-Политика T120 и алгоритм BSL T121 реализованы; SDBL и интерфейсы следуют по очереди.
+Очередь **T120 → T121 → T122 → T123 → T144 — `DONE`** для локальной поставки
+и Linux/VSCodium ru/en: самостоятельный `eska-fmt`, делегирование `eska fmt`,
+профиль 1С, CLI/RPC/Explorer и выборочная установка. Анализатор не требуется.
+[Отчёт и замеры](../measurements/t144-formatting.json). T26 ожидает
+пользовательской приёмки. Публичный релиз не создавался.
+
 Остальные направления backlog этим запросом не запускаются.
 
 Последующим запросом завершено ревью и ускорение компактного конструктора:
@@ -274,7 +273,7 @@ T115–T119 и релизов анализатора. Семантические
 | Направление | Задачи | Зависимости внутри направления | Подробности |
 | --- | --- | --- | --- |
 | Типы, диагностики и панель запросов (Q1–Q5) | T115–T119 | T115 → T116; T118 и T119 требуют T116/T117 | [21-query-analysis.md](21-query-analysis.md) |
-| Гибкий fmt (F1–F5), декомпозиция T26 | T120–T123, T144 | T120–T123 DONE; IN-PROGRESS: T144 | [22-configurable-formatting.md](22-configurable-formatting.md) |
+| Гибкий fmt (F1–F5), декомпозиция T26 | T120–T123, T144 | T120–T123, T144 DONE; T26: пользовательская приёмка | [22-configurable-formatting.md](22-configurable-formatting.md) |
 | Права на компоненты, редакторы и помощники (L1, E1–E8), XDTO | T124–T133 | T128 требует T125; T129 требует T116/T119; T130–T132 требуют T124 и уточнения scope | [23-metadata-editors.md](23-metadata-editors.md) |
 | Компактный конструктор запросов | T134–T142 | T134 → T135; T136 требует T116/T117; T142 объединяет UI и семантическую приёмку | [24-compact-query-constructor.md](24-compact-query-constructor.md) |
 | Скорость компактного конструктора | T143 | DONE; согласованные допуски 400/150 мс выполнены | [25-compact-constructor-performance.md](25-compact-constructor-performance.md) |
@@ -426,7 +425,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T23 | DEFERRED | Спецификация test backend | [08-quality.md](08-quality.md) |
 | T24 | PLANNED | `affected` analysis | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
 | T25 | DONE | Versioning проекта 1С | [10-delivery-and-integrations.md](10-delivery-and-integrations.md) |
-| T26 | PLANNED | `eska-fmt` / `eska fmt`, сводная следующей очереди T120–T123, T144 | [08-quality.md](08-quality.md) |
+| T26 | IN-PROGRESS | `eska-fmt` / `eska fmt`: реализация и Linux-проверки готовы; пользовательская приёмка | [08-quality.md](08-quality.md) |
 | T27 | PLANNED | `eska check` | [08-quality.md](08-quality.md) |
 | T28 | DONE | Build через `ibcmd` | [09-build-and-runtime.md](09-build-and-runtime.md) |
 | T29 | DONE | `eska doctor` | [09-build-and-runtime.md](09-build-and-runtime.md) |
@@ -544,7 +543,7 @@ BSL LSP и визуальный редактор форм в это направ
 | T141 | DONE | Связанный текст, комментарии и просмотр изменений | [24-compact-query-constructor.md](24-compact-query-constructor.md#t141--связанный-текст-комментарии-и-просмотр-изменений) |
 | T142 | IN-PROGRESS | Приёмка компактного конструктора | [24-compact-query-constructor.md](24-compact-query-constructor.md#t142--приёмка-компактного-конструктора) |
 | T143 | DONE | Скорость компактного конструктора; 240,09/50,59 мс в пределах допуска | [25-compact-constructor-performance.md](25-compact-constructor-performance.md) |
-| T144 | IN-PROGRESS | Поставка и приёмка отдельного `eska-fmt` (F5) | [22-configurable-formatting.md](22-configurable-formatting.md#t144--поставка-и-приёмка-отдельного-eska-fmt-f5) |
+| T144 | DONE | Поставка и приёмка отдельного `eska-fmt` (F5) | [22-configurable-formatting.md](22-configurable-formatting.md#t144--поставка-и-приёмка-отдельного-eska-fmt-f5) |
 
 Отложенные и пока недостаточно определённые возможности перечислены в
 [99-deferred.md](99-deferred.md). Общие правила для каждой задачи находятся в

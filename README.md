@@ -44,7 +44,7 @@ Save сохраняет черновик; «Применить» меняет м
 | --- | --- | --- |
 | [`eska-project`](docs/project-cli.md) | Проект, контекст приложения, Metadata API, существующие свойства и переименование | Designer XML; для дерева не нужны Git, платформа или анализатор |
 | [`eska-check`](docs/check-cli.md) | Структурная проверка XML и полный анализ BSL для CI | Внешний `bsl-analyzer-app` |
-| [`eska-fmt`](docs/formatting.md) | Настраиваемое форматирование BSL/SDBL и статических запросов | Без анализатора; отдельная поставка в работе T144 |
+| [`eska-fmt`](docs/formatting.md) | Настраиваемое форматирование BSL/SDBL и статических запросов | Без анализатора; отдельный опциональный компонент, Linux-приёмка T144 |
 | [`eska-build`](docs/build-tool.md) | Сборка, распаковка, import, patch и служебная ИБ | Платформа 1С с `ibcmd`; import/patch также используют `eska-vcs` |
 | [`eska-vcs`](docs/vcs-tool.md) | Workflow, status, semantic diff, commits и полки | Git для операций записи и transport; чтение выполняется через `gix` |
 | [`eska`](docs/component-delegation.md) | Общая команда, вызывающая нужный компонент | Компоненты выбранной операции |
