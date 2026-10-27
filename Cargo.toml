@@ -19,20 +19,20 @@ exclude = ["tests/fixtures/ibcmd"]
 resolver = "3"
 
 [workspace.package]
-version = "0.18.0"
+version = "0.19.0"
 
 [workspace.dependencies]
-eska-analyzer = { path = "crates/eska-analyzer", version = "=0.18.0" }
-eska-build = { path = "crates/eska-build", version = "=0.18.0" }
-eska-build-runtime = { path = "crates/eska-build-runtime", version = "=0.18.0" }
-eska-check = { path = "crates/eska-check", version = "=0.18.0" }
-eska-fmt = { path = "crates/eska-fmt", version = "=0.18.0" }
-eska-presentation = { path = "crates/eska-presentation", version = "=0.18.0" }
-eska-project = { path = "crates/eska-project", version = "=0.18.0" }
-eska-project-core = { path = "crates/eska-project-core", version = "=0.18.0" }
-eska-terminal = { path = "crates/eska-terminal", version = "=0.18.0" }
-eska-tool-runtime = { path = "crates/eska-tool-runtime", version = "=0.18.0" }
-eska-vcs = { path = "crates/eska-vcs", version = "=0.18.0" }
+eska-analyzer = { path = "crates/eska-analyzer", version = "=0.19.0" }
+eska-build = { path = "crates/eska-build", version = "=0.19.0" }
+eska-build-runtime = { path = "crates/eska-build-runtime", version = "=0.19.0" }
+eska-check = { path = "crates/eska-check", version = "=0.19.0" }
+eska-fmt = { path = "crates/eska-fmt", version = "=0.19.0" }
+eska-presentation = { path = "crates/eska-presentation", version = "=0.19.0" }
+eska-project = { path = "crates/eska-project", version = "=0.19.0" }
+eska-project-core = { path = "crates/eska-project-core", version = "=0.19.0" }
+eska-terminal = { path = "crates/eska-terminal", version = "=0.19.0" }
+eska-tool-runtime = { path = "crates/eska-tool-runtime", version = "=0.19.0" }
+eska-vcs = { path = "crates/eska-vcs", version = "=0.19.0" }
 
 [profile.dev]
 opt-level = 0 # No optimization for fast compile times
