@@ -6,6 +6,7 @@ use sha2::{Digest, Sha256};
 
 pub const SCHEMA_VERSION: u32 = 1;
 pub const MAX_TEXT_BYTES: usize = 4 * 1024 * 1024;
+pub const MAX_OUTPUT_BYTES: usize = 16 * 1024 * 1024;
 
 /// Bind a plan to exact UTF-8 source bytes, including BOM and line endings.
 #[must_use]
@@ -112,7 +113,7 @@ impl Response {
             length = length
                 .checked_sub(edit.range.end - edit.range.start)
                 .and_then(|length| length.checked_add(edit.text.len()))
-                .filter(|length| *length <= 16 * 1024 * 1024)
+                .filter(|length| *length <= MAX_OUTPUT_BYTES)
                 .ok_or_else(|| Error::new("invalid_response", "output_size"))?;
             previous = Some(edit.range);
         }

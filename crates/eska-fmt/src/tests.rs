@@ -36,6 +36,60 @@ fn formatted(input: &str, options: Options) -> String {
     output
 }
 
+/// Selecting only EOF trivia still returns an edit contained in the advertised source range.
+#[test]
+fn trailing_trivia_ranges_have_valid_coordinates() {
+    for text in ["А=1;   ", "А=1;\r\n   ", "// comment   "] {
+        for start in text.len() - 3..=text.len() {
+            let request = Request {
+                schema_version: 1,
+                language: Language::Bsl,
+                text: text.into(),
+                options: Options {
+                    comments: eska_project_core::formatting::Comments::Preserve,
+                    ..Options::default()
+                },
+                range: Some(eska_project_core::formatting::protocol::Range {
+                    start,
+                    end: text.len(),
+                }),
+            };
+            let response = super::format(&request).unwrap();
+            assert!(response.validate(&request).is_ok(), "{text:?}: {start}");
+            let output = apply(text, &response);
+            assert!(output.starts_with(if text.starts_with("//") {
+                text
+            } else {
+                "А=1;"
+            }));
+            assert!(output.ends_with('\n'));
+        }
+    }
+}
+
+/// Many individually small units must share the documented whole-document output budget.
+#[test]
+fn output_limit_covers_all_bsl_units() {
+    let text = format!(
+        "{}{}{}",
+        "If A Then\n".repeat(127),
+        "B=1;\n".repeat(4_200),
+        "EndIf;\n".repeat(127)
+    );
+    let request = Request {
+        schema_version: 1,
+        language: Language::Bsl,
+        text,
+        options: Options {
+            indent_style: eska_project_core::formatting::IndentStyle::Space,
+            indent_width: 32,
+            ..Options::default()
+        },
+        range: None,
+    };
+    assert!(matches!(super::format(&request), Err(error) if error.code == "output_too_large"));
+}
+
 /// Ordinary nested code uses one tab per block and canonical reserved words.
 #[test]
 fn default_bsl_profile_formats_blocks_calls_and_operators() {

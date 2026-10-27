@@ -7,6 +7,7 @@ use super::{
 use crate::{
     bsl::layout::{indentation, width},
     lex::{Kind, Token},
+    output::append,
 };
 use eska_project_core::formatting::{Error, Options, Wrapping};
 use std::ops::Range;
@@ -83,35 +84,33 @@ pub fn render(
                 .count()
                 .min(usize::from(options.max_empty_lines) + 1);
             if !options.trim_trailing_whitespace && original_line {
-                output.push_str(
+                append(
+                    &mut output,
                     raw.split('\n')
                         .next()
                         .unwrap_or_default()
                         .trim_end_matches('\r'),
-                );
+                )?;
             }
-            output.push_str(&eol.repeat(lines.max(retained)));
-            output.push_str(&indentation(next_indent, options));
+            append(&mut output, &eol.repeat(lines.max(retained)))?;
+            append(&mut output, &indentation(next_indent, options))?;
             column = next_indent;
             indent = next_indent;
         } else if output.is_empty() {
-            output.push_str(&indentation(next_indent, options));
+            append(&mut output, &indentation(next_indent, options))?;
             column = next_indent;
             indent = next_indent;
         } else if space(tokens, roles, index, options) {
-            output.push(' ');
+            append(&mut output, " ")?;
             column += 1;
         }
         if events[index].alias > 0 {
-            output.push_str(&" ".repeat(events[index].alias));
+            append(&mut output, &" ".repeat(events[index].alias))?;
             column += events[index].alias;
         }
-        output.push_str(&text);
+        append(&mut output, &text)?;
         column = width(&text, column, options.tab_width);
         comment = token.kind == Kind::Comment && token.text.starts_with("//");
-        if output.len() > 16 * 1024 * 1024 {
-            return Err(Error::new("output_too_large", "sdbl"));
-        }
     }
     Ok(output)
 }

@@ -114,6 +114,41 @@ fn complete_preflight_keeps_all_sources_on_failure() {
     );
 }
 
+/// Output expansion is rejected during planning, preserving every file with identical ru/en results.
+#[test]
+fn excessive_output_keeps_the_complete_batch_unchanged() {
+    let directory = TestDir::new();
+    let large = format!(
+        "{}{}{}",
+        "If A Then\n".repeat(127),
+        "B=1;\n".repeat(4_200),
+        "EndIf;\n".repeat(127)
+    );
+    fs::write(directory.0.join("A.bsl"), "A=1;").unwrap();
+    fs::write(directory.0.join("Z.bsl"), &large).unwrap();
+    let args = [
+        "--style",
+        r#"{"indent_style":"space","indent_width":32}"#,
+        "--format",
+        "json",
+    ];
+    let ru = checked(&run(&directory.0, "ru", &args), 2);
+    let en = checked(&run(&directory.0, "en", &args), 2);
+    assert_eq!(ru, en);
+    assert_eq!(ru["error"]["code"], "output_too_large");
+    assert_eq!(ru["files"][0]["status"], "not_applied");
+    assert_eq!(ru["files"][1]["status"], "failed");
+    assert_eq!(
+        fs::read_to_string(directory.0.join("A.bsl")).unwrap(),
+        "A=1;"
+    );
+    assert_eq!(
+        fs::read_to_string(directory.0.join("Z.bsl")).unwrap(),
+        large
+    );
+    assert!(!directory.0.join(".eska").exists());
+}
+
 /// A native query lease in another process is visible to the standalone formatter and released by drop.
 #[test]
 fn shared_source_lease_blocks_the_cli() {

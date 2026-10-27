@@ -32,6 +32,31 @@ fn formatted(input: &str, options: Options) -> String {
     output
 }
 
+/// UTF-8 BOM does not hide a first-line formatter marker from the query lexer.
+#[test]
+fn bom_preserves_disabled_query_bytes() {
+    let input = "\u{feff}// eska-fmt off\r\nselect  1 as A\r\n// eska-fmt on\r\n";
+    assert_eq!(formatted(input, Options::default()), input);
+}
+
+/// Preserved whitespace on the last physical line precedes a newly inserted final newline.
+#[test]
+fn query_tail_preserves_whitespace_with_final_newline() {
+    for (input, tail) in [
+        ("select 1 as A\n   ", "\n   \n"),
+        ("select 1 as A\r\n \t", "\r\n \t\r\n"),
+    ] {
+        let output = formatted(
+            input,
+            Options {
+                trim_trailing_whitespace: false,
+                ..Options::default()
+            },
+        );
+        assert!(output.ends_with(tail), "{output:?}");
+    }
+}
+
 /// Defaults use native SELECT layout without renaming aliases, paths or parameters.
 #[test]
 fn clauses_and_language_roles() {

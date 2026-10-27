@@ -5,6 +5,7 @@ pub mod layout;
 mod syntax;
 
 use crate::lex::{Kind, Token};
+use crate::{output::append, trivia};
 use eska_project_core::formatting::{
     Comments, Error, Options,
     protocol::{Range, Request},
@@ -25,14 +26,14 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
             },
         ));
     }
-    let eol = eol(&request.text);
+    let eol = trivia::eol(&request.text);
     let selected = request.range.unwrap_or(Range {
         start: 0,
         end: request.text.len(),
     });
     let mut output = String::new();
     let bom = usize::from(request.text.starts_with('\u{feff}')) * 3;
-    output.push_str(&request.text[..bom]);
+    append(&mut output, &request.text[..bom])?;
     let mut previous = bom;
     let mut actual = Range {
         start: request.text.len(),
@@ -62,51 +63,42 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
             actual.start = actual.start.min(previous);
             actual.end = end;
             let indent = unit.level * usize::from(request.options.indent_width);
-            output.push_str(&prefix(
-                &request.text[previous..part[0].range.start],
-                &request.options,
-                indent,
-                eol,
-                index == 0,
-                index > 0 && units[index - 1].kind == UnitKind::MethodEnd,
-            ));
-            output.push_str(&layout::render(
-                &request.text,
-                part,
-                &request.options,
-                indent,
-                eol,
-                alignments[index],
-            )?);
+            append(
+                &mut output,
+                &prefix(
+                    &request.text[previous..part[0].range.start],
+                    &request.options,
+                    indent,
+                    eol,
+                    index == 0,
+                    index > 0 && units[index - 1].kind == UnitKind::MethodEnd,
+                ),
+            )?;
+            append(
+                &mut output,
+                &layout::render(
+                    &request.text,
+                    part,
+                    &request.options,
+                    indent,
+                    eol,
+                    alignments[index],
+                )?,
+            )?;
         } else {
-            output.push_str(&request.text[source.clone()]);
+            append(&mut output, &request.text[source.clone()])?;
         }
         previous = end;
     }
     if selected.end == request.text.len() && !frozen.iter().any(|range| range.contains(&previous)) {
-        let tail = &request.text[previous..];
-        let old_lines = tail.chars().filter(|value| *value == '\n').count();
-        let append_after_spaces = request.options.insert_final_newline
-            && !request.options.trim_trailing_whitespace
-            && tail.rsplit('\n').next().is_some_and(|row| !row.is_empty());
-        let lines = (old_lines + usize::from(append_after_spaces))
-            .min(usize::from(request.options.max_empty_lines) + 1)
-            .max(usize::from(request.options.insert_final_newline));
-        output.push_str(&breaks(
-            tail,
-            lines,
-            eol,
-            request.options.trim_trailing_whitespace,
-        ));
-        if !request.options.trim_trailing_whitespace
-            && !request.options.insert_final_newline
-            && lines == old_lines
-        {
-            output.push_str(tail.rsplit('\n').next().unwrap_or_default());
-        }
+        append(
+            &mut output,
+            &trivia::tail(&request.text[previous..], &request.options, eol),
+        )?;
+        actual.start = actual.start.min(previous);
         actual.end = request.text.len();
     } else {
-        output.push_str(&request.text[previous..]);
+        append(&mut output, &request.text[previous..])?;
     }
     syntax::parse(&output, &crate::lex::tokens(&output, request.language)?)?;
     if actual.start > actual.end {
@@ -137,23 +129,9 @@ fn prefix(
         .max(minimum);
     format!(
         "{}{}",
-        breaks(raw, lines, eol, options.trim_trailing_whitespace),
+        trivia::breaks(raw, lines, eol, options.trim_trailing_whitespace),
         layout::indentation(indent, options)
     )
-}
-
-/// Retained physical trivia lines preserve their whitespace when trimming is disabled.
-fn breaks(raw: &str, count: usize, eol: &str, trim: bool) -> String {
-    let mut output = String::new();
-    let mut rows = raw.split('\n');
-    for _ in 0..count {
-        let row = rows.next().unwrap_or_default().trim_end_matches('\r');
-        if !trim {
-            output.push_str(row);
-        }
-        output.push_str(eol);
-    }
-    output
 }
 
 /// Markers only act as separate lexical comments; a quote containing the same text is inert.
@@ -274,16 +252,4 @@ fn finish_alignment(group: &[(usize, usize)], output: &mut [Option<usize>]) {
 /// Half-open intersection is shared by range selection and frozen-source checks.
 const fn intersects(left: &ByteRange<usize>, right: ByteRange<usize>) -> bool {
     left.start < right.end && right.start < left.end
-}
-
-/// Existing physical line endings determine inserted syntax independently of the host OS.
-fn eol(input: &str) -> &str {
-    if input
-        .find('\n')
-        .is_some_and(|at| at > 0 && input.as_bytes()[at - 1] == b'\r')
-    {
-        "\r\n"
-    } else {
-        "\n"
-    }
 }

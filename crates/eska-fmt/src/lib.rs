@@ -2,9 +2,11 @@
 
 mod bsl;
 mod lex;
+mod output;
 mod query;
 mod sdbl;
 mod spelling;
+mod trivia;
 
 pub use query::format_query;
 

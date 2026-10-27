@@ -7,8 +7,6 @@ use crate::{
 };
 use eska_project_core::formatting::{Error, IndentStyle, Options, Wrapping};
 
-const MAX_OUTPUT: usize = 16 * 1024 * 1024;
-
 /// Flat spelling is shared by fit decisions and assignment-column measurement.
 pub fn flat(tokens: &[Token<'_>], options: &Options) -> String {
     let mut text = String::new();
@@ -367,9 +365,7 @@ struct Writer<'a> {
 impl Writer<'_> {
     /// Every append is bounded before allocation; opaque multiline tokens keep their own bytes.
     fn push(&mut self, text: &str) -> Result<(), Error> {
-        if self.text.len().saturating_add(text.len()) > MAX_OUTPUT {
-            return Err(Error::new("output_too_large", "text"));
-        }
+        crate::output::append(&mut self.text, text)?;
         self.column = width(text, self.column, self.options.tab_width);
         if let Some((_, tail)) = text.rsplit_once('\n') {
             self.line_indent = width(
@@ -380,7 +376,6 @@ impl Writer<'_> {
                 self.options.tab_width,
             );
         }
-        self.text.push_str(text);
         self.has_text = true;
         Ok(())
     }

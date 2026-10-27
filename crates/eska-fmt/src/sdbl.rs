@@ -8,6 +8,7 @@ mod words;
 mod tests;
 
 use crate::lex::{Kind, Token};
+use crate::{output::append, trivia};
 use eska_project_core::{
     formatting::{
         Comments, Error,
@@ -30,15 +31,7 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
         end: request.text.len(),
     });
     let bom = usize::from(request.text.starts_with('\u{feff}')) * 3;
-    let eol = if request
-        .text
-        .find('\n')
-        .is_some_and(|at| at > 0 && request.text.as_bytes()[at - 1] == b'\r')
-    {
-        "\r\n"
-    } else {
-        "\n"
-    };
+    let eol = trivia::eol(&request.text);
     let mut output = request.text[..bom].to_owned();
     let mut previous = bom;
     let mut actual = Range {
@@ -77,29 +70,36 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
             actual.start = actual.start.min(previous);
             actual.end = end;
             if index > 0 {
-                output.push_str(
+                append(
+                    &mut output,
                     &eol.repeat(usize::from(request.options.blank_lines_between_queries) + 1),
-                );
+                )?;
             }
-            output.push_str(&layout::render(
-                &request.text,
-                tokens,
-                &roles,
-                &events,
-                first..last,
-                &request.options,
-                eol,
-            )?);
+            append(
+                &mut output,
+                &layout::render(
+                    &request.text,
+                    tokens,
+                    &roles,
+                    &events,
+                    first..last,
+                    &request.options,
+                    eol,
+                )?,
+            )?;
         } else {
-            output.push_str(&request.text[source]);
+            append(&mut output, &request.text[source])?;
         }
         previous = end;
     }
     if actual.end == request.text.len() {
         let last = tokens.last().map_or(bom, |token| token.range.end);
-        output.push_str(&tail(&request.text[last..], &request.options, eol));
+        append(
+            &mut output,
+            &trivia::tail(&request.text[last..], &request.options, eol),
+        )?;
     }
-    output.push_str(&request.text[previous..]);
+    append(&mut output, &request.text[previous..])?;
     if actual.start > actual.end {
         actual = selected;
     }
@@ -108,26 +108,6 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
         return Err(Error::new("structure_mismatch", "sdbl"));
     }
     Ok((output, actual))
-}
-
-/// End-of-file trivia follows explicit newline and trimming options without touching opaque token bodies.
-fn tail(raw: &str, options: &eska_project_core::formatting::Options, eol: &str) -> String {
-    let old = raw.chars().filter(|value| *value == '\n').count();
-    let count = old
-        .min(usize::from(options.max_empty_lines) + 1)
-        .max(usize::from(options.insert_final_newline));
-    let mut output = String::new();
-    let mut rows = raw.split('\n');
-    for _ in 0..count {
-        if !options.trim_trailing_whitespace {
-            output.push_str(rows.next().unwrap_or_default().trim_end_matches('\r'));
-        }
-        output.push_str(eol);
-    }
-    if !options.trim_trailing_whitespace && !options.insert_final_newline && count == old {
-        output.push_str(raw.rsplit('\n').next().unwrap_or_default());
-    }
-    output
 }
 
 /// CASE and typed DCS projections prove clause boundaries without broadening visual editing authority.
@@ -180,7 +160,11 @@ fn disabled(input: &str, tokens: &[Token<'_>]) -> Result<Vec<Bytes<usize>>, Erro
         let line = input[..token.range.start]
             .rfind('\n')
             .map_or(0, |at| at + 1);
-        if !input[line..token.range.start].trim().is_empty() {
+        if !input[line..token.range.start]
+            .trim_start_matches('\u{feff}')
+            .trim()
+            .is_empty()
+        {
             continue;
         }
         match token.text.trim() {
