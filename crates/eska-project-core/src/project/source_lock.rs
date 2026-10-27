@@ -1,4 +1,4 @@
-//! Shared source leases use persistent lock inodes and OS release on process exit.
+//! Shared source leases explicitly unlock persistent inodes; OS close remains the crash fallback.
 
 use sha2::{Digest, Sha256};
 use std::{
@@ -10,9 +10,19 @@ use std::{
 /// An owned handle is the write capability; filenames and numeric session IDs never grant it.
 #[derive(Debug)]
 pub struct SourceLease {
-    _files: Vec<File>,
+    _files: Vec<LockedFile>,
     root: PathBuf,
     names: Vec<String>,
+}
+
+#[derive(Debug)]
+struct LockedFile(File);
+
+impl Drop for LockedFile {
+    /// A concurrent fork may retain the open-file description until exec, so close alone is insufficient.
+    fn drop(&mut self) {
+        let _ = self.0.unlock();
+    }
 }
 
 impl SourceLease {
@@ -32,8 +42,7 @@ impl SourceLease {
         for name in &names {
             let path = directory.join(name);
             let file = open(&path, true)?;
-            lock(&file)?;
-            files.push(file);
+            files.push(lock(file)?);
         }
         Ok(Self {
             _files: files,
@@ -62,7 +71,7 @@ impl SourceLease {
             Err(error) => Err(error),
             Ok(_) => {
                 let file = open(&path, false)?;
-                lock(&file)
+                lock(file).map(drop)
             }
         }
     }
@@ -130,10 +139,40 @@ fn open(path: &Path, create: bool) -> io::Result<File> {
         .open(path)
 }
 
-/// Standard-library locks are released by close/crash; no stale PID cleanup or process killing is needed.
-fn lock(file: &File) -> io::Result<()> {
+/// Only a successful acquisition owns an unlock; failed and competing handles never release another lease.
+fn lock(file: File) -> io::Result<LockedFile> {
     file.try_lock().map_err(|error| match error {
         TryLockError::WouldBlock => io::Error::from(io::ErrorKind::WouldBlock),
         TryLockError::Error(error) => error,
-    })
+    })?;
+    Ok(LockedFile(file))
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::SourceLease;
+    use crate::test_support::TestDir;
+    use std::{fs, io};
+
+    /// A duplicate open-file description models a descriptor inherited by a concurrent subprocess spawn.
+    #[test]
+    fn released_lease_does_not_wait_for_a_duplicate_descriptor_to_close() {
+        let directory = TestDir::new();
+        let source = directory.0.join("Module.bsl");
+        fs::write(&source, "A=1;").unwrap();
+        let lease = SourceLease::acquire(&directory.0, std::slice::from_ref(&source)).unwrap();
+        let SourceLease { _files: files, .. } = &lease;
+        let duplicate = files[0].0.try_clone().unwrap();
+        drop(lease);
+        let next = SourceLease::acquire(&directory.0, std::slice::from_ref(&source)).unwrap();
+        drop(duplicate);
+        assert_eq!(
+            SourceLease::check(&directory.0, &source)
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::WouldBlock
+        );
+        drop(next);
+        SourceLease::check(&directory.0, &source).unwrap();
+    }
 }
