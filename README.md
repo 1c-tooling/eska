@@ -65,6 +65,7 @@ Save сохраняет черновик; «Применить» меняет м
 | --- | --- | --- |
 | Сборка | `eska build` | `eska-build build` |
 | Полная проверка XML/BSL | `eska check` | `eska-check` |
+| Проверка форматирования | `eska fmt --check` | `eska-fmt --check` |
 | Состояние Git | `eska status` | `eska-vcs status` |
 | Semantic diff | `eska diff --semantic` | `eska-vcs diff --semantic` |
 | Сохранение commit | `eska save -m "Сообщение"` | `eska-vcs save -m "Сообщение"` |
@@ -254,6 +255,40 @@ eska-check --analyzer /path/to/bsl-analyzer-app --format json
 [Настройки и миграция анализатора](docs/analyzer-configuration.md) ·
 [Отчёт, пороги и exit codes CI](docs/check-cli.md)
 
+## Форматирование
+
+По умолчанию используется профиль `1c`. Для выравнивания присваиваний и
+аргументов соседних вызовов, пустых строк вокруг блоков и лимита 150 колонок
+выберите в `eska.toml`:
+
+```toml
+[format]
+profile = "eska"
+profile_version = 1
+```
+
+```sh
+eska fmt --check
+eska fmt --diff
+eska fmt
+eska fmt src/CommonModules/MyModule/Ext/Module.bsl --dump-config
+```
+
+Первые две команды проверяют и показывают изменения без записи, третья применяет
+проверенный план, последняя показывает эффективные настройки указанного файла.
+Для `--check` код 1 означает необходимые правки, 2 — ошибку.
+Профиль `eska` сохраняет ручные переносы BSL; для SDBL действуют правила `1c`.
+Инициализация объекта отделяется от выравнивания его полей. Строковые значения,
+BOM и окончания строк сохраняются, ограничения поддержки проверяет ESKA.
+
+При подготовке конфига анализатора лимит строки, отступы и допустимое число
+пустых строк берутся из того же BSL-профиля. Форматирование работает и без
+анализатора. В Explorer доступны штатные команды форматирования документа
+и выделения с Undo/Redo.
+
+[Настройки, наследование и ограничения](docs/formatting.md) ·
+[Передача стиля анализатору](docs/analyzer-configuration.md)
+
 ## Работа над задачей
 
 Для сценария Git используйте проект, созданный через `eska new` или
@@ -336,6 +371,7 @@ Distrobox нужен только при размещении платформы
 | Проект | `eska-project new`, `init`, `validate`, `context`, `doctor`, `version` |
 | Метаданные / IDE | `eska-project metadata`, `serve --stdio` |
 | Анализ | `eska-project analyzer-config status/prepare/migrate`, `eska-check`, `eska check` |
+| Форматирование | `eska-fmt`, `eska fmt`: `--check`, `--diff`, `--dump-config` |
 | Сборка | `eska-build build`, `unpack`, `import`, `patch`, `clean`, `platform list`, `config` |
 | Git | `eska-vcs clone/status/diff/history/start/switch/save/finish/shelve/unshelve/shelves` |
 | Общий вход | `eska new/init/import/build/check/status/...`, `eska update` |
