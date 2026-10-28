@@ -105,9 +105,9 @@ fn select(
     let tool = if init {
         artifact::resolve_for_init(platform, localizer)
     } else {
-        artifact::resolve(platform, inherited.as_ref(), true, localizer)
+        artifact::resolve(platform, inherited.as_ref(), true, localizer).map(Some)
     }?;
-    Ok(json!({"platform_version":tool.version().as_str()}))
+    Ok(json!({"platform_version":tool.as_ref().map(|tool| tool.version().as_str())}))
 }
 
 /// Separate native staging location from the caller's exclusively owned transfer namespace.

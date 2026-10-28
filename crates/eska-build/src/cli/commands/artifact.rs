@@ -200,22 +200,24 @@ impl PlatformHandler<'_> {
         localizer: &Localizer,
     ) -> Result<Ibcmd, Failure> {
         let scope = cancellation_scope(localizer)?;
-        self.resolve_with_cancellation(
-            inherited,
-            interactive,
-            localizer,
-            "artifact-cancelled",
-            scope.as_ref(),
-        )
+        self.resolve_with_cancellation(inherited, interactive, localizer, false, scope.as_ref())
+            .and_then(|tool| {
+                tool.ok_or_else(|| {
+                    Failure::new(
+                        "platform-required",
+                        localizer.text("artifact-platform-required"),
+                    )
+                })
+            })
     }
 
-    /// Reuse native creation's platform selector with initialization-specific cancellation.
+    /// Allow configuration-only onboarding to select a platform or leave its version empty.
     ///
     /// # Errors
     /// Returns the same machine selection and validation failures as `resolve`.
-    pub fn resolve_for_init(&self, localizer: &Localizer) -> Result<Ibcmd, Failure> {
+    pub fn resolve_for_init(&self, localizer: &Localizer) -> Result<Option<Ibcmd>, Failure> {
         let scope = cancellation_scope(localizer)?;
-        self.resolve_with_cancellation(None, true, localizer, "init-cancelled", scope.as_ref())
+        self.resolve_with_cancellation(None, true, localizer, true, scope.as_ref())
     }
 
     /// Keep selection and installed-version verification identical across onboarding commands.
@@ -224,9 +226,14 @@ impl PlatformHandler<'_> {
         inherited: Option<&PlatformVersion>,
         interactive: bool,
         localizer: &Localizer,
-        cancellation_key: &str,
+        initializing: bool,
         scope: Option<&eska_tool_runtime::Operation>,
-    ) -> Result<Ibcmd, Failure> {
+    ) -> Result<Option<Ibcmd>, Failure> {
+        let cancellation_key = if initializing {
+            "init-cancelled"
+        } else {
+            "artifact-cancelled"
+        };
         let options = platform::tool_options(
             self.options.ibcmd.clone(),
             self.options.platform_arch.clone(),
@@ -251,6 +258,9 @@ impl PlatformHandler<'_> {
             version.as_str().to_owned()
         } else {
             if !interactive || !terminal() {
+                if initializing && !self.options.select_platform {
+                    return Ok(None);
+                }
                 return Err(Failure::new(
                     "platform-required",
                     localizer.text("artifact-platform-required"),
@@ -266,19 +276,22 @@ impl PlatformHandler<'_> {
                     ),
                 )
             })?;
-            if installed.is_empty() {
+            if installed.is_empty() && !initializing {
                 return Err(Failure::new(
                     "platform-not-found",
                     localizer.text("platform-none"),
                 ));
             }
-            let choices = installed
+            let mut choices = installed
                 .iter()
                 .map(|value| {
                     let version = value.version().as_str().to_owned();
                     (version.clone(), version)
                 })
                 .collect::<Vec<_>>();
+            if initializing {
+                choices.push((String::new(), localizer.text("artifact-platform-later")));
+            }
             let mut selector = Selector::start("build-platform-tui-title")
                 .map_err(|error| platform_prompt_error(error, localizer, cancellation_key))?;
             let selected = selector
@@ -289,22 +302,27 @@ impl PlatformHandler<'_> {
                 .map_err(|_| platform_prompt_error(PromptError::Io, localizer, cancellation_key))?;
             selected
         };
+        if initializing && version.is_empty() {
+            return Ok(None);
+        }
         let version = PlatformVersion::parse(&version).map_err(|_| {
             Failure::new(
                 "platform-version-invalid",
                 localizer.text("artifact-version-invalid"),
             )
         })?;
-        Ibcmd::discover(&version, &options).map_err(|error| {
-            Failure::new(
-                "platform-discovery",
-                diagnostics::present_tool_error_with_links(
-                    &error,
-                    localizer,
-                    io::stderr().is_terminal(),
-                ),
-            )
-        })
+        Ibcmd::discover(&version, &options)
+            .map(Some)
+            .map_err(|error| {
+                Failure::new(
+                    "platform-discovery",
+                    diagnostics::present_tool_error_with_links(
+                        &error,
+                        localizer,
+                        io::stderr().is_terminal(),
+                    ),
+                )
+            })
     }
 }
 
@@ -458,6 +476,9 @@ pub fn resolve(
 ///
 /// # Errors
 /// Returns the same discovery and selection failures as resolve.
-pub fn resolve_for_init(args: &PlatformArgs, localizer: &Localizer) -> Result<Ibcmd, Failure> {
+pub fn resolve_for_init(
+    args: &PlatformArgs,
+    localizer: &Localizer,
+) -> Result<Option<Ibcmd>, Failure> {
     PlatformHandler { options: args }.resolve_for_init(localizer)
 }
