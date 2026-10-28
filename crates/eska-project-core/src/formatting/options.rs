@@ -109,6 +109,12 @@ options! {
     blank_lines_between_methods: u16 = 1,
     #[serde(default)]
     blank_lines_inside_methods: u16 = 0,
+    #[serde(default)]
+    blank_lines_around_blocks: u16 = 0,
+    #[serde(default)]
+    blank_lines_inside_multistatement_blocks: u16 = 0,
+    #[serde(default)]
+    blank_lines_before_return: u16 = 0,
     trim_trailing_whitespace: bool = true,
     insert_final_newline: bool = true,
     comments: Comments = Comments::IndentOnly,
@@ -178,6 +184,24 @@ impl Options {
             (
                 "blank_lines_inside_methods",
                 self.blank_lines_inside_methods,
+                0,
+                16,
+            ),
+            (
+                "blank_lines_around_blocks",
+                self.blank_lines_around_blocks,
+                0,
+                16,
+            ),
+            (
+                "blank_lines_inside_multistatement_blocks",
+                self.blank_lines_inside_multistatement_blocks,
+                0,
+                16,
+            ),
+            (
+                "blank_lines_before_return",
+                self.blank_lines_before_return,
                 0,
                 16,
             ),

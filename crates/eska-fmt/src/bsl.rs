@@ -3,6 +3,7 @@
 mod alignment;
 mod expressions;
 pub mod layout;
+mod spacing;
 mod syntax;
 
 use crate::lex::{Kind, Token};
@@ -12,7 +13,6 @@ use eska_project_core::formatting::{
     protocol::{Range, Request},
 };
 use std::ops::Range as ByteRange;
-use syntax::UnitKind;
 
 /// Format whole grammar units and report the expanded source range to native editor adapters.
 pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range), Error> {
@@ -42,6 +42,7 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
         end: 0,
     };
     let alignments = alignment::plan(&units, tokens, &request.text, &request.options);
+    let gaps = spacing::plan(&units, tokens, &request.text, &request.options);
     for (index, unit) in units.iter().enumerate() {
         let part = &tokens[unit.tokens.clone()];
         let end = part
@@ -73,15 +74,7 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
                     indent,
                     eol,
                     index == 0,
-                    if index > 0 && units[index - 1].kind == UnitKind::MethodEnd {
-                        request.options.blank_lines_between_methods
-                    } else if unit.kind == UnitKind::MethodEnd
-                        || index > 0 && units[index - 1].kind == UnitKind::Method
-                    {
-                        request.options.blank_lines_inside_methods
-                    } else {
-                        0
-                    },
+                    gaps[index],
                 ),
             )?;
             append(
@@ -117,24 +110,17 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
     Ok((output, actual))
 }
 
-/// Preserve ordinary blank-line intent within the selected maximum, with an explicit method gap.
+/// Preserve ordinary blank-line intent within the selected structural gap policy.
 fn prefix(
     raw: &str,
     options: &Options,
     indent: usize,
     eol: &str,
     first: bool,
-    minimum_empty_lines: u16,
+    gap: spacing::Gap,
 ) -> String {
     let old = raw.chars().filter(|value| *value == '\n').count();
-    let minimum = if first {
-        0
-    } else {
-        usize::from(minimum_empty_lines) + 1
-    };
-    let lines = old
-        .min(usize::from(options.max_empty_lines) + usize::from(!first))
-        .max(minimum);
+    let lines = gap.lines(old, options, first);
     format!(
         "{}{}",
         trivia::breaks(raw, lines, eol, options.trim_trailing_whitespace),

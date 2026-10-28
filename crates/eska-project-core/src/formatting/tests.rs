@@ -18,6 +18,9 @@ fn old_protocol_options_receive_only_pinned_additive_defaults() {
         "closing_parenthesis_on_new_line",
         "preserve_existing_line_breaks",
         "blank_lines_inside_methods",
+        "blank_lines_around_blocks",
+        "blank_lines_inside_multistatement_blocks",
+        "blank_lines_before_return",
     ] {
         value.as_object_mut().unwrap().remove(key);
     }
@@ -71,6 +74,16 @@ fn eska_profile_is_versioned_language_specific_and_inheritable() {
     assert!(bsl.options.align_assignments && bsl.options.align_call_arguments);
     assert!(bsl.options.closing_parenthesis_on_new_line);
     assert_eq!(bsl.options.blank_lines_inside_methods, 1);
+    assert_eq!(bsl.options.blank_lines_around_blocks, 1);
+    assert_eq!(bsl.options.blank_lines_inside_multistatement_blocks, 1);
+    assert_eq!(bsl.options.blank_lines_before_return, 1);
+    for key in [
+        "blank_lines_around_blocks",
+        "blank_lines_inside_multistatement_blocks",
+        "blank_lines_before_return",
+    ] {
+        assert_eq!(bsl.origins[key], "profile:eska@1");
+    }
     assert_eq!(bsl.options.wrap_arguments, super::Wrapping::Fit);
     assert_eq!(bsl.options.wrap_binary, super::Wrapping::Fit);
     assert!(bsl.options.preserve_existing_line_breaks);
@@ -87,7 +100,7 @@ fn eska_profile_is_versioned_language_specific_and_inheritable() {
     assert_eq!(sdbl.options, super::policy::defaults(Language::Sdbl));
 
     let cfg = config(
-        "profile='team'\n[profiles.team]\nbased_on='eska'\n[profiles.team.bsl]\nalign_call_arguments=false\nblank_lines_inside_methods=0",
+        "profile='team'\n[profiles.team]\nbased_on='eska'\n[profiles.team.bsl]\nalign_call_arguments=false\nblank_lines_inside_methods=0\nblank_lines_around_blocks=0\nblank_lines_inside_multistatement_blocks=0\nblank_lines_before_return=0",
     );
     let inherited = resolve(
         &[Layer::new(Path::new("."), "manifest", &cfg, "").unwrap()],
@@ -102,6 +115,12 @@ fn eska_profile_is_versioned_language_specific_and_inheritable() {
     assert_eq!(inherited.profile, "team");
     assert!(!inherited.options.align_call_arguments);
     assert_eq!(inherited.options.blank_lines_inside_methods, 0);
+    assert_eq!(inherited.options.blank_lines_around_blocks, 0);
+    assert_eq!(
+        inherited.options.blank_lines_inside_multistatement_blocks,
+        0
+    );
+    assert_eq!(inherited.options.blank_lines_before_return, 0);
     assert!(inherited.options.align_assignments);
     assert_eq!(inherited.options.column_limit, 90);
     assert_eq!(inherited.origins["column_limit"], "operation");
@@ -168,6 +187,12 @@ fn strict_policies_reject_invalid_or_unsupported_options() {
         "[common]\nclosing_parenthesis_on_new_line=true",
         "[sdbl]\npreserve_existing_line_breaks=true",
         "[bsl]\nblank_lines_inside_methods=17",
+        "[bsl]\nblank_lines_around_blocks=17",
+        "[bsl]\nblank_lines_inside_multistatement_blocks=17",
+        "[bsl]\nblank_lines_before_return=17",
+        "[sdbl]\nblank_lines_around_blocks=0",
+        "[sdbl]\nblank_lines_inside_multistatement_blocks=1",
+        "[common]\nblank_lines_before_return=1",
         "[profiles.eska]\nbased_on='1c'",
         "[profiles.1c]\nbased_on='eska'",
         "exclude=['../elsewhere/**']",
