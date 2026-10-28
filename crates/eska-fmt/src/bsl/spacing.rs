@@ -5,14 +5,14 @@ use crate::{lex::Token, spelling::Key};
 use eska_project_core::formatting::Options;
 
 #[derive(Clone, Copy, Default)]
-pub(super) struct Gap {
+struct Gap {
     minimum: u16,
     maximum: Option<u16>,
 }
 
 impl Gap {
     /// Explicit structural minima override both the ordinary cap and compact single-statement bodies.
-    pub(super) fn lines(self, old: usize, options: &Options, first: bool) -> usize {
+    fn lines(self, old: usize, options: &Options, first: bool) -> usize {
         let separator = usize::from(!first);
         let maximum = self.maximum.unwrap_or(options.max_empty_lines);
         old.min(usize::from(maximum) + separator).max(if first {
@@ -34,13 +34,13 @@ struct Branch {
     opaque: bool,
 }
 
-/// Compute source-local gaps once; rendering still applies them only to selected, writable units.
+/// Resolve gaps once so alignment and rendering agree on the final boundaries between units.
 pub(super) fn plan(
     units: &[Unit],
     tokens: &[Token<'_>],
     input: &str,
     options: &Options,
-) -> Vec<Gap> {
+) -> Vec<usize> {
     let mut gaps = vec![Gap::default(); units.len()];
     let mut branches: Vec<Option<Branch>> = Vec::new();
     for (index, unit) in units.iter().enumerate() {
@@ -88,7 +88,20 @@ pub(super) fn plan(
         }
     }
     separate_statements(units, tokens, input, options, &mut gaps);
-    gaps
+    gaps.into_iter()
+        .enumerate()
+        .map(|(index, gap)| {
+            let start = index.checked_sub(1).map_or(0, |previous| {
+                tokens[units[previous].tokens.end - 1].range.end
+            });
+            let end = tokens[units[index].tokens.start].range.start;
+            let old = input[start..end]
+                .bytes()
+                .filter(|byte| *byte == b'\n')
+                .count();
+            gap.lines(old, options, index == 0)
+        })
+        .collect()
 }
 
 /// A nested control structure counts once in its parent, independently of its descendants.

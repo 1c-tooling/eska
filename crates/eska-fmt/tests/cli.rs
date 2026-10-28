@@ -152,6 +152,42 @@ fn eska_preset_is_shared_by_check_apply_and_config_dump() {
     checked(&run(&directory.0, "en", &args), 0);
 }
 
+/// Removing gaps and collapsing calls reaches a stable checked result in either locale.
+#[test]
+fn compact_alignment_is_idempotent_through_the_cli() {
+    let directory = TestDir::new();
+    let path = directory.0.join("Module.bsl");
+    let before = "\u{feff}Call(\r\n\"A\",1);\r\n\r\nCall(\"Long\",2);\r\n";
+    let style = r#"{"align_call_arguments":true,"max_empty_lines":0}"#;
+    let args = [
+        "Module.bsl",
+        "--style",
+        style,
+        "--check",
+        "--format",
+        "json",
+    ];
+    for locale in ["ru", "en"] {
+        fs::write(&path, before).unwrap();
+        let preview = checked(&run(&directory.0, locale, &args), 1);
+        assert_eq!(fs::read_to_string(&path).unwrap(), before);
+        assert_eq!(preview, checked(&run(&directory.0, "en", &args), 1));
+        checked(
+            &run(
+                &directory.0,
+                locale,
+                &["Module.bsl", "--style", style, "--format", "json"],
+            ),
+            0,
+        );
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            "\u{feff}Call(\"A\"   , 1);\r\nCall(\"Long\", 2);\r\n"
+        );
+        checked(&run(&directory.0, locale, &args), 0);
+    }
+}
+
 /// A later syntax failure cannot leave an earlier valid module formatted.
 #[test]
 fn complete_preflight_keeps_all_sources_on_failure() {

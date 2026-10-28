@@ -41,8 +41,8 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
         start: request.text.len(),
         end: 0,
     };
-    let alignments = alignment::plan(&units, tokens, &request.text, &request.options);
     let gaps = spacing::plan(&units, tokens, &request.text, &request.options);
+    let alignments = alignment::plan(&units, tokens, &request.text, &request.options, &gaps);
     for (index, unit) in units.iter().enumerate() {
         let part = &tokens[unit.tokens.clone()];
         let end = part
@@ -73,7 +73,6 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
                     &request.options,
                     indent,
                     eol,
-                    index == 0,
                     gaps[index],
                 ),
             )?;
@@ -111,16 +110,7 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
 }
 
 /// Preserve ordinary blank-line intent within the selected structural gap policy.
-fn prefix(
-    raw: &str,
-    options: &Options,
-    indent: usize,
-    eol: &str,
-    first: bool,
-    gap: spacing::Gap,
-) -> String {
-    let old = raw.chars().filter(|value| *value == '\n').count();
-    let lines = gap.lines(old, options, first);
+fn prefix(raw: &str, options: &Options, indent: usize, eol: &str, lines: usize) -> String {
     format!(
         "{}{}",
         trivia::breaks(raw, lines, eol, options.trim_trailing_whitespace),

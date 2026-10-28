@@ -1,5 +1,6 @@
 //! The ESKA preset is exercised through resolved public policy and the real text-edit protocol.
 
+mod alignment;
 mod initialization;
 mod spacing;
 

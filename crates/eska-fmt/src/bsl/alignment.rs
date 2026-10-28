@@ -16,16 +16,22 @@ use std::{
 pub type Columns = BTreeMap<usize, usize>;
 
 /// Only adjacent units at the same block level can participate in one horizontal table.
-pub fn plan(units: &[Unit], tokens: &[Token<'_>], input: &str, options: &Options) -> Vec<Columns> {
+pub fn plan(
+    units: &[Unit],
+    tokens: &[Token<'_>],
+    input: &str,
+    options: &Options,
+    gaps: &[usize],
+) -> Vec<Columns> {
     let mut output = vec![Columns::new(); units.len()];
     if options.align_assignments {
-        assignments(units, tokens, input, options, &mut output);
+        assignments(units, tokens, gaps, options, &mut output);
     }
     if options.align_call_arguments
         && options.wrap_arguments != Wrapping::OnePerLine
         && options.wrap_binary != Wrapping::OnePerLine
     {
-        calls(units, tokens, input, options, &mut output);
+        calls(units, tokens, input, options, gaps, &mut output);
     }
     output
 }
@@ -41,7 +47,7 @@ struct Assignment {
 fn assignments(
     units: &[Unit],
     tokens: &[Token<'_>],
-    input: &str,
+    gaps: &[usize],
     options: &Options,
     output: &mut [Columns],
 ) {
@@ -51,7 +57,7 @@ fn assignments(
         let assign =
             unit.kind == UnitKind::Statement && part[0].kind == Kind::Word && part[0].key.is_none();
         let equals = assign.then(|| layout::assignment(part)).flatten();
-        if equals.is_none() || !adjacent(index, units, tokens, input) {
+        if equals.is_none() || !adjacent(index, units, gaps) {
             finish_assignments(&group, tokens, options, output);
             group.clear();
         }
@@ -149,6 +155,7 @@ fn calls(
     tokens: &[Token<'_>],
     input: &str,
     options: &Options,
+    gaps: &[usize],
     output: &mut [Columns],
 ) {
     let mut group: Vec<Call> = Vec::new();
@@ -161,7 +168,7 @@ fn calls(
                     && current.arguments.len() == previous.arguments.len()
             })
         });
-        if !compatible || !adjacent(index, units, tokens, input) {
+        if !compatible || !adjacent(index, units, gaps) {
             finish_calls(&group, options, output);
             group.clear();
         }
@@ -172,7 +179,7 @@ fn calls(
     finish_calls(&group, options, output);
 }
 
-/// Multiline calls and opaque multiline tokens keep their own layout instead of entering a table.
+/// Only calls that render on one line enter a table, including source lines collapsed by policy.
 fn call(
     index: usize,
     unit: &Unit,
@@ -184,7 +191,6 @@ fn call(
     if unit.kind != UnitKind::Statement
         || !part.last()?.is(";")
         || part.iter().any(|token| token.kind == Kind::Comment)
-        || input[part.first()?.range.start..part.last()?.range.end].contains('\n')
     {
         return None;
     }
@@ -227,6 +233,14 @@ fn call(
         }
     }
     if arguments.is_empty() {
+        return None;
+    }
+    // Single-line calls already fit the budget; only source breaks need a layout probe.
+    if input[part.first()?.range.start..part.last()?.range.end].contains('\n')
+        && layout::render(input, part, options, indent, "\n", &Columns::new())
+            .ok()?
+            .contains('\n')
+    {
         return None;
     }
     let callee = layout::flat(&part[..=open], options);
@@ -274,14 +288,7 @@ fn finish_calls(group: &[Call], options: &Options, output: &mut [Columns]) {
     }
 }
 
-/// Unit order already excludes intervening syntax, so the remaining boundary is blank trivia.
-fn adjacent(index: usize, units: &[Unit], tokens: &[Token<'_>], input: &str) -> bool {
-    index > 0
-        && units[index].level == units[index - 1].level
-        && input[tokens[units[index - 1].tokens.end - 1].range.end
-            ..tokens[units[index].tokens.start].range.start]
-            .chars()
-            .filter(|value| *value == '\n')
-            .count()
-            <= 1
+/// Blank lines retained by the spacing policy separate horizontal tables; removed lines do not.
+const fn adjacent(index: usize, units: &[Unit], gaps: &[usize]) -> bool {
+    index > 0 && units[index].level == units[index - 1].level && gaps[index] <= 1
 }
