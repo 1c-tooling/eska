@@ -21,6 +21,7 @@ fn old_protocol_options_receive_only_pinned_additive_defaults() {
         "blank_lines_around_blocks",
         "blank_lines_inside_multistatement_blocks",
         "blank_lines_before_return",
+        "separate_object_initialization",
     ] {
         value.as_object_mut().unwrap().remove(key);
     }
@@ -72,6 +73,7 @@ fn eska_profile_is_versioned_language_specific_and_inheritable() {
     assert_eq!(bsl.profile, "eska");
     assert_eq!(bsl.profile_version, 1);
     assert!(bsl.options.align_assignments && bsl.options.align_call_arguments);
+    assert!(bsl.options.separate_object_initialization);
     assert!(bsl.options.closing_parenthesis_on_new_line);
     assert_eq!(bsl.options.blank_lines_inside_methods, 1);
     assert_eq!(bsl.options.blank_lines_around_blocks, 1);
@@ -100,7 +102,7 @@ fn eska_profile_is_versioned_language_specific_and_inheritable() {
     assert_eq!(sdbl.options, super::policy::defaults(Language::Sdbl));
 
     let cfg = config(
-        "profile='team'\n[profiles.team]\nbased_on='eska'\n[profiles.team.bsl]\nalign_call_arguments=false\nblank_lines_inside_methods=0\nblank_lines_around_blocks=0\nblank_lines_inside_multistatement_blocks=0\nblank_lines_before_return=0",
+        "profile='team'\n[profiles.team]\nbased_on='eska'\n[profiles.team.bsl]\nalign_call_arguments=false\nseparate_object_initialization=false\nblank_lines_inside_methods=0\nblank_lines_around_blocks=0\nblank_lines_inside_multistatement_blocks=0\nblank_lines_before_return=0",
     );
     let inherited = resolve(
         &[Layer::new(Path::new("."), "manifest", &cfg, "").unwrap()],
@@ -114,6 +116,7 @@ fn eska_profile_is_versioned_language_specific_and_inheritable() {
     .unwrap();
     assert_eq!(inherited.profile, "team");
     assert!(!inherited.options.align_call_arguments);
+    assert!(!inherited.options.separate_object_initialization);
     assert_eq!(inherited.options.blank_lines_inside_methods, 0);
     assert_eq!(inherited.options.blank_lines_around_blocks, 0);
     assert_eq!(
@@ -193,6 +196,7 @@ fn strict_policies_reject_invalid_or_unsupported_options() {
         "[sdbl]\nblank_lines_around_blocks=0",
         "[sdbl]\nblank_lines_inside_multistatement_blocks=1",
         "[common]\nblank_lines_before_return=1",
+        "[sdbl]\nseparate_object_initialization=false",
         "[profiles.eska]\nbased_on='1c'",
         "[profiles.1c]\nbased_on='eska'",
         "exclude=['../elsewhere/**']",

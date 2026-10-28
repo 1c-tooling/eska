@@ -100,6 +100,8 @@ options! {
     break_before_binary_operators: bool = true,
     align_assignments: bool = false,
     #[serde(default)]
+    separate_object_initialization: bool = false,
+    #[serde(default)]
     align_call_arguments: bool = false,
     #[serde(default)]
     closing_parenthesis_on_new_line: bool = false,

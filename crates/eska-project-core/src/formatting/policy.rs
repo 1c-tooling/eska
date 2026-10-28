@@ -157,6 +157,7 @@ fn validate_profile(profile: &Profile) -> Result<(), Error> {
 /// Known options for another language fail instead of becoming silently ignored configuration.
 pub(super) fn validate_patch(patch: &Patch, language: Option<Language>) -> Result<(), Error> {
     let bsl_only = patch.align_assignments.is_some()
+        || patch.separate_object_initialization.is_some()
         || patch.align_call_arguments.is_some()
         || patch.closing_parenthesis_on_new_line.is_some()
         || patch.preserve_existing_line_breaks.is_some()
@@ -271,6 +272,7 @@ pub(super) fn builtin_profile(name: &str, language: Language) -> Option<Patch> {
             column_limit: Some(150),
             preserve_existing_line_breaks: Some(true),
             align_assignments: Some(true),
+            separate_object_initialization: Some(true),
             align_call_arguments: Some(true),
             closing_parenthesis_on_new_line: Some(true),
             blank_lines_inside_methods: Some(1),

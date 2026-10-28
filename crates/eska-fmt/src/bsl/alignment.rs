@@ -6,7 +6,11 @@ use super::{
 };
 use crate::lex::{Kind, Token};
 use eska_project_core::formatting::{Options, Wrapping};
-use std::collections::BTreeMap;
+use std::{
+    borrow::Cow,
+    collections::{BTreeMap, BTreeSet},
+    ops::Range,
+};
 
 /// Source token offsets keep nested calls distinct from the outer call's aligned separators.
 pub type Columns = BTreeMap<usize, usize>;
@@ -26,6 +30,13 @@ pub fn plan(units: &[Unit], tokens: &[Token<'_>], input: &str, options: &Options
     output
 }
 
+struct Assignment {
+    unit: usize,
+    offset: usize,
+    column: usize,
+    target: Range<usize>,
+}
+
 /// A blank line, comment, directive or block transition ends an assignment table.
 fn assignments(
     units: &[Unit],
@@ -41,29 +52,85 @@ fn assignments(
             unit.kind == UnitKind::Statement && part[0].kind == Kind::Word && part[0].key.is_none();
         let equals = assign.then(|| layout::assignment(part)).flatten();
         if equals.is_none() || !adjacent(index, units, tokens, input) {
-            finish_assignments(&group, output);
+            finish_assignments(&group, tokens, options, output);
             group.clear();
         }
         if let Some(at) = equals {
-            group.push((
-                index,
-                part[at].range.start,
-                unit.level * usize::from(options.indent_width)
+            group.push(Assignment {
+                unit: index,
+                offset: part[at].range.start,
+                column: unit.level * usize::from(options.indent_width)
                     + layout::width(&layout::flat(&part[..at], options), 0, options.tab_width)
                     + usize::from(options.space_around_operators),
-            ));
+                target: unit.tokens.start..unit.tokens.start + at,
+            });
         }
     }
-    finish_assignments(&group, output);
+    finish_assignments(&group, tokens, options, output);
+}
+
+/// An assignment that provides a later field/index receiver is isolated from horizontal padding.
+fn finish_assignments(
+    group: &[Assignment],
+    tokens: &[Token<'_>],
+    options: &Options,
+    output: &mut [Columns],
+) {
+    if !options.separate_object_initialization {
+        assignment_columns(group, output);
+        return;
+    }
+    let mut receivers = BTreeSet::new();
+    let mut initializers = vec![false; group.len()];
+    for (index, assignment) in group.iter().enumerate().rev() {
+        let (target, parents) = assignment_targets(&tokens[assignment.target.clone()]);
+        initializers[index] = receivers.contains(&target);
+        receivers.extend(parents);
+    }
+    let mut start = 0;
+    for (end, initializer) in initializers.into_iter().enumerate() {
+        if initializer {
+            assignment_columns(&group[start..end], output);
+            start = end + 1;
+        }
+    }
+    assignment_columns(&group[start..], output);
+}
+
+/// Identifier matching is case-insensitive; index literal bytes and nested delimiters remain exact.
+fn assignment_targets(tokens: &[Token<'_>]) -> (String, Vec<String>) {
+    let mut target = String::new();
+    let mut parents = Vec::new();
+    let mut depth = 0_usize;
+    for token in tokens.iter().filter(|token| token.kind != Kind::Comment) {
+        if depth == 0 && (token.is(".") || token.is("[")) {
+            parents.push(target.clone());
+        }
+        let text = if token.kind == Kind::Word {
+            Cow::Owned(token.text.to_lowercase())
+        } else {
+            Cow::Borrowed(token.text)
+        };
+        // Length framing distinguishes token sequences such as [New Item] and [NewItem].
+        target.push_str(&text.len().to_string());
+        target.push(':');
+        target.push_str(&text);
+        match token.text {
+            "(" | "[" => depth += 1,
+            ")" | "]" => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+    }
+    (target, parents)
 }
 
 /// A single assignment retains ordinary spacing, while a table uses its widest left-hand side.
-fn finish_assignments(group: &[(usize, usize, usize)], output: &mut [Columns]) {
+fn assignment_columns(group: &[Assignment], output: &mut [Columns]) {
     if group.len() > 1
-        && let Some(maximum) = group.iter().map(|(_, _, column)| *column).max()
+        && let Some(maximum) = group.iter().map(|assignment| assignment.column).max()
     {
-        for (index, offset, _) in group {
-            output[*index].insert(*offset, maximum);
+        for assignment in group {
+            output[assignment.unit].insert(assignment.offset, maximum);
         }
     }
 }

@@ -184,6 +184,10 @@
           "maximum": 16,
           "default": 0
         },
+        "separate_object_initialization": {
+          "type": "boolean",
+          "default": false
+        },
         "blank_lines_around_blocks": {
           "type": "integer",
           "minimum": 0,

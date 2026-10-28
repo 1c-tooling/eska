@@ -123,6 +123,11 @@ fn eska_preset_is_shared_by_check_apply_and_config_dump() {
     assert_eq!(policy["profile"], "eska");
     assert_eq!(policy["options"]["column_limit"], 150);
     assert_eq!(policy["origins"]["align_call_arguments"], "profile:eska@1");
+    assert_eq!(policy["options"]["separate_object_initialization"], true);
+    assert_eq!(
+        policy["origins"]["separate_object_initialization"],
+        "profile:eska@1"
+    );
     for key in [
         "blank_lines_around_blocks",
         "blank_lines_inside_multistatement_blocks",
