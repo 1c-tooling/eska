@@ -7,6 +7,7 @@ use std::{
 use crate::backend::{
     config::{ProjectConfig, WorkspaceConfig},
     project::ProjectType,
+    project::build::PlatformVersion,
     project::create::{self, CreationError},
     project::discovery,
     vcs::workflow::WorkflowPreset,
@@ -46,6 +47,45 @@ fn empty_workspace() -> TestDir {
     )
     .expect("workspace manifest");
     fixture
+}
+
+/// A scaffold can defer its platform, while an explicit valid version is verified and persisted.
+#[test]
+fn new_accepts_empty_and_explicit_platform_versions_without_an_artifact() {
+    for locale in ["ru", "en"] {
+        for version in ["", "8.3.27.2325"] {
+            let fixture = TestDir::new();
+            let mut cli = command(&fixture.0, locale);
+            cli.args([
+                "new",
+                "demo",
+                "--type",
+                "report",
+                "--workflow",
+                "trunk",
+                "--platform-version",
+                version,
+            ]);
+            if version.is_empty() {
+                cli.env(
+                    "ESKA_BUILD_BINARY",
+                    fixture.0.join("absent-build-component"),
+                );
+            } else {
+                cli.arg("--ibcmd").arg(super::build::fake_ibcmd(&fixture));
+            }
+            success(&cli.output().unwrap());
+            let config = ProjectConfig::load(&fixture.0.join("demo/eska.toml")).unwrap();
+            assert_eq!(
+                config
+                    .configuration()
+                    .build_settings()
+                    .platform_version()
+                    .map(PlatformVersion::as_str),
+                (!version.is_empty()).then_some(version)
+            );
+        }
+    }
 }
 
 #[test]
@@ -91,6 +131,54 @@ fn workspace_new_creates_src_member_and_updates_manifest_in_both_locales() {
         };
         assert_eq!(workspace.members().len(), 1);
         assert_eq!(current_member.unwrap().as_str(), "my-orders");
+    }
+}
+
+#[test]
+/// A member inherits the root version until an explicit selection or an explicit empty value overrides it.
+fn workspace_new_preserves_platform_inheritance_and_explicit_overrides() {
+    for locale in ["ru", "en"] {
+        for version in ["", "8.3.27.2325"] {
+            let fixture = empty_workspace();
+            let mut cli = command(&fixture.0, locale);
+            cli.args([
+                "new",
+                "demo",
+                "--type",
+                "report",
+                "--platform-version",
+                version,
+            ]);
+            if !version.is_empty() {
+                cli.arg("--ibcmd").arg(super::build::fake_ibcmd(&fixture));
+            }
+            success(&cli.output().unwrap());
+            let manifest = fs::read_to_string(fixture.0.join("src/demo/eska.toml")).unwrap();
+            assert!(manifest.contains(&format!("platform_version = {version:?}")));
+            assert!(!manifest.contains("artifacts_directory"));
+            let context = discovery::discover_context(&fixture.0.join("src/demo")).unwrap();
+            let discovery::DiscoveryContext::Workspace {
+                current_member,
+                workspace,
+            } = context
+            else {
+                panic!("workspace member");
+            };
+            let project = workspace
+                .members()
+                .iter()
+                .find(|member| Some(member.name()) == current_member.as_ref())
+                .unwrap();
+            assert_eq!(
+                project
+                    .project()
+                    .configuration()
+                    .build_settings()
+                    .platform_version()
+                    .map(PlatformVersion::as_str),
+                (!version.is_empty()).then_some(version)
+            );
+        }
     }
 }
 
@@ -333,6 +421,7 @@ fn destination_symlinks_are_never_followed_or_replaced() {
                 &link,
                 ProjectType::Report,
                 WorkflowPreset::Trunk,
+                None,
                 true,
                 &|| false
             ),

@@ -17,6 +17,7 @@ use crate::onboarding::{
     },
     project::{
         ProjectName,
+        build::BuildSettings,
         create::{self, CreationError},
         onboarding,
     },
@@ -56,10 +57,6 @@ impl NewHandler<'_> {
     ) -> ExitCode {
         if self.args.from.is_some() {
             return from::run(self.args, base, localizer, scope);
-        }
-        if self.args.platform.is_set() {
-            artifact::report("✗", &localizer.text("artifact-from-required"), "31");
-            return ExitCode::from(2);
         }
         let workspace = match onboarding::find_workspace(base) {
             Ok(workspace) => workspace,
@@ -160,10 +157,15 @@ impl NewHandler<'_> {
             artifact::report("✗", &localizer.text("new-workflow-invalid"), "31");
             return ExitCode::from(2);
         };
+        let build = match self.build_settings(false, localizer, scope) {
+            Ok(build) => build,
+            Err(code) => return code,
+        };
         match create::create(
             &destination,
             project_type,
             workflow,
+            build,
             !self.args.no_vcs,
             &|| scope.is_cancelled(),
         ) {
@@ -259,7 +261,16 @@ impl NewHandler<'_> {
             artifact::report("✗", &localizer.text("new-type-invalid"), "31");
             return ExitCode::from(2);
         };
-        match create::create_workspace_member(&plan, project_type, &|| scope.is_cancelled()) {
+        let build = match self.build_settings(
+            workspace.build_settings().platform_version().is_some(),
+            localizer,
+            scope,
+        ) {
+            Ok(build) => build,
+            Err(code) => return code,
+        };
+        match create::create_workspace_member(&plan, project_type, build, &|| scope.is_cancelled())
+        {
             Ok(project) => {
                 artifact::success(&localizer.format(
                     "new-member-created",
@@ -278,6 +289,42 @@ impl NewHandler<'_> {
                 ExitCode::FAILURE
             }
         }
+    }
+
+    /// Select an optional version before creation; ordinary members inherit their workspace's version.
+    fn build_settings(
+        &self,
+        inherited: bool,
+        localizer: &Localizer,
+        scope: &eska_tool_runtime::Operation,
+    ) -> Result<Option<BuildSettings>, ExitCode> {
+        if inherited && !self.args.platform.is_set() {
+            return Ok(None);
+        }
+        let tool =
+            artifact::resolve_for_init(&self.args.platform, localizer, scope).map_err(|error| {
+                error.report();
+                if matches!(
+                    error.code.as_str(),
+                    "platform-required" | "platform-version-invalid"
+                ) {
+                    ExitCode::from(2)
+                } else {
+                    ExitCode::FAILURE
+                }
+            })?;
+        if tool.is_none() && !self.args.platform.is_set() {
+            return Ok(None);
+        }
+        BuildSettings::new(
+            tool.as_ref().map_or("", |tool| tool.version().as_str()),
+            "build".into(),
+        )
+        .map(Some)
+        .map_err(|_| {
+            artifact::report("✗", &localizer.text("artifact-version-invalid"), "31");
+            ExitCode::from(2)
+        })
     }
 }
 

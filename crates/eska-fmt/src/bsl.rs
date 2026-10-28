@@ -1,7 +1,9 @@
 //! BSL planning connects syntax units to layout while preserving frozen ranges and source trivia.
 
+mod alignment;
 mod expressions;
 pub mod layout;
+mod spacing;
 mod syntax;
 
 use crate::lex::{Kind, Token};
@@ -11,7 +13,6 @@ use eska_project_core::formatting::{
     protocol::{Range, Request},
 };
 use std::ops::Range as ByteRange;
-use syntax::{Unit, UnitKind};
 
 /// Format whole grammar units and report the expanded source range to native editor adapters.
 pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range), Error> {
@@ -40,7 +41,8 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
         start: request.text.len(),
         end: 0,
     };
-    let alignments = alignment(&units, tokens, &request.text, &request.options);
+    let gaps = spacing::plan(&units, tokens, &request.text, &request.options);
+    let alignments = alignment::plan(&units, tokens, &request.text, &request.options, &gaps);
     for (index, unit) in units.iter().enumerate() {
         let part = &tokens[unit.tokens.clone()];
         let end = part
@@ -71,8 +73,7 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
                     &request.options,
                     indent,
                     eol,
-                    index == 0,
-                    index > 0 && units[index - 1].kind == UnitKind::MethodEnd,
+                    gaps[index],
                 ),
             )?;
             append(
@@ -83,7 +84,7 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
                     &request.options,
                     indent,
                     eol,
-                    alignments[index],
+                    &alignments[index],
                 )?,
             )?;
         } else {
@@ -108,26 +109,8 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
     Ok((output, actual))
 }
 
-/// Preserve ordinary blank-line intent within the selected maximum, with an explicit method gap.
-fn prefix(
-    raw: &str,
-    options: &Options,
-    indent: usize,
-    eol: &str,
-    first: bool,
-    after_method: bool,
-) -> String {
-    let old = raw.chars().filter(|value| *value == '\n').count();
-    let minimum = if first {
-        0
-    } else if after_method {
-        usize::from(options.blank_lines_between_methods) + 1
-    } else {
-        1
-    };
-    let lines = old
-        .min(usize::from(options.max_empty_lines) + usize::from(!first))
-        .max(minimum);
+/// Preserve ordinary blank-line intent within the selected structural gap policy.
+fn prefix(raw: &str, options: &Options, indent: usize, eol: &str, lines: usize) -> String {
     format!(
         "{}{}",
         trivia::breaks(raw, lines, eol, options.trim_trailing_whitespace),
@@ -197,57 +180,6 @@ fn disabled(input: &str, tokens: &[Token<'_>]) -> Result<Vec<ByteRange<usize>>, 
         return Err(Error::new("invalid_syntax", "unclosed_deletion"));
     }
     Ok(output)
-}
-
-/// Adjacent assignments share a column only inside one syntax level and without a blank gap.
-fn alignment(
-    units: &[Unit],
-    tokens: &[Token<'_>],
-    input: &str,
-    options: &Options,
-) -> Vec<Option<usize>> {
-    let mut output = vec![None; units.len()];
-    if !options.align_assignments {
-        return output;
-    }
-    let mut group: Vec<(usize, usize)> = Vec::new();
-    for (index, unit) in units.iter().enumerate() {
-        let part = &tokens[unit.tokens.clone()];
-        let assign =
-            unit.kind == UnitKind::Statement && part[0].kind == Kind::Word && part[0].key.is_none();
-        let equals = assign.then(|| layout::assignment(part)).flatten();
-        let contiguous = index == 0
-            || unit.level == units[index - 1].level
-                && input[tokens[units[index - 1].tokens.end - 1].range.end..part[0].range.start]
-                    .chars()
-                    .filter(|value| *value == '\n')
-                    .count()
-                    <= 1;
-        if equals.is_none() || !contiguous {
-            finish_alignment(&group, &mut output);
-            group.clear();
-        }
-        if let Some(at) = equals {
-            group.push((
-                index,
-                unit.level * usize::from(options.indent_width)
-                    + layout::width(&layout::flat(&part[..at], options), 0, options.tab_width)
-                    + usize::from(options.space_around_operators),
-            ));
-        }
-    }
-    finish_alignment(&group, &mut output);
-    output
-}
-
-/// A single assignment is left to normal spacing; a group uses its widest left-hand side.
-fn finish_alignment(group: &[(usize, usize)], output: &mut [Option<usize>]) {
-    if group.len() > 1 {
-        let maximum = group.iter().map(|(_, width)| *width).max();
-        for (index, _) in group {
-            output[*index] = maximum;
-        }
-    }
 }
 
 /// Half-open intersection is shared by range selection and frozen-source checks.

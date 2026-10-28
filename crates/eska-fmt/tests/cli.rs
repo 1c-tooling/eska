@@ -95,6 +95,99 @@ fn check_preview_apply_and_locale_parity() {
     assert_eq!(repeated["files"][0]["changed"], false);
 }
 
+/// Preset selection is manifest-owned and gives identical preview, apply and inspection in ru/en.
+#[test]
+fn eska_preset_is_shared_by_check_apply_and_config_dump() {
+    let directory = TestDir::new();
+    fs::create_dir_all(directory.0.join("src/Ext")).unwrap();
+    fs::write(
+        directory.0.join("eska.toml"),
+        "[project]\ntype='configuration'\n[format]\nprofile='eska'\nprofile_version=1\n",
+    )
+    .unwrap();
+    fs::write(directory.0.join("src/Configuration.xml"), "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Configuration uuid='11111111-1111-1111-1111-111111111111'><Properties><Name>Demo</Name></Properties><ChildObjects/></Configuration></MetaDataObject>").unwrap();
+    fs::write(
+        directory.0.join("src/Ext/ParentConfigurations.bin"),
+        "{6,0,0,0,0,0}",
+    )
+    .unwrap();
+    let relative = "src/Ext/ManagedApplicationModule.bsl";
+    let path = directory.0.join(relative);
+    let before = "\u{feff}Процедура Тест()\r\nДанные.Вставить(\"А\",1);\r\nДанные.Вставить(\"Длинное\",2);\r\nЕсли Условие Тогда\r\nПервое();\r\nВторое();\r\nКонецЕсли;\r\nПока Условие Цикл\r\n\r\nМетод(\r\n1,\r\n2);\r\n\r\nКонецЦикла;\r\nВозврат;\r\nКонецПроцедуры";
+    fs::write(&path, before).unwrap();
+    let args = [relative, "--dump-config", "--format", "json"];
+    let ru = checked(&run(&directory.0, "ru", &args), 0);
+    let en = checked(&run(&directory.0, "en", &args), 0);
+    assert_eq!(ru, en);
+    let policy = &ru["files"][0]["effective"];
+    assert_eq!(policy["profile"], "eska");
+    assert_eq!(policy["options"]["column_limit"], 150);
+    assert_eq!(policy["origins"]["align_call_arguments"], "profile:eska@1");
+    assert_eq!(policy["options"]["separate_object_initialization"], true);
+    assert_eq!(
+        policy["origins"]["separate_object_initialization"],
+        "profile:eska@1"
+    );
+    for key in [
+        "blank_lines_around_blocks",
+        "blank_lines_inside_multistatement_blocks",
+        "blank_lines_before_return",
+    ] {
+        assert_eq!(policy["options"][key], 1);
+        assert_eq!(policy["origins"][key], "profile:eska@1");
+    }
+    assert_eq!(fs::read_to_string(&path).unwrap(), before);
+    let args = [relative, "--check", "--format", "json"];
+    let ru = checked(&run(&directory.0, "ru", &args), 1);
+    let en = checked(&run(&directory.0, "en", &args), 1);
+    assert_eq!(ru, en);
+    assert_eq!(fs::read_to_string(&path).unwrap(), before);
+    checked(&run(&directory.0, "ru", &[relative, "--format", "json"]), 0);
+    let after = fs::read_to_string(&path).unwrap();
+    assert!(after.starts_with("\u{feff}Процедура Тест()\r\n\r\n"));
+    assert!(after.contains("Данные.Вставить(\"А\"      , 1);\r\n"));
+    assert!(after.contains("\r\n\r\n\tЕсли Условие Тогда\r\n\r\n\t\tПервое();\r\n\t\tВторое();\r\n\r\n\tКонецЕсли;\r\n\r\n"));
+    assert!(after.contains("\tПока Условие Цикл\r\n\t\tМетод(\r\n\t\t\t1,\r\n\t\t\t2\r\n\t\t);\r\n\tКонецЦикла;\r\n\r\n\tВозврат;\r\n\r\nКонецПроцедуры\r\n"));
+    assert!(!after.replace("\r\n", "").contains('\n'));
+    checked(&run(&directory.0, "en", &args), 0);
+}
+
+/// Removing gaps and collapsing calls reaches a stable checked result in either locale.
+#[test]
+fn compact_alignment_is_idempotent_through_the_cli() {
+    let directory = TestDir::new();
+    let path = directory.0.join("Module.bsl");
+    let before = "\u{feff}Call(\r\n\"A\",1);\r\n\r\nCall(\"Long\",2);\r\n";
+    let style = r#"{"align_call_arguments":true,"max_empty_lines":0}"#;
+    let args = [
+        "Module.bsl",
+        "--style",
+        style,
+        "--check",
+        "--format",
+        "json",
+    ];
+    for locale in ["ru", "en"] {
+        fs::write(&path, before).unwrap();
+        let preview = checked(&run(&directory.0, locale, &args), 1);
+        assert_eq!(fs::read_to_string(&path).unwrap(), before);
+        assert_eq!(preview, checked(&run(&directory.0, "en", &args), 1));
+        checked(
+            &run(
+                &directory.0,
+                locale,
+                &["Module.bsl", "--style", style, "--format", "json"],
+            ),
+            0,
+        );
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            "\u{feff}Call(\"A\"   , 1);\r\nCall(\"Long\", 2);\r\n"
+        );
+        checked(&run(&directory.0, locale, &args), 0);
+    }
+}
+
 /// A later syntax failure cannot leave an earlier valid module formatted.
 #[test]
 fn complete_preflight_keeps_all_sources_on_failure() {

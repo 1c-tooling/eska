@@ -101,14 +101,22 @@ impl PlatformHandler<'_> {
         localizer: &Localizer,
         scope: &Operation,
     ) -> Result<ToolSelection, Failure> {
-        self.select(inherited, false, localizer, scope)
+        self.select(inherited, false, localizer, scope)?
+            .ok_or_else(|| {
+                component_failure(Error::InvalidResponse, localizer, "artifact-cancelled")
+            })
     }
     /// Keep initialization-specific selection and cancellation in the native owner.
     pub fn resolve_for_init(
         &self,
         localizer: &Localizer,
         scope: &Operation,
-    ) -> Result<ToolSelection, Failure> {
+    ) -> Result<Option<ToolSelection>, Failure> {
+        if self.args.platform_version.as_deref() == Some("")
+            || !self.args.is_set() && (!io::stdin().is_terminal() || !io::stderr().is_terminal())
+        {
+            return Ok(None);
+        }
         self.select(None, true, localizer, scope)
     }
     /// Bind one executable and one sticky cancellation scope across both native requests.
@@ -118,7 +126,7 @@ impl PlatformHandler<'_> {
         init: bool,
         localizer: &Localizer,
         scope: &Operation,
-    ) -> Result<ToolSelection, Failure> {
+    ) -> Result<Option<ToolSelection>, Failure> {
         let cancellation = if init {
             "init-cancelled"
         } else {
@@ -151,16 +159,21 @@ impl PlatformHandler<'_> {
             .as_object()
             .filter(|object| object.len() == 1)
             .and_then(|object| object.get("platform_version"))
-            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| failure(Error::InvalidResponse))?;
+        if init && version.is_null() {
+            return Ok(None);
+        }
+        let version = version
+            .as_str()
             .and_then(|version| PlatformVersion::parse(version).ok())
             .ok_or_else(|| failure(Error::InvalidResponse))?;
-        Ok(ToolSelection {
+        Ok(Some(ToolSelection {
             binary,
             version,
             options,
             language,
             scope: scope.clone(),
-        })
+        }))
     }
     /// Preserve OS-native option values; command lines never pass through a shell.
     fn options(&self) -> Vec<OsString> {
@@ -336,6 +349,6 @@ pub fn resolve_for_init(
     args: &PlatformArgs,
     localizer: &Localizer,
     scope: &Operation,
-) -> Result<ToolSelection, Failure> {
+) -> Result<Option<ToolSelection>, Failure> {
     PlatformHandler { args }.resolve_for_init(localizer, scope)
 }

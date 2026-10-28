@@ -33,7 +33,7 @@
         "minLength": 1,
         "maxLength": 128,
         "not": {
-          "const": "1c"
+          "enum": ["1c", "eska"]
         }
       }
     },
@@ -165,6 +165,46 @@
         "align_assignments": {
           "type": "boolean",
           "default": false
+        },
+        "align_call_arguments": {
+          "type": "boolean",
+          "default": false
+        },
+        "closing_parenthesis_on_new_line": {
+          "type": "boolean",
+          "default": false
+        },
+        "preserve_existing_line_breaks": {
+          "type": "boolean",
+          "default": false
+        },
+        "blank_lines_inside_methods": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 0
+        },
+        "separate_object_initialization": {
+          "type": "boolean",
+          "default": false
+        },
+        "blank_lines_around_blocks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 0
+        },
+        "blank_lines_inside_multistatement_blocks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 0
+        },
+        "blank_lines_before_return": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 0
         },
         "blank_lines_between_methods": {
           "type": "integer",

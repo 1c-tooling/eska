@@ -1,7 +1,9 @@
 //! Native creation orchestration; filesystem transactions belong to the shared project core.
 
 use super::{Project, ProjectName, ProjectType, Workspace, artifact::PreparedSources};
-use crate::onboarding::{config::ProjectConfig, vcs::workflow::WorkflowPreset};
+use crate::onboarding::{
+    config::ProjectConfig, project::build::BuildSettings, vcs::workflow::WorkflowPreset,
+};
 use eska_project_core::project::create as core;
 use std::path::{Path, PathBuf};
 
@@ -26,13 +28,17 @@ pub fn create(
     destination: &Path,
     project_type: ProjectType,
     workflow: WorkflowPreset,
+    build: Option<BuildSettings>,
     initialize_vcs: bool,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<Project, CreationError> {
     let destination = resolve_destination(destination)?;
     check_cancelled(cancelled).map_err(CreationError::Operation)?;
     let vcs = preflight_vcs(initialize_vcs)?;
-    let config = ProjectConfig::new(project_type).with_workflow(workflow);
+    let mut config = ProjectConfig::new(project_type).with_workflow(workflow);
+    if let Some(build) = build {
+        config = config.with_build_settings(build);
+    }
     core::create_with(&destination, &config, |root| {
         check_cancelled(cancelled)?;
         initialize(root, vcs.as_deref())?;
@@ -81,9 +87,13 @@ pub fn inspect_workspace_member(
 pub fn create_workspace_member(
     plan: &WorkspaceCreationPlan,
     project_type: ProjectType,
+    build: Option<BuildSettings>,
     cancelled: &dyn Fn() -> bool,
 ) -> Result<Project, CreationError> {
-    let config = ProjectConfig::new(project_type);
+    let mut config = ProjectConfig::new(project_type);
+    if let Some(build) = build {
+        config = config.with_build_settings(build);
+    }
     core::create_member_configured(plan, &config, None, || check_cancelled(cancelled))
 }
 
@@ -273,7 +283,7 @@ mod tests {
         fs::remove_dir(existing.join("src")).unwrap();
 
         assert!(matches!(
-            create_workspace_member(&plan, ProjectType::Processing, &|| false),
+            create_workspace_member(&plan, ProjectType::Processing, None, &|| false),
             Err(CreationError::WorkspaceValidation(_))
         ));
         assert_eq!(fs::read(manifest).unwrap(), original);

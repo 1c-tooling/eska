@@ -238,7 +238,11 @@ impl InitHandler<'_> {
         scope: &eska_tool_runtime::Operation,
     ) -> Result<BuildSettings, Failure> {
         let tool = artifact::resolve_for_init(&self.args.platform, localizer, scope)?;
-        BuildSettings::new(tool.version().as_str(), "build".into()).map_err(|_| {
+        BuildSettings::new(
+            tool.as_ref().map_or("", |tool| tool.version().as_str()),
+            "build".into(),
+        )
+        .map_err(|_| {
             Failure::new(
                 "platform-version-invalid",
                 localizer.text("artifact-version-invalid"),

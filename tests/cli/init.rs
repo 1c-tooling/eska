@@ -215,8 +215,8 @@ fn workspace_init_saves_an_explicit_platform_even_when_root_has_no_version() {
 }
 
 #[test]
-/// Require an explicit choice in automation without modifying either workspace manifest.
-fn workspace_init_requires_platform_when_root_is_unconfigured_or_selection_is_forced() {
+/// Unconfigured workspaces permit an empty version; an explicitly requested menu still requires a TTY.
+fn workspace_init_allows_an_empty_platform_unless_selection_is_forced() {
     for locale in ["ru", "en"] {
         for select in [false, true] {
             let fixture = empty_workspace();
@@ -230,9 +230,50 @@ fn workspace_init_requires_platform_when_root_is_unconfigured_or_selection_is_fo
             if select {
                 cli.arg("--select-platform");
             }
-            let error = failure(&cli.output().unwrap(), 2, locale);
-            assert!(error.contains("--platform-version"));
-            assert_eq!(snapshot(&fixture.0), before);
+            let output = cli.output().unwrap();
+            if select {
+                let error = failure(&output, 2, locale);
+                assert!(error.contains("--platform-version"));
+                assert_eq!(snapshot(&fixture.0), before);
+            } else {
+                success(&output);
+                assert!(
+                    ProjectConfig::load(&member.join("eska.toml"))
+                        .unwrap()
+                        .configuration()
+                        .build_settings()
+                        .platform_version()
+                        .is_none()
+                );
+            }
+        }
+    }
+}
+
+/// An empty explicit platform and the noninteractive default both preserve an unconfigured version.
+#[test]
+fn standalone_init_can_defer_platform_without_a_build_component() {
+    for locale in ["ru", "en"] {
+        for explicit in [false, true] {
+            let fixture = TestDir::new();
+            descriptor(&fixture.0.join("src"), "report");
+            let mut cli = command(&fixture.0, locale);
+            cli.args(["--workflow", "trunk"]).env(
+                "ESKA_BUILD_BINARY",
+                fixture.0.join("absent-build-component"),
+            );
+            if explicit {
+                cli.arg("--platform-version=");
+            }
+            success(&cli.output().unwrap());
+            let config = ProjectConfig::load(&fixture.0.join("eska.toml")).unwrap();
+            assert!(
+                config
+                    .configuration()
+                    .build_settings()
+                    .platform_version()
+                    .is_none()
+            );
         }
     }
 }
@@ -577,7 +618,6 @@ fn config_collisions_missing_options_and_invalid_xml_never_write() {
         for args in [
             vec![],
             vec!["--workflow", "unknown"],
-            vec!["--workflow", "trunk"],
             vec!["--workflow", "trunk", "--select-platform"],
         ] {
             failure(

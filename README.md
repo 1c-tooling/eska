@@ -9,7 +9,7 @@
 ESKA подключает выгрузку Конфигуратора, предоставляет дерево и редактирование
 свойств в VS Code/VSCodium, готовит контекст внешнего BSL Analyzer, проверяет
 проект для CI и собирает `.cf`, `.cfe`, `.epf`, `.erf` установленной платформой 1С.
-`eska-fmt` / `eska fmt` форматируют BSL и запросы по настраиваемому профилю 1С
+`eska-fmt` / `eska fmt` форматируют BSL и запросы по настраиваемым профилям `1c` и `eska`
 без зависимости от анализатора ([контракт и состояние поставки](docs/formatting.md)).
 Исходниками остаются обычные XML, BSL и ресурсы выгрузки. Изменения из рабочей
 информационной базы автоматически не выгружаются.
@@ -65,6 +65,7 @@ Save сохраняет черновик; «Применить» меняет м
 | --- | --- | --- |
 | Сборка | `eska build` | `eska-build build` |
 | Полная проверка XML/BSL | `eska check` | `eska-check` |
+| Проверка форматирования | `eska fmt --check` | `eska-fmt --check` |
 | Состояние Git | `eska status` | `eska-vcs status` |
 | Semantic diff | `eska diff --semantic` | `eska-vcs diff --semantic` |
 | Сохранение commit | `eska save -m "Сообщение"` | `eska-vcs save -m "Сообщение"` |
@@ -189,6 +190,13 @@ eska new processor --from processor.epf --workflow trunk --platform-version 8.3.
 проекта выполняется через `eska import FILE --dry-run`, затем `eska import FILE`
 с просмотром и подтверждением.
 
+При обычных `eska new` и `eska init` интерактивное меню перечисляет установленные
+платформы и пункт **Настроить позже (пустая версия)**. Он доступен и без
+установленной 1С. В манифесте сохраняется `platform_version = ""`; дерево,
+анализ и Git доступны, а сборка потребует указать версию.
+Без терминала версия остаётся пустой, если не задан `--platform-version`.
+При создании из CF/CFE/EPF/ERF платформа нужна для распаковки.
+
 ## Подключение IDE
 
 Установите актуальный VSIX Explorer, откройте доверенную папку с `eska.toml`
@@ -253,6 +261,40 @@ eska-check --analyzer /path/to/bsl-analyzer-app --format json
 [Контексты приложений](docs/application-context.md) ·
 [Настройки и миграция анализатора](docs/analyzer-configuration.md) ·
 [Отчёт, пороги и exit codes CI](docs/check-cli.md)
+
+## Форматирование
+
+По умолчанию используется профиль `1c`. Для выравнивания присваиваний и
+аргументов соседних вызовов, пустых строк вокруг блоков и лимита 150 колонок
+выберите в `eska.toml`:
+
+```toml
+[format]
+profile = "eska"
+profile_version = 1
+```
+
+```sh
+eska fmt --check
+eska fmt --diff
+eska fmt
+eska fmt src/CommonModules/MyModule/Ext/Module.bsl --dump-config
+```
+
+Первые две команды проверяют и показывают изменения без записи, третья применяет
+проверенный план, последняя показывает эффективные настройки указанного файла.
+Для `--check` код 1 означает необходимые правки, 2 — ошибку.
+Профиль `eska` сохраняет ручные переносы BSL; для SDBL действуют правила `1c`.
+Инициализация объекта отделяется от выравнивания его полей. Строковые значения,
+BOM и окончания строк сохраняются, ограничения поддержки проверяет ESKA.
+
+При подготовке конфига анализатора лимит строки, отступы и допустимое число
+пустых строк берутся из того же BSL-профиля. Форматирование работает и без
+анализатора. В Explorer доступны штатные команды форматирования документа
+и выделения с Undo/Redo.
+
+[Настройки, наследование и ограничения](docs/formatting.md) ·
+[Передача стиля анализатору](docs/analyzer-configuration.md)
 
 ## Работа над задачей
 
@@ -336,6 +378,7 @@ Distrobox нужен только при размещении платформы
 | Проект | `eska-project new`, `init`, `validate`, `context`, `doctor`, `version` |
 | Метаданные / IDE | `eska-project metadata`, `serve --stdio` |
 | Анализ | `eska-project analyzer-config status/prepare/migrate`, `eska-check`, `eska check` |
+| Форматирование | `eska-fmt`, `eska fmt`: `--check`, `--diff`, `--dump-config` |
 | Сборка | `eska-build build`, `unpack`, `import`, `patch`, `clean`, `platform list`, `config` |
 | Git | `eska-vcs clone/status/diff/history/start/switch/save/finish/shelve/unshelve/shelves` |
 | Общий вход | `eska new/init/import/build/check/status/...`, `eska update` |

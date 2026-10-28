@@ -5,7 +5,7 @@ use super::{
 };
 use std::path::Path;
 
-/// Additive SDBL options retain pinned v1 defaults for older pure-text clients.
+/// Additive layout options retain pinned v1 defaults for older pure-text clients.
 #[test]
 fn old_protocol_options_receive_only_pinned_additive_defaults() {
     let mut value = serde_json::to_value(super::Options::default()).unwrap();
@@ -14,6 +14,14 @@ fn old_protocol_options_receive_only_pinned_additive_defaults() {
         "group_items",
         "order_items",
         "blank_lines_between_queries",
+        "align_call_arguments",
+        "closing_parenthesis_on_new_line",
+        "preserve_existing_line_breaks",
+        "blank_lines_inside_methods",
+        "blank_lines_around_blocks",
+        "blank_lines_inside_multistatement_blocks",
+        "blank_lines_before_return",
+        "separate_object_initialization",
     ] {
         value.as_object_mut().unwrap().remove(key);
     }
@@ -48,6 +56,79 @@ fn default_policy_is_complete_and_language_specific() {
         );
         assert!(policy.origins.values().all(|value| value == "profile:1c@1"));
     }
+}
+
+/// The immutable ESKA preset changes BSL layout while queries keep the pinned 1C policy.
+#[test]
+fn eska_profile_is_versioned_language_specific_and_inheritable() {
+    let cfg = config("profile='eska'\nprofile_version=1");
+    let layers = [Layer::new(Path::new("."), "manifest", &cfg, "").unwrap()];
+    let bsl = resolve(
+        &layers,
+        Path::new("a.bsl"),
+        Language::Bsl,
+        &Patch::default(),
+    )
+    .unwrap();
+    assert_eq!(bsl.profile, "eska");
+    assert_eq!(bsl.profile_version, 1);
+    assert!(bsl.options.align_assignments && bsl.options.align_call_arguments);
+    assert!(bsl.options.separate_object_initialization);
+    assert!(bsl.options.closing_parenthesis_on_new_line);
+    assert_eq!(bsl.options.blank_lines_inside_methods, 1);
+    assert_eq!(bsl.options.blank_lines_around_blocks, 1);
+    assert_eq!(bsl.options.blank_lines_inside_multistatement_blocks, 1);
+    assert_eq!(bsl.options.blank_lines_before_return, 1);
+    for key in [
+        "blank_lines_around_blocks",
+        "blank_lines_inside_multistatement_blocks",
+        "blank_lines_before_return",
+    ] {
+        assert_eq!(bsl.origins[key], "profile:eska@1");
+    }
+    assert_eq!(bsl.options.wrap_arguments, super::Wrapping::Fit);
+    assert_eq!(bsl.options.wrap_binary, super::Wrapping::Fit);
+    assert!(bsl.options.preserve_existing_line_breaks);
+    assert_eq!(bsl.options.column_limit, 150);
+    assert_eq!(bsl.origins["align_call_arguments"], "profile:eska@1");
+    assert_eq!(bsl.origins["indent_width"], "profile:1c@1");
+    let sdbl = resolve(
+        &layers,
+        Path::new("a.sdbl"),
+        Language::Sdbl,
+        &Patch::default(),
+    )
+    .unwrap();
+    assert_eq!(sdbl.options, super::policy::defaults(Language::Sdbl));
+
+    let cfg = config(
+        "profile='team'\n[profiles.team]\nbased_on='eska'\n[profiles.team.bsl]\nalign_call_arguments=false\nseparate_object_initialization=false\nblank_lines_inside_methods=0\nblank_lines_around_blocks=0\nblank_lines_inside_multistatement_blocks=0\nblank_lines_before_return=0",
+    );
+    let inherited = resolve(
+        &[Layer::new(Path::new("."), "manifest", &cfg, "").unwrap()],
+        Path::new("a.bsl"),
+        Language::Bsl,
+        &Patch {
+            column_limit: Some(90),
+            ..Patch::default()
+        },
+    )
+    .unwrap();
+    assert_eq!(inherited.profile, "team");
+    assert!(!inherited.options.align_call_arguments);
+    assert!(!inherited.options.separate_object_initialization);
+    assert_eq!(inherited.options.blank_lines_inside_methods, 0);
+    assert_eq!(inherited.options.blank_lines_around_blocks, 0);
+    assert_eq!(
+        inherited.options.blank_lines_inside_multistatement_blocks,
+        0
+    );
+    assert_eq!(inherited.options.blank_lines_before_return, 0);
+    assert!(inherited.options.align_assignments);
+    assert_eq!(inherited.options.column_limit, 90);
+    assert_eq!(inherited.origins["column_limit"], "operation");
+    assert_eq!(inherited.origins["align_call_arguments"], "profile:team@1");
+    assert_eq!(inherited.origins["align_assignments"], "profile:eska@1");
 }
 
 /// Workspace/member rules use their declaring roots; operation values remain highest priority.
@@ -105,6 +186,19 @@ fn strict_policies_reject_invalid_or_unsupported_options() {
         "[bsl]\nselect_items='one_per_line'",
         "[common]\nalign_aliases=true",
         "[sdbl]\nblank_lines_between_methods=1",
+        "[sdbl]\nalign_call_arguments=false",
+        "[common]\nclosing_parenthesis_on_new_line=true",
+        "[sdbl]\npreserve_existing_line_breaks=true",
+        "[bsl]\nblank_lines_inside_methods=17",
+        "[bsl]\nblank_lines_around_blocks=17",
+        "[bsl]\nblank_lines_inside_multistatement_blocks=17",
+        "[bsl]\nblank_lines_before_return=17",
+        "[sdbl]\nblank_lines_around_blocks=0",
+        "[sdbl]\nblank_lines_inside_multistatement_blocks=1",
+        "[common]\nblank_lines_before_return=1",
+        "[sdbl]\nseparate_object_initialization=false",
+        "[profiles.eska]\nbased_on='1c'",
+        "[profiles.1c]\nbased_on='eska'",
         "exclude=['../elsewhere/**']",
         "[bsl]\nindent_style='tabs'",
         "[[overrides]]\ninclude=[]",

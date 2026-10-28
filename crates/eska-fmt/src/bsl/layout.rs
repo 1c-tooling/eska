@@ -1,6 +1,6 @@
 //! A bounded token-tree printer chooses line breaks without changing expression order.
 
-use super::syntax::group_end;
+use super::{alignment::Columns, syntax::group_end};
 use crate::{
     lex::{Kind, Token},
     spelling::{self, Key},
@@ -30,7 +30,7 @@ pub fn render(
     options: &Options,
     indent: usize,
     eol: &str,
-    alignment: Option<usize>,
+    alignment: &Columns,
 ) -> Result<String, Error> {
     let mut writer = Writer {
         text: String::new(),
@@ -51,7 +51,7 @@ fn sequence(
     tokens: &[Token<'_>],
     writer: &mut Writer<'_>,
     base: usize,
-    alignment: Option<usize>,
+    alignment: &Columns,
 ) -> Result<(), Error> {
     let flattened = flat(tokens, writer.options);
     let long = writer.options.column_limit != 0
@@ -68,10 +68,16 @@ fn sequence(
         let wrap = binary
             && match writer.options.wrap_binary {
                 Wrapping::OnePerLine => true,
-                Wrapping::Fit => long,
+                Wrapping::Fit => {
+                    long || writer.options.preserve_existing_line_breaks && (before || after)
+                }
                 Wrapping::Preserve => before || after,
             };
-        let leading = if writer.options.wrap_binary == Wrapping::Preserve {
+        let leading = if writer.options.wrap_binary == Wrapping::Preserve
+            || writer.options.wrap_binary == Wrapping::Fit
+                && writer.options.preserve_existing_line_breaks
+                && (before || after)
+        {
             before
         } else {
             writer.options.break_before_binary_operators
@@ -79,18 +85,24 @@ fn sequence(
         if token.kind == Kind::Comment && before && writer.has_text {
             writer.newline(base + usize::from(writer.options.continuation_indent_width))?;
         }
+        if before
+            && writer.options.preserve_existing_line_breaks
+            && tokens[at - 1].is("=")
+            && writer.has_text
+        {
+            writer.newline(base + usize::from(writer.options.continuation_indent_width))?;
+        }
         if wrap && leading && writer.has_text {
             writer.newline(base + usize::from(writer.options.continuation_indent_width))?;
         }
-        let aligned = alignment.is_some() && assignment(tokens) == Some(at);
-        if aligned {
-            writer.padding(alignment.unwrap_or_default().saturating_sub(writer.column))?;
+        if let Some(column) = alignment.get(&token.range.start) {
+            writer.padding(column.saturating_sub(writer.column))?;
         } else if at > 0 && writer.has_text && space(tokens, at, writer.options) {
             writer.padding(1)?;
         }
         if token.is("(") || token.is("[") {
             let end = group_end(tokens, at)?;
-            group(input, tokens, at, end, writer)?;
+            group(input, tokens, at, end, writer, alignment)?;
             at = end;
             continue;
         }
@@ -123,6 +135,7 @@ fn group(
     start: usize,
     end: usize,
     writer: &mut Writer<'_>,
+    alignment: &Columns,
 ) -> Result<(), Error> {
     let open = &tokens[start];
     let mut body = &tokens[start + 1..end - 1];
@@ -141,7 +154,10 @@ fn group(
         && !body.is_empty()
         && match writer.options.wrap_arguments {
             Wrapping::OnePerLine => true,
-            Wrapping::Fit => long || body.iter().any(|token| token.kind == Kind::Comment),
+            Wrapping::Fit => {
+                long || writer.options.preserve_existing_line_breaks && existing
+                    || body.iter().any(|token| token.kind == Kind::Comment)
+            }
             Wrapping::Preserve => existing,
         };
     writer.push(open.text)?;
@@ -168,7 +184,7 @@ fn group(
                 &body[at..end - usize::from(comma)],
                 writer,
                 indent,
-                None,
+                alignment,
             )?;
             if comma {
                 if writer.line_comment_open {
@@ -182,12 +198,14 @@ fn group(
         if open.is("(") && writer.options.space_inside_parentheses {
             writer.padding(1)?;
         }
-        sequence(input, body, writer, initial, None)?;
+        sequence(input, body, writer, initial, alignment)?;
     }
-    if writer.line_comment_open {
+    let closing_line = wrap && writer.options.closing_parenthesis_on_new_line;
+    if writer.line_comment_open || closing_line {
         writer.newline(initial)?;
     }
-    if open.is("(") && writer.options.space_inside_parentheses && !body.is_empty() {
+    if open.is("(") && writer.options.space_inside_parentheses && !body.is_empty() && !closing_line
+    {
         writer.padding(1)?;
     }
     writer.push(tokens[end - 1].text)

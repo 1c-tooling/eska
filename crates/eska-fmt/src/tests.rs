@@ -1,5 +1,7 @@
 //! Black-box formatter tests apply the real edit protocol and require a stable second pass.
 
+mod preset;
+
 use eska_project_core::formatting::{
     Language, Options,
     protocol::{Request, Response},

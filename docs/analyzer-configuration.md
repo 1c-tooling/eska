@@ -5,6 +5,44 @@
 Один root обслуживает один выбранный контекст. Полного CLI, Git, платформы 1С,
 daemon и индекса BSL для подготовки не требуется.
 
+Если в `eska.toml` задана непустая секция `[format]`, генератор
+передаёт поддерживаемые анализатором настройки из эффективного BSL-профиля:
+
+| Параметр ESKA | Производный параметр bsl-analyzer |
+| --- | --- |
+| `column_limit` | `diagnostics.parameters.LineLength.maxLineLength`; `0` отключает `LineLength` |
+| `indent_style`, `indent_width`, `tab_width` | `formatting.use_tabs`, `formatting.indent_size`; размер в табах для `tab`, в пробелах для `space` |
+| `max_empty_lines` и минимумы пустых строк для методов/блоков/возврата | `diagnostics.parameters.ConsecutiveEmptyLines.allowedEmptyLinesCount`: максимум этих значений |
+
+Например, `[format] profile = "eska"` задаёт в производном конфиге
+`maxLineLength = 150`, `use_tabs = true`, `indent_size = 1` и
+`allowedEmptyLinesCount = 1`. Явное `format.bsl.column_limit = 140` передаст 140.
+Изменение профиля делает управляемый конфиг устаревшим; обычная подготовка
+обновляет его с проверкой bsl-analyzer и снимка исходных настроек.
+
+Параметры `LineLength.maxLineLength` и
+`ConsecutiveEmptyLines.allowedEmptyLinesCount` вычисляются из `[format]`, даже
+если в `[tools.bsl-analyzer.diagnostics.parameters]` записаны другие значения.
+Отключённые пользователем диагностики (`LineLength = false`,
+`ConsecutiveEmptyLines = false`), прочие параметры правил и независимые настройки
+сохраняются. Если `[format]` отсутствует или пуст, прежняя политика анализатора
+переносится без такой синхронизации.
+Генерация меняет только производный `bsl-analyzer.toml`, а не `eska.toml`.
+
+Старые `tools.bsl-analyzer.formatting.use_tabs` и `indent_size` учитываются тем же
+resolver, что и в `eska-fmt`. Конфликт с явными отступами `[format.common]` или
+`[format.bsl]` отклоняется до записи; его нужно устранить явно.
+Для переноса совместимых старых настроек используйте `eska-fmt --migrate-config`
+с последующим `--apply-migration`.
+Один лишь выбор профиля не отменяет явные старые отступы.
+
+Для workspace применяется наследование стиля workspace → основной записываемый
+проект выбранного приложения. Внешняя база, подключённая только для контекста,
+не задаёт стиль обработки. Текущий bsl-analyzer использует один глобальный стиль
+на контекст: `[format.overrides]` для отдельных путей и отличающиеся стили других
+участников приложения в него не переносятся. Выравнивание, отбивка блоков и
+другие правила, для которых у анализатора нет параметров, остаются в ESKA fmt.
+
 Закреплён опубликованный **bsl-analyzer-app 0.4.0**, machine contract **3.5**.
 Перед prepare/migration проверяются версия, наличие необходимых CLI-команд и
 результат реального `check-config`. Другие версии отклоняются. Встроенного
