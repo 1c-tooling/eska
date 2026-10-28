@@ -25,6 +25,9 @@ use support::TestDir;
 #[path = "configuration/extension_scope.rs"]
 mod extension_scope;
 
+#[path = "configuration/formatting.rs"]
+mod formatting;
+
 /// Create only source descriptors needed by context resolution and check-config.
 fn project(root: &Path, kind: ProjectType) {
     create::create(root, &ProjectConfig::new(kind)).unwrap();

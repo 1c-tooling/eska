@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "scope": [
+    "ESKA preset control-block and return spacing",
+    "separate object initialization from field assignment alignment",
+    "project formatting parameters projected into generated analyzer configuration"
+  ],
+  "architecture": {
+    "policy": "eska-project-core",
+    "layout": "eska-fmt",
+    "analyzer_configuration": "eska-analyzer",
+    "ide_adapter": "unchanged"
+  },
+  "bsl_options": {
+    "blank_lines_around_blocks": 1,
+    "blank_lines_inside_multistatement_blocks": 1,
+    "blank_lines_before_return": 1,
+    "separate_object_initialization": true
+  },
+  "analyzer_projection": {
+    "column_limit": "diagnostics.parameters.LineLength.maxLineLength",
+    "unlimited_columns": "LineLength=false",
+    "indentation": [
+      "formatting.use_tabs",
+      "formatting.indent_size"
+    ],
+    "empty_line_budget": "diagnostics.parameters.ConsecutiveEmptyLines.allowedEmptyLinesCount",
+    "explicit_rule_disables": "preserved",
+    "other_diagnostic_parameters": "preserved"
+  },
+  "validation": {
+    "commands": [
+      {
+        "command": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "exit_code": 0,
+        "seconds": 1.71
+      },
+      {
+        "command": [
+          "cargo",
+          "check"
+        ],
+        "exit_code": 0,
+        "seconds": 0.21
+      },
+      {
+        "command": [
+          "cargo",
+          "clippy",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "seconds": 1.8
+      },
+      {
+        "command": [
+          "cargo",
+          "test"
+        ],
+        "exit_code": 0,
+        "seconds": 33.84
+      },
+      {
+        "command": [
+          "cargo",
+          "doc",
+          "--no-deps"
+        ],
+        "exit_code": 0,
+        "seconds": 20.3
+      },
+      {
+        "command": [
+          "cargo",
+          "build",
+          "--workspace",
+          "--bins"
+        ],
+        "exit_code": 0,
+        "seconds": 0.22
+      }
+    ],
+    "tests": {
+      "targets": 42,
+      "passed": 1297,
+      "failed": 0,
+      "ignored": 17
+    },
+    "cli_facade_rpc": {
+      "ru-RU": {
+        "cli_facade_rpc_parity": true,
+        "idempotent": true,
+        "crlf_preserved": true,
+        "cli_apply_matches_plan": true
+      },
+      "en-US": {
+        "cli_facade_rpc_parity": true,
+        "idempotent": true,
+        "crlf_preserved": true,
+        "cli_apply_matches_plan": true
+      }
+    },
+    "native_analyzer": {
+      "version": "bsl-analyzer 0.4.0",
+      "cases": 10,
+      "code_line_lengths": [
+        140,
+        151
+      ],
+      "eska_result": "140 accepted; 151 diagnosed against maximum 150",
+      "locales": [
+        "ru",
+        "en"
+      ],
+      "limits_tested": [
+        120,
+        150,
+        160,
+        0
+      ],
+      "explicit_disable_tested": true
+    },
+    "native_editor": {
+      "application": "VSCodium",
+      "platform": "Linux",
+      "runs": [
+        {
+          "locale": "en",
+          "passed": true,
+          "vsix_version": "0.1.2",
+          "bundle_sha256": "aef9b9c66ae044fb41305c6d2a2d51e3707e7ee371e0d7c8e71d847aaa78b805",
+          "matches_cli_rpc": true,
+          "undo_redo": true,
+          "idempotent": true,
+          "source_unchanged": true
+        },
+        {
+          "locale": "ru",
+          "passed": true,
+          "vsix_version": "0.1.2",
+          "bundle_sha256": "aef9b9c66ae044fb41305c6d2a2d51e3707e7ee371e0d7c8e71d847aaa78b805",
+          "matches_cli_rpc": true,
+          "undo_redo": true,
+          "idempotent": true,
+          "source_unchanged": true
+        }
+      ]
+    },
+    "schema_values_and_scopes": "passed",
+    "documentation_links": "passed"
+  },
+  "installation": {
+    "updated_tools": [
+      "eska",
+      "eska-project",
+      "eska-check",
+      "eska-build",
+      "eska-vcs",
+      "eska-fmt"
+    ],
+    "version": "0.19.0 local build",
+    "preview_before_user_install": true,
+    "receipt_owner_and_hash_checks": true,
+    "all_tool_contracts_and_help_ru_en": "passed",
+    "user_settings_and_extension_unchanged": true,
+    "rollback_preflight": "passed",
+    "official_installer_changes": "one local GNU archive checksum",
+    "cargo_metadata": "existing automated v0.19.0 metadata, no source-repository version change",
+    "published": false
+  },
+  "test_retry": {
+    "initial_failure": "cli::update::unix::current_release_is_read_only_and_concurrent_update_is_rejected: spawn returned ETXTBSY",
+    "isolated_retry": "passed",
+    "full_retry": "passed",
+    "unrelated_product_or_test_code_changed": false,
+    "log": "final3-test-etxtbsy.log"
+  },
+  "limits": {
+    "analyzer_global_style": "workspace plus main writable project; path overrides and other members individual styles are not representable in one upstream global config",
+    "preprocessor_bodies": "ordinary blank-line policy when branch operation count is ambiguous",
+    "unverified_platforms": [
+      "Windows",
+      "macOS",
+      "VS Code",
+      "Remote"
+    ],
+    "existing_user_window": "reload required"
+  },
+  "evidence_root": "../eska-playground/fmt-eska-block-spacing-mxlfbe1v"
+}

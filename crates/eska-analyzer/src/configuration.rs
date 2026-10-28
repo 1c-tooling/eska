@@ -16,6 +16,8 @@ use crate::{
     storage::{self, ConfigLock, Temporary},
 };
 
+mod formatting;
+
 pub const GENERATOR_VERSION: u32 = 1;
 pub const FILE_NAME: &str = "bsl-analyzer.toml";
 const HEADER: &str = "# eska-generated ";
@@ -90,6 +92,7 @@ pub(crate) fn build(
     let body = generate(
         &context,
         policy.unwrap_or_else(|| context.analyzer_policy()),
+        &manifest,
     )?;
     let mut hash = Sha256::new();
     hash.update(GENERATOR_VERSION.to_le_bytes());
@@ -227,6 +230,7 @@ pub(crate) fn ensure_snapshot(plan: &Plan) -> Result<(), Error> {
 pub(crate) fn generate(
     context: &AnalysisContext,
     policy: &AnalyzerPolicy,
+    manifest: &[u8],
 ) -> Result<String, Error> {
     let mut table: toml::Table =
         toml::from_str(policy.as_toml()).map_err(|error| Error::InvalidToml {
@@ -296,6 +300,7 @@ pub(crate) fn generate(
     source.insert("extensions".into(), toml::Value::Array(extensions));
     source.insert("externals".into(), toml::Value::Array(externals));
     table.insert("source".into(), toml::Value::Table(source));
+    formatting::apply(context, manifest, &mut table)?;
     toml::to_string_pretty(&table).map_err(|_| Error::InvalidPolicy {
         field: "serialization".into(),
     })

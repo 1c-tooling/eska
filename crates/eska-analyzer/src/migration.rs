@@ -52,7 +52,11 @@ pub fn preview(start: &Path, application: Option<&str>) -> Result<Preview, Error
         path: base.path(),
         detail: error.to_string(),
     })?;
-    let generated = configuration::generate(&base.context, base.context.analyzer_policy())?;
+    let generated = configuration::generate(
+        &base.context,
+        base.context.analyzer_policy(),
+        &base.manifest,
+    )?;
     let expected: toml::Table = toml::from_str(&generated).map_err(|error| Error::InvalidToml {
         path: base.path(),
         detail: error.to_string(),
