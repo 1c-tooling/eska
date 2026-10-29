@@ -196,7 +196,7 @@ eska-vcs --help
 ### Публичный пакет и текущий checkout
 
 Компонентная поставка появилась в ESKA `0.15.0`; для готовых бинарников проверяйте
-Assets выбранного [GitHub Release](https://github.com/1c-tooling/eska/releases).
+Assets выбранного [GitHub Release](https://github.com/odineska/eska/releases).
 Инструменты также публикуются в Cargo registry вместе с общей версией выпуска.
 Установите их через Cargo либо соберите checkout, а Explorer упакуйте из текущих
 исходников: новый backend со старым VSIX сам по себе не добавит новый клиент.
@@ -270,7 +270,7 @@ cargo install --locked eska eska-check
 вместо повторного клонирования; сначала сохраните собственные изменения.
 
 ```sh
-git clone https://github.com/1c-tooling/eska.git
+git clone https://github.com/odineska/eska.git
 cd eska
 cargo build --workspace --bins --release --locked
 export PATH="$PWD/target/release:$PATH"
@@ -343,7 +343,7 @@ project и анализатор отдельно и предлагает уст�
 Из родительского каталога, в котором лежит `eska`:
 
 ```sh
-git clone https://github.com/1c-tooling/eska-vscode-explorer.git
+git clone https://github.com/odineska/eska-vscode-explorer.git
 cd eska-vscode-explorer
 bun install --frozen-lockfile --ignore-scripts
 bun run package
@@ -1799,5 +1799,5 @@ eska patch --base main --output build/TASK-123.cfe
 [Делегирование общей команды](component-delegation.md) ·
 [Компонентная установка](component-installation.md) · [Обновление CLI](cli-update.md) ·
 [Patch-контракт](roadmap/t42-patch-extension.md) ·
-[Сборка и установка VSIX](https://github.com/1c-tooling/eska-vscode-explorer/blob/main/docs/packaging.md) ·
-[Языковой клиент](https://github.com/1c-tooling/eska-vscode-explorer/blob/main/docs/language-service.md)
+[Сборка и установка VSIX](https://github.com/odineska/eska-vscode-explorer/blob/main/docs/packaging.md) ·
+[Языковой клиент](https://github.com/odineska/eska-vscode-explorer/blob/main/docs/language-service.md)
