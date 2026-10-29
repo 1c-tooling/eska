@@ -134,7 +134,7 @@ fn load_manifest(path: &Path) -> Result<ManifestConfig, ContextDiscoveryError> {
     }
     ManifestConfig::load(path).map_err(|source| ContextDiscoveryError::Manifest {
         path: path.to_path_buf(),
-        source,
+        source: Box::new(source),
     })
 }
 
@@ -162,7 +162,7 @@ fn load_workspace(
             .resolve_analysis(&members)
             .map_err(|source| ContextDiscoveryError::Manifest {
                 path: root.join(FILE_NAME),
-                source: ManifestConfigError::Workspace(source),
+                source: Box::new(ManifestConfigError::Workspace(source)),
             })?;
     Ok(Workspace::new(
         root.to_path_buf(),
@@ -420,7 +420,7 @@ pub enum ContextDiscoveryError {
     Project(DiscoveryError),
     Manifest {
         path: PathBuf,
-        source: ManifestConfigError,
+        source: Box<ManifestConfigError>,
     },
     MemberNotDirectory {
         path: PathBuf,
