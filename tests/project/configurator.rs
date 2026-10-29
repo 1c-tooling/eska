@@ -136,6 +136,63 @@ fn configurator_golden_trees_cover_four_project_types_and_owner_shapes() {
     assert_eq!(actual, expected);
 }
 
+/// External roots expose their object module directly, including deferred and failed probes.
+#[test]
+fn external_object_modules_are_direct_children() {
+    for case in ["report", "processing"] {
+        let (_directory, source) = project(case);
+        let schema = ConfiguratorSchema::for_source(&source);
+        let owner = source.root().id();
+        let parsed = metadata_parser::load(&source, owner, PropertiesMode::Summary).unwrap();
+        for availability in [
+            ModuleAvailability::Loaded(vec![ModuleRole::Object, ModuleRole::Manager]),
+            ModuleAvailability::Loaded(vec![]),
+            ModuleAvailability::Unloaded,
+            ModuleAvailability::Failed,
+        ] {
+            let projection = ConfiguratorTree::build(
+                &schema,
+                &parsed,
+                &BTreeMap::from([(owner.clone(), availability.clone())]),
+            )
+            .unwrap();
+            let root = projection.node(projection.root()).unwrap();
+            assert!(!root.children.iter().any(|id| matches!(
+                id,
+                NodeId::Collection {
+                    kind: CollectionKind::Modules,
+                    ..
+                }
+            )));
+            let module = NodeId::Module {
+                owner: owner.clone(),
+                role: ModuleRole::Object,
+            };
+            if matches!(availability, ModuleAvailability::Loaded(ref roles) if roles.contains(&ModuleRole::Object))
+            {
+                assert_eq!(root.children.first(), Some(&module));
+                assert_eq!(
+                    projection.node(&module).unwrap().parent.as_ref(),
+                    Some(projection.root())
+                );
+            } else {
+                assert!(projection.node(&module).is_none());
+            }
+            assert!(
+                projection
+                    .node(&NodeId::Module {
+                        owner: owner.clone(),
+                        role: ModuleRole::Manager
+                    })
+                    .is_none()
+            );
+            if availability == ModuleAvailability::Failed {
+                assert_eq!(root.state, ChildrenState::Error);
+            }
+        }
+    }
+}
+
 /// View filtering preserves nested empty groups and keeps Documents with only numerators.
 #[test]
 fn configurator_filters_only_proven_empty_root_sections() {
