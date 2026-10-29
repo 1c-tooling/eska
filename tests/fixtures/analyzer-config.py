@@ -3,10 +3,11 @@
 import sys,json,time,os
 from pathlib import Path
 root=Path.cwd()
+version=(root/'version').read_text() if (root/'version').exists() else '0.4.0'
 if sys.argv[1]=='--version':
-    print('bsl-analyzer '+((root/'version').read_text() if (root/'version').exists() else '0.4.0'))
+    print('bsl-analyzer '+version)
 elif sys.argv[1]=='contract':
-    print(json.dumps({'build_version':'0.4.0','contract_version':'3.5','cli':{'commands':[{'name':name,'args':[{'name':'config'}]} for name in ['check-config','analyze','lsp']]}}))
+    print(json.dumps({'build_version':version,'contract_version':'3.5','cli':{'commands':[{'name':name,'args':[{'name':'config'}]} for name in ['check-config','analyze','lsp']]}}))
 elif sys.argv[1]=='check-config':
     (root/'check-started').write_text(str(os.getpid()))
     if (root/'sleep').exists(): time.sleep(1)

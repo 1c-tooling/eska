@@ -12,7 +12,7 @@ use sha2::{Digest, Sha256};
 
 use crate::{
     Error,
-    process::{Analyzer, SUPPORTED_VERSION},
+    process::Analyzer,
     storage::{self, ConfigLock, Temporary},
 };
 
@@ -21,6 +21,8 @@ mod formatting;
 pub const GENERATOR_VERSION: u32 = 1;
 pub const FILE_NAME: &str = "bsl-analyzer.toml";
 const HEADER: &str = "# eska-generated ";
+// This records the generated configuration dialect, not a restriction on the installed executable.
+const CONFIGURATION_BASE_VERSION: &str = "0.4.0";
 
 /// A generated config carries only reproducibility and ownership facts, not editor state.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -96,7 +98,7 @@ pub(crate) fn build(
     )?;
     let mut hash = Sha256::new();
     hash.update(GENERATOR_VERSION.to_le_bytes());
-    hash.update(SUPPORTED_VERSION.as_bytes());
+    hash.update(CONFIGURATION_BASE_VERSION.as_bytes());
     digest_input(&mut hash, Path::new("eska.toml"), &manifest)?;
     for source in context.sources() {
         let member_manifest = source.project().root().join("eska.toml");
@@ -123,7 +125,7 @@ pub(crate) fn build(
     let ownership = Ownership {
         schema_version: 1,
         generator_version: GENERATOR_VERSION,
-        analyzer_version: SUPPORTED_VERSION.into(),
+        analyzer_version: CONFIGURATION_BASE_VERSION.into(),
         context: context.name().map(|name| name.as_str().into()),
         input_fingerprint: hex(&hash.finalize()),
         body_sha256: sha256(body.as_bytes()),

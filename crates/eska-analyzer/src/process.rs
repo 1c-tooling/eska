@@ -1,4 +1,4 @@
-//! Bounded subprocess I/O, cancellation and a pinned published CLI contract.
+//! Bounded subprocess I/O, cancellation and capability checks for the published CLI.
 
 use std::{
     ffi::OsStr,
@@ -14,7 +14,6 @@ use serde_json::Value;
 
 use crate::Error;
 
-pub const SUPPORTED_VERSION: &str = "0.4.0";
 const MAX_OUTPUT: u64 = 4 * 1024 * 1024;
 
 /// The selected executable and operation limits do not locate a wrapper or a platform.
@@ -48,23 +47,29 @@ impl Analyzer<'_> {
                 .connection_closed
                 .is_some_and(|closed| closed.load(Ordering::Acquire))
     }
-    /// Verify both the selected release and the commands used by this integration.
+    /// Verify the executable identity and commands, returning its actual release version.
     ///
     /// # Errors
-    /// Rejects unsupported releases, malformed contracts, process failures and cancellation.
-    pub fn validate(&self, root: &Path) -> Result<(), Error> {
+    /// Rejects invalid version output, malformed contracts, process failures and cancellation.
+    pub fn validate(&self, root: &Path) -> Result<String, Error> {
         let output = self.run(root, [OsStr::new("--version")])?;
         let actual = String::from_utf8_lossy(&output.stdout).trim().to_owned();
-        if !output.status.success() || actual != format!("bsl-analyzer {SUPPORTED_VERSION}") {
+        let version = actual.strip_prefix("bsl-analyzer ").filter(|version| {
+            let parts: Vec<_> = version.split('.').collect();
+            parts.len() == 3
+                && parts.iter().all(|part| {
+                    !part.is_empty()
+                        && (part.len() == 1 || !part.starts_with('0'))
+                        && part.bytes().all(|byte| byte.is_ascii_digit())
+                })
+        });
+        let Some(version) = version.filter(|_| output.status.success()) else {
             return Err(Error::AnalyzerVersion { actual });
-        }
+        };
         let output = self.run(root, [OsStr::new("contract")])?;
         let contract: Value =
             serde_json::from_slice(&output.stdout).map_err(|_| Error::AnalyzerContract)?;
-        if !output.status.success()
-            || contract["build_version"] != SUPPORTED_VERSION
-            || contract["contract_version"] != "3.5"
-        {
+        if !output.status.success() || contract["build_version"].as_str() != Some(version) {
             return Err(Error::AnalyzerContract);
         }
         let commands = contract["cli"]["commands"]
@@ -83,7 +88,7 @@ impl Analyzer<'_> {
                 return Err(Error::AnalyzerContract);
             }
         }
-        Ok(())
+        Ok(version.to_owned())
     }
 
     /// Validate a config in its final parent directory so every relative policy path keeps its meaning.

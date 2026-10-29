@@ -151,7 +151,7 @@ fn malformed_partial_and_failed_runs_never_produce_a_report() {
         let expected = match mode {
             "exit-after-done" => "analyzer_exit",
             "mutate" | "add-file" => "inputs_changed",
-            "wrong-version" => "analyzer_version",
+            "wrong-version" => "analyzer_contract",
             _ => "invalid_stream",
         };
         assert_eq!(failure.code(), expected, "{mode}: {failure:?}");

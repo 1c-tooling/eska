@@ -404,10 +404,10 @@ fn migration_does_not_discard_paths_targets_or_conflicting_policy() {
     );
 }
 
-/// A selected unsupported release cannot validate or replace a config even if it exits successfully.
+/// Compatible releases reuse the generated dialect; malformed version output never replaces a config.
 #[cfg(unix)]
 #[test]
-fn unsupported_release_preserves_existing_config() {
+fn compatible_releases_reuse_existing_config() {
     let fixture = TestDir::new();
     let root = fixture.0.join("project");
     project(&root, ProjectType::Configuration);
@@ -421,7 +421,13 @@ fn unsupported_release_preserves_existing_config() {
     let plan = configuration::inspect(&root, None).unwrap();
     let plan = configuration::prepare(&plan, &analyzer, false).unwrap();
     let original = fs::read(plan.path()).unwrap();
-    fs::write(root.join("version"), b"0.3.1").unwrap();
+    for version in ["0.3.1", "0.4.1", "0.5.0", "1.2.3"] {
+        fs::write(root.join("version"), version).unwrap();
+        assert_eq!(analyzer.validate(&root).unwrap(), version);
+        configuration::prepare(&plan, &analyzer, false).unwrap();
+        assert_eq!(fs::read(plan.path()).unwrap(), original);
+    }
+    fs::write(root.join("version"), b"invalid").unwrap();
     let result = configuration::prepare(&plan, &analyzer, false);
     assert!(
         matches!(result, Err(Error::AnalyzerVersion { .. })),

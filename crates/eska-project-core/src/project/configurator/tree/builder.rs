@@ -195,7 +195,12 @@ fn build_modules(
         return;
     }
     let parent = NodeId::Object(owner.clone());
-    let id = group(tree, owner, CollectionKind::Modules, &parent, false);
+    let id = if schema.has_direct_modules(owner) {
+        // External objects have one object module and no manager module to group with it.
+        parent
+    } else {
+        group(tree, owner, CollectionKind::Modules, &parent, false)
+    };
     if let Some(node) = tree.nodes.get_mut(&id) {
         node.state = match availability {
             ModuleAvailability::Loaded(_) => ChildrenState::NonEmpty,

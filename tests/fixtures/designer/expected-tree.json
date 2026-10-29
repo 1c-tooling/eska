@@ -130,8 +130,7 @@
   ],
   "processing": [
     ["object:data-processor:Обработка", null, "name:Обработка", "NonEmpty", false],
-    ["group:data-processor:Обработка#modules", "object:data-processor:Обработка", "tree-collection-modules", "NonEmpty", false],
-    ["module:data-processor:Обработка#object", "group:data-processor:Обработка#modules", "tree-module-object", "Empty", false],
+    ["module:data-processor:Обработка#object", "object:data-processor:Обработка", "tree-module-object", "Empty", false],
     ["group:data-processor:Обработка#attribute", "object:data-processor:Обработка", "tree-collection-attribute", "NonEmpty", false],
     ["object:data-processor:Обработка/attribute:Параметр", "group:data-processor:Обработка#attribute", "name:Параметр", "Empty", false],
     ["group:data-processor:Обработка#tabular-section", "object:data-processor:Обработка", "tree-collection-tabular-section", "Empty", false],
@@ -141,8 +140,7 @@
   ],
   "report": [
     ["object:report:Анализ", null, "name:Анализ", "NonEmpty", false],
-    ["group:report:Анализ#modules", "object:report:Анализ", "tree-collection-modules", "NonEmpty", false],
-    ["module:report:Анализ#object", "group:report:Анализ#modules", "tree-module-object", "Empty", false],
+    ["module:report:Анализ#object", "object:report:Анализ", "tree-module-object", "Empty", false],
     ["group:report:Анализ#attribute", "object:report:Анализ", "tree-collection-attribute", "NonEmpty", false],
     ["object:report:Анализ/attribute:Параметр", "group:report:Анализ#attribute", "name:Параметр", "Empty", false],
     ["group:report:Анализ#tabular-section", "object:report:Анализ", "tree-collection-tabular-section", "Empty", false],
