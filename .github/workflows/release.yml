@@ -173,7 +173,7 @@ jobs:
 
   publish:
     needs: [assemble, verify-installers]
-    if: inputs.tag != 'dry-run' && github.repository == '1c-tooling/eska' && startsWith(github.ref, 'refs/tags/')
+    if: inputs.tag != 'dry-run' && github.repository == 'odineska/eska' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
