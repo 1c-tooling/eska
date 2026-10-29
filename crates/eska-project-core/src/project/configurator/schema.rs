@@ -68,6 +68,16 @@ impl ConfiguratorSchema {
             )
     }
 
+    /// Only the actual external-object root bypasses the module group, never a nested descriptor root.
+    #[must_use]
+    pub(super) fn has_direct_modules(&self, owner: &ObjectId) -> bool {
+        &self.root == owner
+            && matches!(
+                self.project_type,
+                ProjectType::Report | ProjectType::Processing
+            )
+    }
+
     /// Classes nested under Common, in the same order used by semantic diff.
     pub fn common_collections() -> impl Iterator<Item = MetadataKind> {
         METADATA_ORDER
@@ -220,12 +230,7 @@ impl ConfiguratorSchema {
     #[must_use]
     pub fn modules(&self, owner: &ObjectId, kind: MetadataKind) -> &'static [ModuleRole] {
         use ModuleRole::{Manager, Module, Object, RecordSet};
-        if &self.root == owner
-            && matches!(
-                self.project_type,
-                ProjectType::Report | ProjectType::Processing
-            )
-        {
+        if self.has_direct_modules(owner) {
             return &[Object];
         }
         match kind {

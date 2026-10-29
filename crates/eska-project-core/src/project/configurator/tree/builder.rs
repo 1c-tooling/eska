@@ -7,7 +7,6 @@ use super::{
     TreeNode,
 };
 use crate::project::{
-    ProjectType,
     metadata_model::{CollectionKind, MetadataKind, NodeId, ObjectId},
     metadata_parser::{ParsedDescriptor, ParsedObject},
 };
@@ -196,11 +195,7 @@ fn build_modules(
         return;
     }
     let parent = NodeId::Object(owner.clone());
-    let id = if parent == tree.root
-        && matches!(
-            schema.project_type(),
-            ProjectType::Report | ProjectType::Processing
-        ) {
+    let id = if schema.has_direct_modules(owner) {
         // External objects have one object module and no manager module to group with it.
         parent
     } else {

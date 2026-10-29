@@ -193,6 +193,44 @@ fn external_object_modules_are_direct_children() {
     }
 }
 
+/// A separately loaded form is a descriptor root, but remains nested in the external project.
+#[test]
+fn external_object_forms_keep_their_module_group() {
+    for case in ["report", "processing"] {
+        let (_directory, source) = project(case);
+        let schema = ConfiguratorSchema::for_source(&source);
+        let parsed = metadata_parser::parse(
+            "<MetaDataObject xmlns='http://v8.1c.ru/8.3/MDClasses'><Form uuid='form'><Properties><Name>NestedForm</Name></Properties></Form></MetaDataObject>",
+            None,
+            PropertiesMode::Summary,
+        ).unwrap();
+        let owner = parsed.objects[0].metadata.id();
+        let projection = ConfiguratorTree::build(
+            &schema,
+            &parsed,
+            &BTreeMap::from([(
+                owner.clone(),
+                ModuleAvailability::Loaded(vec![ModuleRole::Module]),
+            )]),
+        )
+        .unwrap();
+        let root = projection.node(projection.root()).unwrap();
+        let group = NodeId::Collection {
+            owner: owner.clone(),
+            kind: CollectionKind::Modules,
+        };
+        assert_eq!(root.children.first(), Some(&group));
+        let module = NodeId::Module {
+            owner: owner.clone(),
+            role: ModuleRole::Module,
+        };
+        assert_eq!(
+            projection.node(&module).unwrap().parent.as_ref(),
+            Some(&group)
+        );
+    }
+}
+
 /// View filtering preserves nested empty groups and keeps Documents with only numerators.
 #[test]
 fn configurator_filters_only_proven_empty_root_sections() {
