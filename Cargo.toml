@@ -74,7 +74,7 @@ serde_json = "1.0.154"
 eska-vcs = { path = "crates/eska-vcs" }
 eska-project-core = { path = "crates/eska-project-core" }
 eska-project = { path = "crates/eska-project" }
-gix = { version = "0.90.0", default-features = false, features = ["blocking-http-transport-curl-rustls", "max-performance", "revision", "sha1", "status", "worktree-mutation"] }
+gix = { version = "0.90.0", default-features = false, features = ["max-performance", "revision", "sha1", "status", "worktree-mutation"] }
 roxmltree = { version = "0.21.2", default-features = false, features = ["std", "positions"] }
 toml = { version = "1.1.8", default-features = false, features = ["display", "parse", "serde"] }
 base64 = { version = "0.23.1", default-features = false, features = ["std"] }
@@ -85,3 +85,8 @@ nix = { version = "0.31.3", default-features = false, features = ["signal", "pro
 
 [target.'cfg(windows)'.dependencies]
 self-replace = "1.5.0"
+# curl's ssl feature uses Schannel and the Windows certificate store on this target.
+gix = { version = "0.90.0", default-features = false, features = ["blocking-http-transport-curl-openssl"] }
+
+[target.'cfg(not(windows))'.dependencies]
+gix = { version = "0.90.0", default-features = false, features = ["blocking-http-transport-curl-rustls"] }
