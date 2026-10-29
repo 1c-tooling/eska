@@ -19,7 +19,7 @@ jobs:
     needs: check
     name: Publish crate
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == '1c-tooling' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository_owner == 'odineska' && github.ref == 'refs/heads/main' }}
     concurrency:
       group: release-plz-publish
       cancel-in-progress: false
@@ -75,7 +75,7 @@ jobs:
     needs: check
     name: Release PR
     runs-on: ubuntu-latest
-    if: ${{ github.repository_owner == '1c-tooling' && github.event_name == 'push' }}
+    if: ${{ github.repository_owner == 'odineska' && github.event_name == 'push' }}
     concurrency:
       group: release-plz-pr-${{ github.ref }}
       cancel-in-progress: false

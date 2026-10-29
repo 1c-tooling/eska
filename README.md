@@ -1,7 +1,7 @@
 # eska
 
-[![Release-plz](https://github.com/1c-tooling/eska/actions/workflows/release-plz.yml/badge.svg)](https://github.com/1c-tooling/eska/actions/workflows/release-plz.yml)
-[![Binaries](https://github.com/1c-tooling/eska/actions/workflows/release.yml/badge.svg)](https://github.com/1c-tooling/eska/actions/workflows/release.yml)
+[![Release-plz](https://github.com/odineska/eska/actions/workflows/release-plz.yml/badge.svg)](https://github.com/odineska/eska/actions/workflows/release-plz.yml)
+[![Binaries](https://github.com/odineska/eska/actions/workflows/release.yml/badge.svg)](https://github.com/odineska/eska/actions/workflows/release.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 **Инструменты для проектов 1С в формате Designer XML: метаданные, BSL, Git и сборка.**
@@ -35,8 +35,8 @@ Save сохраняет черновик; «Применить» меняет м
 (медианы на 48 полях).
 
 [Подробное руководство](docs/user-guide.md) ·
-[Сайт и инструкция](https://1c-tooling.github.io/eska/docs/) ·
-[ESKA: 1C Explorer](https://github.com/1c-tooling/eska-vscode-explorer)
+[Сайт и инструкция](https://odineska.github.io/eska/docs/) ·
+[ESKA: 1C Explorer](https://github.com/odineska/eska-vscode-explorer)
 
 ## Из чего состоит ESKA
 
@@ -48,7 +48,7 @@ Save сохраняет черновик; «Применить» меняет м
 | [`eska-build`](docs/build-tool.md) | Сборка, распаковка, import, patch и служебная ИБ | Платформа 1С с `ibcmd`; import/patch также используют `eska-vcs` |
 | [`eska-vcs`](docs/vcs-tool.md) | Workflow, status, semantic diff, commits и полки | Git для операций записи и transport; чтение выполняется через `gix` |
 | [`eska`](docs/component-delegation.md) | Общая команда, вызывающая нужный компонент | Компоненты выбранной операции |
-| [ESKA: 1C Explorer](https://github.com/1c-tooling/eska-vscode-explorer) | Дерево метаданных, свойства, поддержка 1С и BSL-клиент в редакторе | VS Code/VSCodium ≥ 1.109.0 и `eska-project` с Metadata API 1.12 |
+| [ESKA: 1C Explorer](https://github.com/odineska/eska-vscode-explorer) | Дерево метаданных, свойства, поддержка 1С и BSL-клиент в редакторе | VS Code/VSCodium ≥ 1.109.0 и `eska-project` с Metadata API 1.12 |
 
 Для дерева достаточно project-компонента. Анализатор, сборщик и VCS можно
 подключать отдельно. BSL Analyzer поставляется как **внешний upstream-бинарник**:
@@ -92,7 +92,7 @@ Save сохраняет черновик; «Применить» меняет м
 
 Компонентная поставка доступна начиная с ESKA `0.15.0`.
 Версия checkout указана в `Cargo.toml`, готовые бинарники — в
-[GitHub Releases](https://github.com/1c-tooling/eska/releases).
+[GitHub Releases](https://github.com/odineska/eska/releases).
 Новые возможности этой документации требуют также текущей сборки расширения.
 Опубликованная Cargo-версия не означает наличие готовых бинарников той же версии
 в GitHub Releases.
@@ -126,19 +126,19 @@ eska --help
 Linux и macOS:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://1c-tooling.github.io/eska/install | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://odineska.github.io/eska/install | sh
 ```
 
 Windows PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://1c-tooling.github.io/eska/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://odineska.github.io/eska/install.ps1 | iex"
 ```
 
 После первой установки откройте новый терминал и выполните `eska --version`.
 Release pipeline настроен на полный комплект и
 [выборочные компонентные ZIP](docs/component-installation.md); перед установкой
-проверьте Assets выбранного [релиза](https://github.com/1c-tooling/eska/releases).
+проверьте Assets выбранного [релиза](https://github.com/odineska/eska/releases).
 Для локального компонентного комплекта предусмотрены установка, проверка,
 обновление, удаление и восстановление по receipts.
 
