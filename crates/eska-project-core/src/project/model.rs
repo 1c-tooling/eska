@@ -243,7 +243,8 @@ mod tests {
         InvalidPathReason, Project, ProjectConfiguration, ProjectPath, ProjectPathError,
         ProjectType, SourceFormat,
     };
-    use std::path::{Path, PathBuf};
+    use crate::test_path;
+    use std::path::PathBuf;
 
     fn configuration() -> ProjectConfiguration {
         ProjectConfiguration::new(ProjectType::Configuration, SourceFormat::DesignerXml)
@@ -252,14 +253,14 @@ mod tests {
     #[test]
     fn creates_project_with_source_inside_root() {
         let project = Project::new(
-            PathBuf::from("/work/example"),
-            PathBuf::from("/work/example/src"),
+            test_path("/work/example"),
+            test_path("/work/example/src"),
             configuration(),
         )
         .expect("valid project paths");
 
-        assert_eq!(project.root(), Path::new("/work/example"));
-        assert_eq!(project.source(), Path::new("/work/example/src"));
+        assert_eq!(project.root(), test_path("/work/example"));
+        assert_eq!(project.source(), test_path("/work/example/src"));
         assert_eq!(
             project.configuration().project_type(),
             ProjectType::Configuration
@@ -273,8 +274,8 @@ mod tests {
     #[test]
     fn allows_project_root_as_source_directory() {
         let project = Project::new(
-            PathBuf::from("/work/example"),
-            PathBuf::from("/work/example"),
+            test_path("/work/example"),
+            test_path("/work/example"),
             configuration(),
         );
 
@@ -285,7 +286,7 @@ mod tests {
     fn rejects_relative_root() {
         let error = Project::new(
             PathBuf::from("example"),
-            PathBuf::from("/work/example/src"),
+            test_path("/work/example/src"),
             configuration(),
         )
         .expect_err("relative root must be rejected");
@@ -303,7 +304,7 @@ mod tests {
     #[test]
     fn rejects_relative_source() {
         let error = Project::new(
-            PathBuf::from("/work/example"),
+            test_path("/work/example"),
             PathBuf::from("src"),
             configuration(),
         )
@@ -335,14 +336,14 @@ mod tests {
                 "/work/example/src/../xml",
             ),
         ] {
-            let error = Project::new(root.into(), source.into(), configuration())
+            let error = Project::new(test_path(root), test_path(source), configuration())
                 .expect_err("parent traversal must be rejected");
 
             assert_eq!(
                 error,
                 ProjectPathError::InvalidPath {
                     field,
-                    path: path.into(),
+                    path: test_path(path),
                     reason: InvalidPathReason::ContainsParentTraversal,
                 }
             );
@@ -352,8 +353,8 @@ mod tests {
     #[test]
     fn rejects_source_outside_root() {
         let error = Project::new(
-            PathBuf::from("/work/example"),
-            PathBuf::from("/work/another/src"),
+            test_path("/work/example"),
+            test_path("/work/another/src"),
             configuration(),
         )
         .expect_err("source outside root must be rejected");
@@ -361,8 +362,8 @@ mod tests {
         assert_eq!(
             error,
             ProjectPathError::SourceOutsideRoot {
-                root: PathBuf::from("/work/example"),
-                source: PathBuf::from("/work/another/src"),
+                root: test_path("/work/example"),
+                source: test_path("/work/another/src"),
             }
         );
     }

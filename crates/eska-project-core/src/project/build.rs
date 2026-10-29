@@ -127,7 +127,11 @@ pub enum BuildSettingsError {
 fn validate_artifacts_directory(path: &Path) -> Result<(), BuildSettingsError> {
     let reason = if path.as_os_str().is_empty() {
         Some(InvalidArtifactsDirectoryReason::Empty)
-    } else if path.is_absolute() {
+    } else if path.has_root()
+        || path
+            .components()
+            .any(|part| matches!(part, Component::Prefix(_)))
+    {
         Some(InvalidArtifactsDirectoryReason::Absolute)
     } else if path
         .components()

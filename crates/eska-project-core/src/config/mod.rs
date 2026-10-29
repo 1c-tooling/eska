@@ -2,6 +2,7 @@
 
 pub(crate) mod composition;
 mod manifest;
+mod paths;
 mod project;
 mod schema;
 mod workflow;
