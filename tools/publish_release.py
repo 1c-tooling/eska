@@ -10,7 +10,7 @@ from urllib.parse import quote
 
 from component_package import digest, require
 
-REPOSITORY = "1c-tooling/eska"
+REPOSITORY = "odineska/eska"
 
 
 def gh(*args):
