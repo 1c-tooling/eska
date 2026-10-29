@@ -83,6 +83,7 @@ pub struct FileResult {
 /// A report exists only after successful exit, complete JSONL and unchanged input checks.
 #[derive(Debug)]
 pub struct Report {
+    pub analyzer_version: String,
     pub root: PathBuf,
     pub application: Option<String>,
     pub limited_context: bool,
@@ -176,7 +177,8 @@ pub fn analyze(plan: &Plan, analyzer: &Analyzer<'_>) -> Result<Report, Failure> 
         }
     }
     let _lease = configuration::lease(plan)?;
-    analyzer.validate(plan.context.root())?;
+    let version = analyzer.validate(plan.context.root())?;
+    let expected_version = version.clone();
     analyzer.check_config(plan.context.root(), &plan.path())?;
     let expected = snapshot.modules.clone();
     let config = plan.path();
@@ -191,7 +193,7 @@ pub fn analyze(plan: &Plan, analyzer: &Analyzer<'_>) -> Result<Report, Failure> 
             OsStr::new("--format"),
             OsStr::new("jsonl"),
         ],
-        move |stdout| Ok(jsonl::read(stdout, &expected)),
+        move |stdout| Ok(jsonl::read(stdout, &expected, &expected_version)),
     )?;
     if !output.status.success() {
         return Err(Failure::ProcessExit {
@@ -211,6 +213,7 @@ pub fn analyze(plan: &Plan, analyzer: &Analyzer<'_>) -> Result<Report, Failure> 
         }
     }
     Ok(Report {
+        analyzer_version: version,
         root: plan.context.root().into(),
         application: plan.context.name().map(|name| name.as_str().to_owned()),
         limited_context: plan.context.limited_context(),

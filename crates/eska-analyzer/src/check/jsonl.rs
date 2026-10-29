@@ -9,7 +9,6 @@ use std::{
 use serde::Deserialize;
 
 use super::{Diagnostic, Failure, FileResult};
-use crate::process::SUPPORTED_VERSION;
 
 const MAX_LINE: u64 = 8 * 1024 * 1024;
 // Large configurations can exceed 256 MiB while every individual file event remains small.
@@ -46,9 +45,10 @@ struct Baseline {
 pub(super) fn read(
     stream: impl Read,
     expected: &BTreeSet<PathBuf>,
+    version: &str,
 ) -> Result<Vec<FileResult>, Failure> {
     let mut reader = BufReader::new(stream);
-    let result = parse(&mut reader, expected, MAX_REPORT);
+    let result = parse(&mut reader, expected, MAX_REPORT, version);
     if result.is_err() {
         let _ = io::copy(&mut reader, &mut io::sink());
     }
@@ -60,6 +60,7 @@ fn parse(
     reader: &mut impl BufRead,
     expected: &BTreeSet<PathBuf>,
     max_report_bytes: u64,
+    expected_version: &str,
 ) -> Result<Vec<FileResult>, Failure> {
     let invalid = |reason| Failure::Stream { reason };
     let mut started = false;
@@ -95,7 +96,7 @@ fn parse(
                 if total_files != expected.len() || total_files == 0 {
                     return Err(invalid("source_count"));
                 }
-                if version != SUPPORTED_VERSION {
+                if version != expected_version {
                     return Err(invalid("stream_version"));
                 }
                 started = true;
@@ -185,6 +186,21 @@ mod tests {
         output
     }
 
+    /// JSONL follows the selected executable version instead of a compiled-in release pin.
+    #[test]
+    fn accepts_the_selected_release_and_rejects_a_different_stream_version() {
+        let expected = BTreeSet::from([PathBuf::from("/selected/Module.bsl")]);
+        let mut values = events();
+        values[0]["version"] = json!("0.5.0");
+        assert!(read(stream(&values).as_slice(), &expected, "0.5.0").is_ok());
+        assert!(matches!(
+            read(stream(&values).as_slice(), &expected, "0.4.0"),
+            Err(Failure::Stream {
+                reason: "stream_version"
+            })
+        ));
+    }
+
     /// Current upstream Sonar severities must survive complete stream validation as public errors.
     #[test]
     fn normalizes_published_error_severities() {
@@ -192,7 +208,7 @@ mod tests {
         for severity in ["Blocker", "Critical", "Major", "Error"] {
             let mut values = events();
             values[1]["diagnostics"][0]["severity"] = json!(severity);
-            let files = read(stream(&values).as_slice(), &expected).unwrap();
+            let files = read(stream(&values).as_slice(), &expected, "0.4.0").unwrap();
             let diagnostic = &files[0].diagnostics[0];
             assert_eq!(diagnostic.severity, super::super::Severity::Error);
             assert_eq!(
@@ -207,7 +223,7 @@ mod tests {
     fn validates_diagnostics_and_event_order() {
         let expected = BTreeSet::from([PathBuf::from("/selected/Module.bsl")]);
         let valid = events();
-        assert!(read(stream(&valid).as_slice(), &expected).is_ok());
+        assert!(read(stream(&valid).as_slice(), &expected, "0.4.0").is_ok());
         let mut invalid = Vec::new();
         let mut values = events();
         values[1]["diagnostics"][0]["severity"] = json!("UnknownSeverity");
@@ -235,7 +251,7 @@ mod tests {
         invalid.push(values);
         for values in invalid {
             assert!(
-                read(stream(&values).as_slice(), &expected).is_err(),
+                read(stream(&values).as_slice(), &expected, "0.4.0").is_err(),
                 "{values:?}"
             );
         }
@@ -247,9 +263,22 @@ mod tests {
         let expected = BTreeSet::from([PathBuf::from("/selected/Module.bsl")]);
         let bytes = stream(&events());
         let length = u64::try_from(bytes.len()).unwrap();
-        assert!(parse(&mut BufReader::new(bytes.as_slice()), &expected, length).is_ok());
+        assert!(
+            parse(
+                &mut BufReader::new(bytes.as_slice()),
+                &expected,
+                length,
+                "0.4.0"
+            )
+            .is_ok()
+        );
         assert!(matches!(
-            parse(&mut BufReader::new(bytes.as_slice()), &expected, length - 1),
+            parse(
+                &mut BufReader::new(bytes.as_slice()),
+                &expected,
+                length - 1,
+                "0.4.0"
+            ),
             Err(Failure::Stream {
                 reason: "output_limit"
             })
@@ -262,7 +291,7 @@ mod tests {
         let expected = BTreeSet::from([PathBuf::from("/selected/Module.bsl")]);
         let bytes = vec![b'x'; usize::try_from(MAX_LINE + 1).unwrap()];
         assert!(matches!(
-            read(bytes.as_slice(), &expected),
+            read(bytes.as_slice(), &expected, "0.4.0"),
             Err(Failure::Stream {
                 reason: "output_limit"
             })
@@ -270,7 +299,7 @@ mod tests {
         let mut bytes = stream(&events());
         bytes.pop();
         assert!(matches!(
-            read(bytes.as_slice(), &expected),
+            read(bytes.as_slice(), &expected, "0.4.0"),
             Err(Failure::Stream {
                 reason: "truncated_line"
             })

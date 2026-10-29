@@ -5,10 +5,7 @@ use std::{
     path::Path,
 };
 
-use eska_analyzer::{
-    check::{Counts, Diagnostic, Failure, FileResult, Report, Severity},
-    process::SUPPORTED_VERSION,
-};
+use eska_analyzer::check::{Counts, Diagnostic, Failure, FileResult, Report, Severity};
 use eska_presentation::{
     encoding,
     localization::{LocalizationValue, Localizer},
@@ -56,7 +53,7 @@ fn document(report: &Report) -> impl Serialize + '_ {
         validation: Value,
     }
     Document {
-        analyzer: json!({"name":"bsl-analyzer-app","version":SUPPORTED_VERSION}),
+        analyzer: json!({"name":"bsl-analyzer-app","version":report.analyzer_version}),
         complete: true,
         context: json!({"root":path(&report.root),"application":report.application,"limited_context":report.limited_context}),
         counts: &report.counts,
@@ -137,7 +134,7 @@ fn configuration(error: &eska_analyzer::Error) -> Value {
         Error::ProcessStart { binary, source } => {
             json!({"binary":path(binary),"io_kind":source.kind().to_string()})
         }
-        Error::AnalyzerVersion { actual } => json!({"actual":actual,"supported":SUPPORTED_VERSION}),
+        Error::AnalyzerVersion { actual } => json!({"actual":actual}),
         Error::CheckConfig { exit_code, .. } => json!({"exit_code":exit_code}),
         Error::Context(error) => context(error),
         _ => json!({}),
@@ -277,6 +274,7 @@ mod tests {
     #[test]
     fn borrowed_report_preserves_the_public_envelope() {
         let report = Report {
+            analyzer_version: "1.2.3".into(),
             root: "project".into(),
             application: Some("База".into()),
             limited_context: false,
@@ -310,7 +308,7 @@ mod tests {
             json!({
                 "schema_version":1,"kind":"check","status":"threshold_exceeded","complete":true,"scope":"full",
                 "context":{"root":path(&report.root),"application":"База","limited_context":false},
-                "analyzer":{"name":"bsl-analyzer-app","version":SUPPORTED_VERSION},
+                "analyzer":{"name":"bsl-analyzer-app","version":"1.2.3"},
                 "validation":{"kind":"declared_descriptors","objects":1},"counts":report.counts,"policy":report.policy,
                 "input_fingerprint":"fingerprint","files":[{"path":path(&report.files[0].path),"diagnostics":[{
                     "code":"Rule","message":"Строка \"один\"\nдва","severity":"Error",

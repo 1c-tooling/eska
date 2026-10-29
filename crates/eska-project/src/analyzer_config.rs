@@ -230,7 +230,7 @@ pub fn error_document(error: &Error) -> Value {
             json!({"binary":response::path(binary),"io_kind":source.kind().to_string()})
         }
         Error::AnalyzerVersion { actual } => {
-            json!({"actual":actual,"supported":eska_analyzer::process::SUPPORTED_VERSION})
+            json!({"actual":actual})
         }
         Error::CheckConfig { exit_code, .. } => json!({"exit_code":exit_code}),
         Error::Context(error) => match error.as_ref() {

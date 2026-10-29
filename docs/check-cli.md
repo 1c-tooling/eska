@@ -2,8 +2,10 @@
 
 `eska-check` — самостоятельный компонент для Designer XML и полного BSL-анализа
 выбранного приложения. Он не запускает `eska`, `eska-project`, IDE, Git или платформу
-и не связывает ядро bsl-analyzer. Нужен опубликованный `bsl-analyzer-app` 0.4.0
-с машинным контрактом 3.5. Сам компонент собирается: `cargo build -p eska-check --locked`.
+и не связывает ядро bsl-analyzer. Нужен опубликованный `bsl-analyzer-app`
+с командами `check-config` и `analyze --format jsonl`. Номер релиза не закреплён;
+версия JSONL сверяется с выбранным исполняемым файлом и записывается в отчёт.
+Сам компонент собирается: `cargo build -p eska-check --locked`.
 
 Пример для CI; `PROJECT_ROOT`, `BSL_ANALYZER` и `CHECK_REPORT` задаёт среда запуска:
 
