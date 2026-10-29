@@ -155,6 +155,8 @@ def main(argv=None):
     language = option(argv, "--lang", "ru-RU" if os.environ.get("LANG", "").startswith("ru") else "en-US")
     language = language if language in MESSAGES else "en-US"
     output_format = option(argv, "--format", "human")
+    if output_format == "json" and hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     try:
         parser = Parser(add_help=False)
         parser.add_argument("command", nargs="?", choices=("install", "remove", "status", "inspect", "recover"))
