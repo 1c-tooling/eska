@@ -85,8 +85,10 @@ nix = { version = "0.31.3", default-features = false, features = ["signal", "pro
 
 [target.'cfg(windows)'.dependencies]
 self-replace = "1.5.0"
+
+[target.'cfg(windows)'.dev-dependencies]
 # curl's ssl feature uses Schannel and the Windows certificate store on this target.
 gix = { version = "0.90.0", default-features = false, features = ["blocking-http-transport-curl-openssl"] }
 
-[target.'cfg(not(windows))'.dependencies]
+[target.'cfg(not(windows))'.dev-dependencies]
 gix = { version = "0.90.0", default-features = false, features = ["blocking-http-transport-curl-rustls"] }
