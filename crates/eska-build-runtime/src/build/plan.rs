@@ -383,11 +383,15 @@ mod tests {
     use super::*;
     use eska_project_core::project::{ProjectConfiguration, SourceFormat, build::BuildSettings};
 
+    fn absolute(path: &str) -> PathBuf {
+        std::path::absolute(path).expect("absolute native fixture path")
+    }
+
     /// Construct a filesystem-independent project for plan tests.
     fn project(project_type: ProjectType, root: &str) -> Project {
         Project::new(
-            PathBuf::from(root),
-            PathBuf::from(root).join("src"),
+            absolute(root),
+            absolute(root).join("src"),
             ProjectConfiguration::new(project_type, SourceFormat::DesignerXml).with_build_settings(
                 BuildSettings::new("8.3.27.2325", PathBuf::from("artifacts"))
                     .expect("valid settings"),
@@ -409,7 +413,7 @@ mod tests {
                 BuildPlan::new(&project(project_type, "/work/demo"), None).expect("valid plan");
             assert_eq!(
                 plan.output(),
-                Path::new(&format!("/work/demo/artifacts/demo.{extension}"))
+                absolute(&format!("/work/demo/artifacts/demo.{extension}"))
             );
         }
     }
@@ -422,7 +426,7 @@ mod tests {
             BuildPlan::new(&project, Some(Path::new("dist/result.cf")))
                 .expect("valid output")
                 .output(),
-            Path::new("/work/demo/dist/result.cf")
+            absolute("/work/demo/dist/result.cf")
         );
         assert!(matches!(
             BuildPlan::new(&project, Some(Path::new("../result.cf"))),
@@ -459,15 +463,15 @@ mod tests {
         let project = project(ProjectType::Report, "/work/src/report-directory");
         let plan = BuildPlan::for_workspace_member(
             &project,
-            Path::new("/work"),
+            &absolute("/work"),
             "sales-report",
             None,
             None,
         )
         .expect("valid workspace plan");
-        assert_eq!(plan.project_root(), Path::new("/work/src/report-directory"));
-        assert_eq!(plan.output_scope_root(), Path::new("/work"));
-        assert_eq!(plan.output(), Path::new("/work/artifacts/sales-report.erf"));
+        assert_eq!(plan.project_root(), absolute("/work/src/report-directory"));
+        assert_eq!(plan.output_scope_root(), absolute("/work"));
+        assert_eq!(plan.output(), absolute("/work/artifacts/sales-report.erf"));
     }
 
     #[test]
@@ -475,7 +479,7 @@ mod tests {
     fn grouped_plans_reject_output_collisions() {
         let project = project(ProjectType::Report, "/work/src/report");
         let plan =
-            BuildPlan::for_workspace_member(&project, Path::new("/work"), "report", None, None)
+            BuildPlan::for_workspace_member(&project, &absolute("/work"), "report", None, None)
                 .expect("valid workspace plan");
         assert!(matches!(
             validate_unique_outputs(&[&plan, &plan]),

@@ -108,6 +108,6 @@ impl Error {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 #[path = "../../../tests/support/mod.rs"]
 mod test_support;

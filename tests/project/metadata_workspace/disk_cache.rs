@@ -52,7 +52,9 @@ fn offline_changes_and_deleted_descriptors_never_restore_stale_results() {
     let modified = fs::metadata(&path).unwrap().modified().unwrap();
     let xml = fs::read_to_string(&path).unwrap().replace("ИНН", "КПП");
     fs::write(&path, xml).unwrap();
-    fs::File::open(&path)
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&path)
         .unwrap()
         .set_modified(modified)
         .unwrap();

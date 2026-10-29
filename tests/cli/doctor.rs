@@ -155,6 +155,7 @@ fn executable(path: &Path, contents: &str) {
 }
 
 /// Replace an empty scaffold with a build-ready configuration descriptor.
+#[cfg(unix)]
 fn configure_project(root: &Path, version: &str) {
     fs::write(
         root.join("eska.toml"),
