@@ -241,7 +241,7 @@ fn reports_an_inaccessible_remote_without_switching() {
     let root = repository();
     commit(&root.0, "initial.txt");
     git(&root.0, &["switch", "-c", "task/FI-OFFLINE"]);
-    let missing = root.0.join("missing-remote.git");
+    let missing = eska_vcs::vcs::git::native_path(&root.0.join("missing-remote.git")).into_owned();
     git(
         &root.0,
         &[

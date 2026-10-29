@@ -1,9 +1,58 @@
 //! Isolated Git opening and initialization shared by project and repository operations.
 
 use std::{
+    borrow::Cow,
     fs, io,
     path::{Path, PathBuf},
 };
+
+/// Win32 verbatim prefixes are filesystem syntax that Git's URL/path parsers do not accept.
+#[must_use]
+pub fn native_path(path: &Path) -> Cow<'_, Path> {
+    #[cfg(windows)]
+    {
+        use std::{
+            ffi::OsString,
+            path::{Component, Prefix},
+        };
+        let mut components = path.components();
+        if let Some(Component::Prefix(prefix)) = components.next() {
+            let mut plain = match prefix.kind() {
+                Prefix::VerbatimDisk(drive) => PathBuf::from(format!("{}:", char::from(drive))),
+                Prefix::VerbatimUNC(server, share) => {
+                    let mut value = OsString::from(r"\\");
+                    value.push(server);
+                    value.push(r"\");
+                    value.push(share);
+                    PathBuf::from(value)
+                }
+                _ => return Cow::Borrowed(path),
+            };
+            for component in components {
+                plain.push(component.as_os_str());
+            }
+            return Cow::Owned(plain);
+        }
+    }
+    Cow::Borrowed(path)
+}
+
+#[cfg(all(test, windows))]
+mod native_path_tests {
+    use super::native_path;
+    use std::path::Path;
+
+    #[test]
+    fn git_paths_preserve_drive_unc_and_unicode_components() {
+        for (native, plain) in [
+            (r"\\?\C:\Проект #1\source.git", r"C:\Проект #1\source.git"),
+            (r"\\?\UNC\server\share\Проект", r"\\server\share\Проект"),
+            (r"C:\Проект #1", r"C:\Проект #1"),
+        ] {
+            assert_eq!(native_path(Path::new(native)), Path::new(plain));
+        }
+    }
+}
 
 /// Initialize only the transaction-owned directory, ignoring redirecting configuration.
 ///

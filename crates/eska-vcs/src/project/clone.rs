@@ -49,12 +49,14 @@ pub fn inspect(
         return Err(CloneError::InvalidBase { path: base });
     }
 
-    let mut repository = gix::Url::try_from(repository).map_err(CloneError::RepositoryUrl)?;
+    let native = crate::vcs::git::native_path(Path::new(repository));
+    let mut repository =
+        gix::Url::try_from(native.as_os_str()).map_err(CloneError::RepositoryUrl)?;
     let repository_path = gix::path::from_bstr(repository.path.as_bstr())
         .map_err(CloneError::RepositoryUrl)?
         .into_owned();
     repository
-        .canonicalize(&base)
+        .canonicalize(&crate::vcs::git::native_path(&base))
         .map_err(|source| CloneError::LocalRepository {
             path: repository_path,
             source,
@@ -127,7 +129,10 @@ fn default_directory(repository: &gix::Url) -> Result<OsString, CloneError> {
     while path.last() == Some(&b'/') {
         path = &path[..path.len() - 1];
     }
-    let name = path.rsplit(|byte| *byte == b'/').next().unwrap_or_default();
+    let name = path
+        .rsplit(|byte| *byte == b'/' || cfg!(windows) && *byte == b'\\')
+        .next()
+        .unwrap_or_default();
     let name = name.strip_suffix(b".git").unwrap_or(name);
     if name.is_empty() || matches!(name, b"." | b"..") {
         return Err(CloneError::MissingDirectoryName);
