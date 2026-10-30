@@ -393,8 +393,11 @@ Distrobox нужен только при размещении платформы
 [Выпуск и установка](docs/releases.md) · [Roadmap](docs/roadmap/README.md)
 
 Основная приёмка выполнена на Linux/VSCodium и платформе 8.3.27.2325.
-Наличие сборок других ОС не заменяет приёмку Windows, macOS, Microsoft VS Code
-и Remote. Поддерживается Designer XML; EDT и экспериментальный формат ESKA
+Дополнительно выполнена [проверка Windows 11 / Microsoft VS Code](docs/measurements/windows-2026-10-30.md):
+CLI, компонентная установка, Git HTTPS, Metadata API, интерфейс Explorer
+и сборка/roundtrip четырёх типов на 1С 8.3.27.2342. Native patch остаётся
+закреплённым на 8.3.27.2325; macOS и Remote требуют
+отдельной приёмки. Поддерживается Designer XML; EDT и экспериментальный формат ESKA
 не используются в текущем цикле. Отладчик остаётся отдельной опциональной задачей.
 
 [Apache License 2.0](LICENSE).

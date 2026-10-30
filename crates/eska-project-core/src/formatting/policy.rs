@@ -161,11 +161,14 @@ pub(super) fn validate_patch(patch: &Patch, language: Option<Language>) -> Resul
         || patch.align_call_arguments.is_some()
         || patch.closing_parenthesis_on_new_line.is_some()
         || patch.preserve_existing_line_breaks.is_some()
+        || patch.indent_multiline_strings.is_some()
         || patch.blank_lines_between_methods.is_some()
         || patch.blank_lines_inside_methods.is_some()
         || patch.blank_lines_around_blocks.is_some()
         || patch.blank_lines_inside_multistatement_blocks.is_some()
-        || patch.blank_lines_before_return.is_some();
+        || patch.blank_lines_before_return.is_some()
+        || patch.blank_lines_around_multiline_statements.is_some()
+        || patch.blank_lines_between_object_groups.is_some();
     let sdbl_only = patch.select_items.is_some()
         || patch.clause_newlines.is_some()
         || patch.align_aliases.is_some()
@@ -271,6 +274,7 @@ pub(super) fn builtin_profile(name: &str, language: Language) -> Option<Patch> {
         "eska" if language == Language::Bsl => Some(Patch {
             column_limit: Some(150),
             preserve_existing_line_breaks: Some(true),
+            indent_multiline_strings: Some(true),
             align_assignments: Some(true),
             separate_object_initialization: Some(true),
             align_call_arguments: Some(true),
@@ -279,6 +283,8 @@ pub(super) fn builtin_profile(name: &str, language: Language) -> Option<Patch> {
             blank_lines_around_blocks: Some(1),
             blank_lines_inside_multistatement_blocks: Some(1),
             blank_lines_before_return: Some(1),
+            blank_lines_around_multiline_statements: Some(1),
+            blank_lines_between_object_groups: Some(1),
             ..Patch::default()
         }),
         "1c" | "eska" => Some(Patch::default()),

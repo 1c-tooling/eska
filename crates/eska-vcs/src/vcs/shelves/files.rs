@@ -259,12 +259,14 @@ fn create_link(bytes: &[u8], path: &Path) -> Result<(), Error> {
         ffi::OsString,
         os::windows::{ffi::OsStringExt, fs::symlink_file},
     };
-    if bytes.len() % 2 != 0 {
+    if !bytes.len().is_multiple_of(2) {
         return Err(Error::InvalidShelf);
     }
     let units: Vec<_> = bytes
-        .chunks_exact(2)
-        .map(|v| u16::from_le_bytes([v[0], v[1]]))
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|v| u16::from_le_bytes(*v))
         .collect();
     symlink_file(OsString::from_wide(&units), path)?;
     Ok(())

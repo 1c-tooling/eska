@@ -121,7 +121,9 @@ fn prepare_infobase(
             "config".into(),
             "import".into(),
             data_arg.clone(),
-            base.as_os_str().to_owned(),
+            crate::platform_path::native_path(base)
+                .as_os_str()
+                .to_owned(),
         ],
     )?;
     run(
@@ -163,7 +165,9 @@ fn create_extension(
             "export".into(),
             data_arg.clone(),
             extension_arg.clone(),
-            extension.as_os_str().to_owned(),
+            crate::platform_path::native_path(extension)
+                .as_os_str()
+                .to_owned(),
         ],
     )?;
     extension::write(plan, &workspace.0.join("modules"), extension)?;
@@ -176,7 +180,9 @@ fn create_extension(
             "import".into(),
             data_arg.clone(),
             extension_arg.clone(),
-            extension.as_os_str().to_owned(),
+            crate::platform_path::native_path(extension)
+                .as_os_str()
+                .to_owned(),
         ],
     )
 }
@@ -247,7 +253,9 @@ fn save_candidate(
             "save".into(),
             data_arg.clone(),
             extension_arg.clone(),
-            candidate.as_os_str().to_owned(),
+            crate::platform_path::native_path(candidate)
+                .as_os_str()
+                .to_owned(),
         ],
     )
 }
@@ -309,13 +317,19 @@ fn designer(
     let mut args: Vec<OsString> = vec![
         "DESIGNER".into(),
         "/F".into(),
-        data.join("db-data").into_os_string(),
+        crate::platform_path::native_path(&data.join("db-data"))
+            .as_os_str()
+            .to_owned(),
         "/DisableStartupDialogs".into(),
         "/DisableStartupMessages".into(),
         "/Out".into(),
-        log.clone().into_os_string(),
+        crate::platform_path::native_path(&log)
+            .as_os_str()
+            .to_owned(),
         "/DumpResult".into(),
-        result_file.clone().into_os_string(),
+        crate::platform_path::native_path(&result_file)
+            .as_os_str()
+            .to_owned(),
     ];
     args.extend(checks.into_iter().map(OsString::from));
     args.extend(["-Extension".into(), name.into()]);
@@ -342,6 +356,6 @@ fn designer(
 fn option(name: &str, path: &Path) -> OsString {
     let mut value = OsString::from(name);
     value.push("=");
-    value.push(path);
+    value.push(crate::platform_path::native_path(path).as_os_str());
     value
 }

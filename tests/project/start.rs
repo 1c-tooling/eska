@@ -81,7 +81,7 @@ fn starts_from_local_base_when_policy_remote_is_not_configured() {
 fn configured_inaccessible_remote_reports_name_url_and_gix_reason() {
     let root = repository();
     commit(&root.0, "initial.txt");
-    let missing = root.0.join("missing-remote.git");
+    let missing = eska_vcs::vcs::git::native_path(&root.0.join("missing-remote.git")).into_owned();
     git(
         &root.0,
         &[

@@ -351,7 +351,10 @@ fn help_uses_the_standalone_name_and_both_locales() {
                 .unwrap();
             assert!(output.status.success(), "{output:?}");
             let help = String::from_utf8(output.stdout).unwrap();
-            assert!(help.contains(&format!("eska-build {action}")));
+            assert!(help.contains(&format!(
+                "eska-build{} {action}",
+                std::env::consts::EXE_SUFFIX
+            )));
             assert!(help.contains(if locale == "ru" {
                 "Использование"
             } else {

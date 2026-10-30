@@ -481,18 +481,23 @@ fn external_build_uses_base_configuration_context_and_source_directory() {
         .lines()
         .find(|line| line.starts_with("infobase create"))
         .expect("create invocation");
+    let base_argument = base.to_string_lossy();
+    let base_argument = base_argument
+        .strip_prefix(r"\\?\")
+        .unwrap_or(&base_argument);
     assert!(
-        create.contains(&format!("--load={}", base.display())),
+        create.contains(&format!("--load={base_argument}")),
         "{create}"
     );
     let import = invocations
         .lines()
         .find(|line| line.starts_with("infobase config import"))
         .expect("import invocation");
-    assert!(
-        import.ends_with(root.join("src").to_string_lossy().as_ref()),
-        "{import}"
-    );
+    let source_argument = root.join("src").to_string_lossy().into_owned();
+    let source_argument = source_argument
+        .strip_prefix(r"\\?\")
+        .unwrap_or(&source_argument);
+    assert!(import.ends_with(source_argument), "{import}");
 }
 
 #[test]

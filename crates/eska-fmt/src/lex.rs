@@ -188,7 +188,7 @@ fn word_end(input: &str) -> usize {
 }
 
 /// Significant tokens, identifiers, literals and comment text must survive every rewrite.
-pub fn equivalent(before: &[Token<'_>], after: &[Token<'_>]) -> bool {
+pub fn equivalent(before: &[Token<'_>], after: &[Token<'_>], indent_literals: bool) -> bool {
     before.len() == after.len()
         && before.iter().zip(after).all(|(left, right)| {
             left.kind == right.kind
@@ -196,6 +196,8 @@ pub fn equivalent(before: &[Token<'_>], after: &[Token<'_>]) -> bool {
                     || {
                         if left.kind == Kind::Directive {
                             spelling::directive(left.text) == spelling::directive(right.text)
+                        } else if indent_literals && left.kind == Kind::Literal {
+                            crate::literals::equivalent(left.text, right.text)
                         } else {
                             left.text == right.text
                         }

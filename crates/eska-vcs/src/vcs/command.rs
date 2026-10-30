@@ -168,6 +168,7 @@ impl<'a> Executor<'a> {
     /// # Errors
     /// Returns a process error; the caller retains its durable shelf before invoking this.
     pub(crate) fn clean_shelved_paths(&self, base: &str, paths: &Path) -> Result<(), Error> {
+        let paths = super::git::native_path(paths);
         self.success(
             Operation::Shelf,
             [

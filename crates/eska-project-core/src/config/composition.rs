@@ -23,7 +23,7 @@ pub struct MemberLayout(pub BTreeMap<String, ApplicationMembers>);
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(untagged)]
 pub enum ConfigurationMember {
-    Project(PathBuf),
+    Project(#[serde(serialize_with = "super::paths::one")] PathBuf),
     Reference(ConfigurationReference),
 }
 
@@ -31,6 +31,7 @@ pub enum ConfigurationMember {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExtensionMember {
+    #[serde(serialize_with = "super::paths::one")]
     pub path: PathBuf,
     #[serde(default, skip_serializing_if = "ExtensionScope::is_default")]
     pub scope: ExtensionScope,
@@ -47,6 +48,7 @@ pub struct ApplicationMembers {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<ExtensionMember>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(serialize_with = "super::paths::many")]
     pub external_objects: Vec<PathBuf>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub target_platform_version: Option<String>,

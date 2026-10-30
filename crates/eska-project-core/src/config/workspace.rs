@@ -140,7 +140,7 @@ impl WorkspaceConfig {
                     .map_or("", crate::project::build::PlatformVersion::as_str),
                 artifacts_directory: (self.build.artifacts_directory()
                     != defaults.artifacts_directory())
-                .then(|| self.build.artifacts_directory()),
+                .then(|| super::paths::Portable(self.build.artifacts_directory())),
             },
             vcs: self.workflow.as_ref().map(|settings| SerializedVcs {
                 workflow: super::workflow::serialize(settings),
@@ -233,7 +233,11 @@ pub enum WorkspaceConfigError {
 pub(super) fn validate_member_path(path: &Path) -> Result<(), WorkspaceConfigError> {
     let reason = if path.as_os_str().is_empty() {
         Some(InvalidMemberPathReason::Empty)
-    } else if path.is_absolute() {
+    } else if path.has_root()
+        || path
+            .components()
+            .any(|part| matches!(part, Component::Prefix(_)))
+    {
         Some(InvalidMemberPathReason::Absolute)
     } else if path
         .components()

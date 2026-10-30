@@ -51,6 +51,73 @@ fn project(root: &Path, kind: ProjectType) {
     }
 }
 
+/// Keep Windows startup independent of installed HBK unless the project explicitly opts in.
+#[cfg(windows)]
+#[test]
+fn windows_uses_bundled_help_unless_policy_explicitly_selects_another_source() {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("help-policy");
+    project(&root, ProjectType::Configuration);
+    let manifest = root.join("eska.toml");
+    let base = fs::read_to_string(&manifest).unwrap();
+    let generated = configuration::inspect(&root, None).unwrap();
+    let text = String::from_utf8(generated.contents).unwrap();
+    let table: toml::Table = toml::from_str(&text).unwrap();
+    assert_eq!(table["platform_help"]["source"].as_str(), Some("bundled"));
+    for (source, extra) in [
+        ("auto", ""),
+        ("installed", ""),
+        ("external", "\npath='corpus.json'"),
+    ] {
+        fs::write(
+            &manifest,
+            format!("{base}\n[tools.bsl-analyzer.platform_help]\nsource='{source}'{extra}\n"),
+        )
+        .unwrap();
+        let generated = configuration::inspect(&root, None).unwrap();
+        let text = String::from_utf8(generated.contents).unwrap();
+        let table: toml::Table = toml::from_str(&text).unwrap();
+        assert_eq!(table["platform_help"]["source"].as_str(), Some(source));
+        if source == "external" {
+            assert_eq!(table["platform_help"]["path"].as_str(), Some("corpus.json"));
+        }
+    }
+}
+
+/// Explicit external references must remain usable by upstream's URL conversion.
+#[cfg(windows)]
+#[test]
+fn windows_reference_root_is_an_ordinary_absolute_path_for_upstream_lsp() {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("external");
+    let reference = fixture.0.join("База с БСП");
+    project(&root, ProjectType::Processing);
+    project(&reference, ProjectType::Configuration);
+    fs::remove_file(reference.join("eska.toml")).unwrap();
+    let manifest = root.join("eska.toml");
+    fs::write(
+        &manifest,
+        fs::read_to_string(&manifest).unwrap()
+            + "\n[analysis.configuration]\nsource='../База с БСП/src'\n",
+    )
+    .unwrap();
+    let plan = configuration::inspect(&root, None).unwrap();
+    let generated: toml::Table =
+        toml::from_str(std::str::from_utf8(&plan.contents).unwrap()).unwrap();
+    let canonical = fs::canonicalize(reference.join("src")).unwrap();
+    let expected = canonical
+        .to_str()
+        .unwrap()
+        .strip_prefix(r"\\?\")
+        .unwrap()
+        .replace('\\', "/");
+    assert_eq!(
+        generated["source"]["root"].as_str(),
+        Some(expected.as_str())
+    );
+    assert!(!expected.starts_with("//?/"));
+}
+
 /// Model executable failures separately from actual upstream validation, tested explicitly below.
 #[cfg(unix)]
 fn fake_analyzer(root: &Path) -> PathBuf {

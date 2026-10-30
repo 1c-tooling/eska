@@ -175,13 +175,13 @@ def notes(version):
 Linux и macOS:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/1c-tooling/eska/releases/download/v{version}/eska-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/odineska/eska/releases/download/v{version}/eska-installer.sh | sh
 ```
 
 Windows PowerShell:
 
 ```powershell
-irm https://github.com/1c-tooling/eska/releases/download/v{version}/eska-installer.ps1 | iex
+irm https://github.com/odineska/eska/releases/download/v{version}/eska-installer.ps1 | iex
 ```
 
 Из исходников через Cargo:

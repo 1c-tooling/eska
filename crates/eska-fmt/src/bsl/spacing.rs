@@ -1,20 +1,26 @@
 //! Vertical spacing follows parsed statement boundaries, never physical line or semicolon counts.
 
-use super::syntax::{Unit, UnitKind};
+use super::{
+    groups,
+    syntax::{Unit, UnitKind},
+};
 use crate::{lex::Token, spelling::Key};
 use eska_project_core::formatting::Options;
 
 #[derive(Clone, Copy, Default)]
 struct Gap {
     minimum: u16,
-    maximum: Option<u16>,
+    compact: bool,
 }
 
 impl Gap {
-    /// Explicit structural minima override both the ordinary cap and compact single-statement bodies.
+    /// A sole operation stays against its branch boundaries even when it returns or spans lines.
     fn lines(self, old: usize, options: &Options, first: bool) -> usize {
         let separator = usize::from(!first);
-        let maximum = self.maximum.unwrap_or(options.max_empty_lines);
+        if self.compact {
+            return separator;
+        }
+        let maximum = options.max_empty_lines;
         old.min(usize::from(maximum) + separator).max(if first {
             0
         } else {
@@ -32,6 +38,7 @@ struct Branch {
     header: usize,
     statements: u8,
     opaque: bool,
+    first: Option<usize>,
 }
 
 /// Resolve gaps once so alignment and rendering agree on the final boundaries between units.
@@ -40,6 +47,7 @@ pub(super) fn plan(
     tokens: &[Token<'_>],
     input: &str,
     options: &Options,
+    multiline: &[bool],
 ) -> Vec<usize> {
     let mut gaps = vec![Gap::default(); units.len()];
     let mut branches: Vec<Option<Branch>> = Vec::new();
@@ -60,7 +68,7 @@ pub(super) fn plan(
             UnitKind::Header => {
                 branches.resize_with(unit.level + 1, || None);
                 if opening(tokens[unit.tokens.start].key) {
-                    count_statement(&mut branches, unit.level);
+                    count_statement(&mut branches, unit.level, index);
                 } else {
                     finish_branch(branches[unit.level].take(), index, &mut gaps, options);
                 }
@@ -68,6 +76,7 @@ pub(super) fn plan(
                     header: index,
                     statements: 0,
                     opaque: false,
+                    first: None,
                 });
             }
             UnitKind::End => {
@@ -76,7 +85,7 @@ pub(super) fn plan(
                 }
             }
             UnitKind::Statement if !tokens[unit.tokens.start].is(";") => {
-                count_statement(&mut branches, unit.level);
+                count_statement(&mut branches, unit.level, index);
             }
             UnitKind::Directive | UnitKind::Deleted => {
                 // Compiler alternatives can open the same runtime block in different source branches.
@@ -87,7 +96,7 @@ pub(super) fn plan(
             _ => {}
         }
     }
-    separate_statements(units, tokens, input, options, &mut gaps);
+    separate_statements(units, tokens, input, options, multiline, &mut gaps);
     gaps.into_iter()
         .enumerate()
         .map(|(index, gap)| {
@@ -105,13 +114,14 @@ pub(super) fn plan(
 }
 
 /// A nested control structure counts once in its parent, independently of its descendants.
-fn count_statement(branches: &mut [Option<Branch>], level: usize) {
+fn count_statement(branches: &mut [Option<Branch>], level: usize, index: usize) {
     if let Some(branch) = level
         .checked_sub(1)
         .and_then(|at| branches.get_mut(at))
         .and_then(Option::as_mut)
     {
         branch.statements = branch.statements.saturating_add(1).min(2);
+        branch.first.get_or_insert(index);
     }
 }
 
@@ -127,7 +137,14 @@ fn finish_branch(branch: Option<Branch>, end: usize, gaps: &mut [Gap], options: 
         if branch.statements > 1 {
             gaps[index].require(options.blank_lines_inside_multistatement_blocks);
         } else {
-            gaps[index].maximum = Some(0);
+            gaps[index].compact = true;
+        }
+    }
+    if branch.statements == 1
+        && let Some(first) = branch.first
+    {
+        for gap in &mut gaps[branch.header + 1..=first] {
+            gap.compact = true;
         }
     }
 }
@@ -138,20 +155,49 @@ fn separate_statements(
     tokens: &[Token<'_>],
     input: &str,
     options: &Options,
+    multiline: &[bool],
     gaps: &mut [Gap],
 ) {
+    let groups = if options.blank_lines_between_object_groups == 0 {
+        vec![groups::Boundary::default(); units.len()]
+    } else {
+        groups::plan(units, tokens)
+    };
     for (index, unit) in units.iter().enumerate() {
         let key = tokens[unit.tokens.start].key;
-        if unit.kind == UnitKind::Header && opening(key) {
+        let multiline_gap = if multiline[index] {
+            options.blank_lines_around_multiline_statements
+        } else {
+            0
+        };
+        let group_gap = if groups[index].before {
+            options.blank_lines_between_object_groups
+        } else {
+            0
+        };
+        let block_gap = if unit.kind == UnitKind::Header && opening(key) {
+            options.blank_lines_around_blocks
+        } else {
+            0
+        };
+        let before = multiline_gap.max(group_gap).max(block_gap);
+        if before > 0 {
             let start = leading_comments(units, tokens, input, index);
             if start.checked_sub(1).is_some_and(|previous| {
                 units[previous].level == unit.level
                     && matches!(units[previous].kind, UnitKind::Statement | UnitKind::End)
             }) {
-                gaps[start].require(options.blank_lines_around_blocks);
+                gaps[start].require(before);
             }
         }
-        if unit.kind == UnitKind::End {
+        let after = multiline_gap.max(if groups[index].after {
+            options.blank_lines_between_object_groups
+        } else if unit.kind == UnitKind::End {
+            options.blank_lines_around_blocks
+        } else {
+            0
+        });
+        if after > 0 {
             let next = units[index + 1..]
                 .iter()
                 .find(|unit| unit.kind != UnitKind::Comment);
@@ -159,7 +205,7 @@ fn separate_statements(
                 next.level == unit.level
                     && matches!(next.kind, UnitKind::Statement | UnitKind::Header)
             }) {
-                gaps[index + 1].require(options.blank_lines_around_blocks);
+                gaps[index + 1].require(after);
             }
         }
         if unit.kind == UnitKind::Statement && key == Some(Key::Return) {
@@ -169,7 +215,7 @@ fn separate_statements(
     }
 }
 
-/// Explanatory own-line comments stay attached to the following block or return statement.
+/// Explanatory own-line comments stay attached to the following separated statement or block.
 fn leading_comments(units: &[Unit], tokens: &[Token<'_>], input: &str, mut index: usize) -> usize {
     while index > 0
         && units[index - 1].kind == UnitKind::Comment

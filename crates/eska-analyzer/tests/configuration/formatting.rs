@@ -8,6 +8,31 @@ fn generated(root: &Path) -> toml::Value {
     toml::from_str(std::str::from_utf8(&plan.contents).unwrap()).unwrap()
 }
 
+/// New structural gaps participate in the analyzer's maximum without leaking formatter-only keys.
+#[test]
+fn readability_gaps_raise_the_analyzers_allowed_empty_line_count() {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("project");
+    project(&root, ProjectType::Configuration);
+    let path = root.join("eska.toml");
+    fs::write(
+        &path,
+        fs::read_to_string(&path).unwrap()
+            + "\n[format]\nprofile='eska'\n[format.bsl]\nblank_lines_around_multiline_statements=2\nblank_lines_between_object_groups=3\n",
+    ).unwrap();
+    let value = generated(&root);
+    assert_eq!(
+        value["diagnostics"]["parameters"]["ConsecutiveEmptyLines"]["allowedEmptyLinesCount"]
+            .as_integer(),
+        Some(3)
+    );
+    assert!(
+        value["formatting"]
+            .get("blank_lines_between_object_groups")
+            .is_none()
+    );
+}
+
 /// Selecting ESKA changes the analyzer threshold while preserving explicit unrelated rule parameters.
 #[test]
 fn preset_controls_supported_analyzer_style_parameters() {

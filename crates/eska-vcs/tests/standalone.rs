@@ -83,7 +83,13 @@ fn help_and_version_need_no_project_or_other_components() {
             assert!(output.status.success(), "{command}: {output:?}");
             assert_eq!(output.stderr, [] as [u8; 0]);
             let text = String::from_utf8(output.stdout).unwrap();
-            assert!(text.contains(&format!("eska-vcs {command}")), "{text}");
+            assert!(
+                text.contains(&format!(
+                    "eska-vcs{} {command}",
+                    std::env::consts::EXE_SUFFIX
+                )),
+                "{text}"
+            );
             assert!(text.contains(if locale == "ru" {
                 "Использование:"
             } else {

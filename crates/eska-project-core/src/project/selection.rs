@@ -175,7 +175,7 @@ pub enum SelectionError {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use crate::test_path;
 
     use super::{SelectionError, SelectionIntent, select_projects};
     use crate::project::{
@@ -184,7 +184,7 @@ mod tests {
     };
 
     fn context(current: Option<&str>) -> DiscoveryContext {
-        let root = PathBuf::from("/workspace");
+        let root = test_path("/workspace");
         let members = ["report", "processing"]
             .into_iter()
             .map(|name| {

@@ -20,7 +20,10 @@ fn git(root: &Path, args: &[&str]) -> Output {
         .env("GIT_AUTHOR_DATE", "2026-01-01T00:00:00+00:00")
         .env("GIT_COMMITTER_DATE", "2026-01-01T00:00:00+00:00")
         .args(["-c", "core.hooksPath=", "-c", "commit.gpgsign=false"])
-        .args(args)
+        .args(
+            args.iter()
+                .map(|argument| eska_vcs::vcs::git::native_path(Path::new(argument)).into_owned()),
+        )
         .output()
         .expect("run Git fixture command")
 }
@@ -60,7 +63,7 @@ fn source_project(valid: bool) -> (TestDir, std::path::PathBuf) {
 /// Render a local repository either as a path or as a canonical file URL.
 fn repository_address(source: &Path, as_url: bool) -> String {
     if as_url {
-        gix::Url::try_from(source)
+        gix::Url::try_from(eska_vcs::vcs::git::native_path(source).as_ref())
             .expect("local repository URL")
             .with_request_alternate_form(false)
             .to_string()

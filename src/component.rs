@@ -118,10 +118,7 @@ fn status_code(status: ExitStatus) -> ExitCode {
     #[cfg(windows)]
     {
         let code = status.code().unwrap_or(1);
-        match u8::try_from(code) {
-            Ok(code) => ExitCode::from(code),
-            // Stable ExitCode exposes only u8; exit preserves a full Windows child status.
-            Err(_) => std::process::exit(code),
-        }
+        // Stable ExitCode exposes only u8; exit preserves a full Windows child status.
+        u8::try_from(code).map_or_else(|_| std::process::exit(code), ExitCode::from)
     }
 }

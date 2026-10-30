@@ -225,7 +225,10 @@ fn serve_requires_stdio_and_localizes_its_help() {
             .unwrap();
         assert!(output.status.success());
         let help = String::from_utf8(output.stdout).unwrap();
-        assert!(help.contains("eska-project serve"));
+        assert!(help.contains(&format!(
+            "eska-project{} serve",
+            std::env::consts::EXE_SUFFIX
+        )));
         assert!(help.contains(if locale == "ru" {
             "Использование"
         } else {

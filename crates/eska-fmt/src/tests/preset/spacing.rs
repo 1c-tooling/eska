@@ -121,14 +121,13 @@ fn nested_blocks_and_multiline_calls_count_as_single_operations() {
     assert_eq!(formatted(source, options()), expected);
 }
 
-/// Return separation wins in single-operation branches and keeps explanatory comments attached.
+/// A sole return stays compact, while other returns retain separation and their attached comments.
 #[test]
-fn returns_with_or_without_values_always_have_a_leading_gap() {
+fn return_spacing_respects_compact_branches_and_method_boundaries() {
     let source = "Функция Тест()\nЕсли Условие Тогда\n// Причина выхода.\nВозврат 1;\nКонецЕсли;\nДействие();\n// Готовый результат.\nВозврат 2;\nКонецФункции\nПроцедура Выход()\nВозврат;\nКонецПроцедуры\n";
     let output = formatted(source, options());
     assert!(
-        output
-            .contains("Если Условие Тогда\n\n\t\t// Причина выхода.\n\t\tВозврат 1;\n\tКонецЕсли;"),
+        output.contains("Если Условие Тогда\n\t\t// Причина выхода.\n\t\tВозврат 1;\n\tКонецЕсли;"),
         "{output}"
     );
     assert!(
@@ -157,7 +156,9 @@ fn literals_and_preprocessor_branches_keep_their_structure() {
     let source = "Если Флаг Тогда\nТекст=\"Первое; Второе;\n |Третье\";\nКонецЕсли;\n#Если Клиент Тогда\nЕсли Первое Тогда\n#Иначе\nЕсли Второе Тогда\n#КонецЕсли\nДействие();\nКонецЕсли;\n";
     let output = formatted(source, options());
     assert!(
-        output.starts_with("Если Флаг Тогда\n\tТекст = \"Первое; Второе;\n |Третье\";\nКонецЕсли;"),
+        output.starts_with(
+            "Если Флаг Тогда\n\tТекст =\n\t\t\"Первое; Второе;\n\t\t|Третье\";\nКонецЕсли;"
+        ),
         "{output}"
     );
     assert!(

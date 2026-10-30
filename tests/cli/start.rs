@@ -28,7 +28,9 @@ fn git(root: &Path, args: &[&str]) -> Output {
         .env("GIT_AUTHOR_DATE", "2026-01-01T00:00:00+00:00")
         .env("GIT_COMMITTER_DATE", "2026-01-01T00:00:00+00:00")
         .args(["-c", "core.hooksPath=", "-c", "commit.gpgsign=false"])
-        .args(args)
+        .args(args.iter().map(|argument| {
+            crate::backend::vcs::git::native_path(Path::new(argument)).into_owned()
+        }))
         .output()
         .expect("run Git fixture command")
 }
@@ -139,7 +141,8 @@ fn inaccessible_remote_error_includes_remote_url_and_gix_reason() {
         ("en", "Could not fetch changes from repository origin"),
     ] {
         let (_fixture, root) = local_project("trunk");
-        let missing = root.join("missing-remote.git");
+        let missing =
+            eska_vcs::vcs::git::native_path(&root.join("missing-remote.git")).into_owned();
         let url = missing.to_str().expect("UTF-8 path");
         git_ok(&root, &["remote", "add", "origin", url]);
 

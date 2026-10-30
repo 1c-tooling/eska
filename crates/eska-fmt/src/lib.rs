@@ -2,6 +2,7 @@
 
 mod bsl;
 mod lex;
+mod literals;
 mod output;
 mod query;
 mod sdbl;
@@ -31,7 +32,7 @@ pub fn format(request: &Request) -> Result<Response, Error> {
     };
     let after = lex::tokens(&text, request.language)?;
     let equivalent = match request.language {
-        Language::Bsl => lex::equivalent(&tokens, &after),
+        Language::Bsl => lex::equivalent(&tokens, &after, request.options.indent_multiline_strings),
         Language::Sdbl => sdbl::equivalent(&tokens, &after),
     };
     if !equivalent {

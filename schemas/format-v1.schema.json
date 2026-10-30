@@ -178,6 +178,10 @@
           "type": "boolean",
           "default": false
         },
+        "indent_multiline_strings": {
+          "type": "boolean",
+          "default": false
+        },
         "blank_lines_inside_methods": {
           "type": "integer",
           "minimum": 0,
@@ -201,6 +205,18 @@
           "default": 0
         },
         "blank_lines_before_return": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 0
+        },
+        "blank_lines_around_multiline_statements": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 0
+        },
+        "blank_lines_between_object_groups": {
           "type": "integer",
           "minimum": 0,
           "maximum": 16,

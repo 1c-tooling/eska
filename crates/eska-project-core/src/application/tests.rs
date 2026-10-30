@@ -117,13 +117,13 @@ fn check_policy_roundtrips_and_rejects_invalid_limits() {
     let ContextError::Discovery(error) = error else {
         panic!("{error:?}");
     };
-    let ContextDiscoveryError::Manifest {
-        source:
-            crate::config::ManifestConfigError::Workspace(WorkspaceConfigError::InvalidAnalysis(error)),
-        ..
-    } = *error
-    else {
+    let ContextDiscoveryError::Manifest { source, .. } = *error else {
         panic!("{error:?}");
+    };
+    let crate::config::ManifestConfigError::Workspace(WorkspaceConfigError::InvalidAnalysis(error)) =
+        *source
+    else {
+        panic!("{source:?}");
     };
     assert!(matches!(
         *error,
@@ -535,15 +535,14 @@ fn missing_members_wrong_roles_and_member_settings_are_rejected() {
         let ContextError::Discovery(error) = resolve(&fixture.0, None).unwrap_err() else {
             panic!("discovery error")
         };
-        let ContextDiscoveryError::Manifest {
-            source:
-                crate::config::ManifestConfigError::Workspace(WorkspaceConfigError::InvalidAnalysis(
-                    error,
-                )),
-            ..
-        } = *error
-        else {
+        let ContextDiscoveryError::Manifest { source, .. } = *error else {
             panic!("configuration error")
+        };
+        let crate::config::ManifestConfigError::Workspace(WorkspaceConfigError::InvalidAnalysis(
+            error,
+        )) = *source
+        else {
+            panic!("configuration error");
         };
         assert!(matches!(
             (&*error, reason),

@@ -66,6 +66,21 @@ def snapshot(root):
             for path in root.rglob("*") if path.is_file() and path.name != ".eska-components.lock"}
 
 
+class CliEncodingTests(unittest.TestCase):
+    """Machine output must not inherit a Windows console code page."""
+
+    def test_json_errors_preserve_unicode_with_a_legacy_console_encoding(self):
+        with tempfile.TemporaryDirectory(prefix="eska-cli-encoding-", dir=os.environ["ESKA_TEST_ROOT"]) as directory:
+            missing = Path(directory) / "Не найден 😀.exe"
+            for language in ("ru-RU", "en-US"):
+                result = subprocess.run([sys.executable, "-B", str(REPOSITORY / "tools/components.py"),
+                    "inspect", "--executable", str(missing), "--format", "json", "--lang", language],
+                    env={**os.environ, "PYTHONIOENCODING": "cp1251"}, capture_output=True, cwd=directory)
+                self.assertEqual(result.returncode, 1)
+                self.assertFalse(result.stderr)
+                self.assertEqual(json.loads(result.stdout.decode("utf-8"))["detail"], str(missing))
+
+
 @unittest.skipUnless(sys.platform.startswith("linux"), "Executable fixtures require Linux; other target acceptance is separate")
 class InstallationTests(unittest.TestCase):
     """Exercise real process ownership, selective writes, rollback and explicit recovery."""
