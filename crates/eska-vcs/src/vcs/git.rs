@@ -7,6 +7,7 @@ use std::{
 };
 
 /// Win32 verbatim prefixes are filesystem syntax that Git's URL/path parsers do not accept.
+#[cfg(windows)]
 #[must_use]
 pub fn native_path(path: &Path) -> Cow<'_, Path> {
     #[cfg(windows)]
@@ -34,6 +35,13 @@ pub fn native_path(path: &Path) -> Cow<'_, Path> {
             return Cow::Owned(plain);
         }
     }
+    Cow::Borrowed(path)
+}
+
+/// Preserve paths on systems without Win32 verbatim prefixes.
+#[cfg(not(windows))]
+#[must_use]
+pub const fn native_path(path: &Path) -> Cow<'_, Path> {
     Cow::Borrowed(path)
 }
 
