@@ -5,6 +5,7 @@ mod expressions;
 pub mod layout;
 mod spacing;
 mod syntax;
+mod wrapping;
 
 use crate::lex::{Kind, Token};
 use crate::{output::append, trivia};

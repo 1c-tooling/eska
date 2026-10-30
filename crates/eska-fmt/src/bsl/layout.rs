@@ -1,6 +1,6 @@
 //! A bounded token-tree printer chooses line breaks without changing expression order.
 
-use super::{alignment::Columns, syntax::group_end};
+use super::{alignment::Columns, syntax::group_end, wrapping};
 use crate::{
     lex::{Kind, Token},
     spelling::{self, Key},
@@ -41,7 +41,7 @@ pub fn render(
         has_text: false,
         line_comment_open: false,
     };
-    sequence(input, tokens, &mut writer, indent, alignment)?;
+    sequence(input, tokens, &mut writer, indent, alignment, true)?;
     Ok(writer.text)
 }
 
@@ -52,27 +52,29 @@ fn sequence(
     writer: &mut Writer<'_>,
     base: usize,
     alignment: &Columns,
+    statement: bool,
 ) -> Result<(), Error> {
-    let flattened = flat(tokens, writer.options);
-    let long = writer.options.column_limit != 0
-        && width(&flattened, writer.column, writer.options.tab_width)
-            > usize::from(writer.options.column_limit);
+    let assignment = statement
+        .then(|| tokens.first())
+        .flatten()
+        .filter(|token| token.kind == Kind::Word && token.key.is_none())
+        .and_then(|_| assignment(tokens));
+    let breaks = wrapping::plan(
+        input,
+        tokens,
+        writer.options,
+        writer.column,
+        base,
+        assignment,
+    )?;
     let mut at = 0;
     while at < tokens.len() {
         let token = &tokens[at];
-        let binary = binary(tokens, at);
         let before = at > 0 && input[tokens[at - 1].range.end..token.range.start].contains('\n');
         let after = tokens
             .get(at + 1)
             .is_some_and(|next| input[token.range.end..next.range.start].contains('\n'));
-        let wrap = binary
-            && match writer.options.wrap_binary {
-                Wrapping::OnePerLine => true,
-                Wrapping::Fit => {
-                    long || writer.options.preserve_existing_line_breaks && (before || after)
-                }
-                Wrapping::Preserve => before || after,
-            };
+        let wrap = breaks[at];
         let leading = if writer.options.wrap_binary == Wrapping::Preserve
             || writer.options.wrap_binary == Wrapping::Fit
                 && writer.options.preserve_existing_line_breaks
@@ -87,7 +89,7 @@ fn sequence(
         }
         if before
             && writer.options.preserve_existing_line_breaks
-            && tokens[at - 1].is("=")
+            && assignment == at.checked_sub(1)
             && writer.has_text
         {
             writer.newline(base + usize::from(writer.options.continuation_indent_width))?;
@@ -185,6 +187,7 @@ fn group(
                 writer,
                 indent,
                 alignment,
+                false,
             )?;
             if comma {
                 if writer.line_comment_open {
@@ -198,7 +201,7 @@ fn group(
         if open.is("(") && writer.options.space_inside_parentheses {
             writer.padding(1)?;
         }
-        sequence(input, body, writer, initial, alignment)?;
+        sequence(input, body, writer, initial, alignment, false)?;
     }
     let closing_line = wrap && writer.options.closing_parenthesis_on_new_line;
     if writer.line_comment_open || closing_line {
@@ -338,7 +341,7 @@ pub fn assignment(tokens: &[Token<'_>]) -> Option<usize> {
 }
 
 /// A leading sign is not an infix break opportunity and must stay attached to its operand.
-fn unary(tokens: &[Token<'_>], at: usize) -> bool {
+pub(super) fn unary(tokens: &[Token<'_>], at: usize) -> bool {
     (tokens[at].is("+") || tokens[at].is("-"))
         && (at == 0
             || tokens[at - 1].is("(")
@@ -349,16 +352,6 @@ fn unary(tokens: &[Token<'_>], at: usize) -> bool {
                 tokens[at - 1].key,
                 Some(Key::Return | Key::Raise | Key::Then | Key::Do)
             ))
-}
-
-/// The first assignment equals is a spacing boundary, but not a continuation break target.
-fn binary(tokens: &[Token<'_>], at: usize) -> bool {
-    operator(&tokens[at])
-        && !unary(tokens, at)
-        && !(tokens[at].is("=")
-            && tokens[..at]
-                .iter()
-                .all(|token| token.key.is_none() && !token.is("(") && !token.is("=")))
 }
 
 /// Boolean keyword boundaries always retain lexical separation, even with compact operator style.

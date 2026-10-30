@@ -198,7 +198,7 @@ impl Parser<'_, '_> {
 }
 
 /// Numeric precedences are only syntax boundaries; emitted token order never depends on them.
-fn precedence(token: &Token<'_>) -> Option<u8> {
+pub(super) fn precedence(token: &Token<'_>) -> Option<u8> {
     match token.key {
         Some(Key::Or) => Some(10),
         Some(Key::And) => Some(20),
