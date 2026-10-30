@@ -239,6 +239,13 @@ pub(crate) fn generate(
             path: context.root().join("eska.toml"),
             detail: error.to_string(),
         })?;
+    // Upstream auto-loading of installed HBK stalls Windows startup; explicit policies still win.
+    #[cfg(windows)]
+    table.entry("platform_help").or_insert_with(|| {
+        let mut help = toml::Table::new();
+        help.insert("source".into(), "bundled".into());
+        toml::Value::Table(help)
+    });
     if let Some(version) = context.target_platform_version() {
         table.insert("target_platform_version".into(), version.as_str().into());
     }
