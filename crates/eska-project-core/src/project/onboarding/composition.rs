@@ -17,6 +17,10 @@ pub(super) fn append(
     let member = path
         .to_str()
         .ok_or_else(|| WorkspaceEnrollmentError::NonUtf8MemberPath { path: path.into() })?;
+    #[cfg(windows)]
+    let portable = member.replace('\\', "/");
+    #[cfg(windows)]
+    let member = portable.as_str();
     let workspace = document
         .get_mut("workspace")
         .and_then(Item::as_table_mut)

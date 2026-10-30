@@ -82,7 +82,10 @@ fn version_json_is_stable_locale_independent_and_read_only() {
     assert_eq!(documents[0], documents[1]);
     assert_eq!(documents[0]["schema_version"], 1);
     assert_eq!(documents[0]["version"], "1.0.2.01");
-    assert_eq!(documents[0]["descriptor"], "src/Configuration.xml");
+    assert_eq!(
+        documents[0]["descriptor"],
+        Path::new("src").join("Configuration.xml").to_str().unwrap()
+    );
     assert_eq!(fs::read(path).unwrap(), before);
 }
 
@@ -292,7 +295,10 @@ fn bump_json_reports_the_transition_and_updates_the_descriptor() {
     assert_eq!(document["bump"], "patch");
     assert_eq!(document["previous_version"], "01.0.2.01");
     assert_eq!(document["current_version"], "01.0.3.01");
-    assert_eq!(document["descriptor"], "src/Configuration.xml");
+    assert_eq!(
+        document["descriptor"],
+        Path::new("src").join("Configuration.xml").to_str().unwrap()
+    );
     let xml = fs::read_to_string(fixture.0.join("src/Configuration.xml")).expect("XML");
     assert!(xml.contains("<Version>01.0.3.01</Version>"));
 }

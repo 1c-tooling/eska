@@ -44,11 +44,10 @@ fn file_uri(path: &Path) -> Option<String> {
     let normalized = {
         let path = path.to_str()?.replace('\\', "/");
         // Win32 verbatim prefixes are filesystem syntax, not part of a file URI.
-        let path = if let Some(unc) = path.strip_prefix("//?/UNC/") {
-            format!("//{unc}")
-        } else {
-            path.strip_prefix("//?/").unwrap_or(&path).to_owned()
-        };
+        let path = path.strip_prefix("//?/UNC/").map_or_else(
+            || path.strip_prefix("//?/").unwrap_or(&path).to_owned(),
+            |unc| format!("//{unc}"),
+        );
         path.into_bytes()
     };
     let prefix = if normalized.starts_with(b"//") {

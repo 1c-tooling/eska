@@ -1,5 +1,6 @@
 //! Execute the verified 8.3 pipeline through the existing platform runner.
 
+use crate::platform_path::native_path;
 use std::{ffi::OsString, fs, path::Path};
 
 use super::{ArtifactError, Identity, PublicationError, identity::inspect_identity, io_error};
@@ -200,21 +201,21 @@ where
                 "config".into(),
                 "load".into(),
                 option("--data=", data),
-                snapshot.as_os_str().to_owned(),
+                native_path(snapshot).as_os_str().to_owned(),
             ],
             output,
         )?;
     } else {
         arguments.push(option("--file=", snapshot));
     }
-    arguments.push(destination.as_os_str().to_owned());
+    arguments.push(native_path(destination).as_os_str().to_owned());
     run(tool, pid, "export", arguments, output)
 }
 
 /// Construct one native argument without lossy path conversion or shell interpolation.
 fn option(prefix: &str, path: &Path) -> OsString {
     let mut value = OsString::from(prefix);
-    value.push(path);
+    value.push(native_path(path).as_os_str());
     value
 }
 

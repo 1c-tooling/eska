@@ -10,8 +10,10 @@ use std::{
 #[cfg(unix)]
 use std::{sync::atomic::Ordering, thread, time::Instant};
 
+#[cfg(unix)]
+use eska_analyzer::check::Failure;
 use eska_analyzer::{
-    check::{self, Failure},
+    check,
     configuration::{self, Plan},
     process::Analyzer,
 };

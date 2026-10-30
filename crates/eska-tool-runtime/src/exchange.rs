@@ -6,9 +6,10 @@ use crate::{
     query::{bounded, decode},
 };
 use serde_json::Value;
+#[cfg(unix)]
+use std::io;
 use std::{
     ffi::OsString,
-    io,
     path::Path,
     process::{Command, Stdio},
     sync::{Arc, atomic::Ordering, mpsc},
@@ -115,6 +116,8 @@ pub fn exchange(
             };
         }
         if scope.is_cancelled() && cancellation.is_none() {
+            // Windows console cancellation already reaches both attached processes.
+            #[cfg(unix)]
             forward_cancel(&child, scope).map_err(Error::Signal)?;
             cancellation = Some(Instant::now());
         }
@@ -143,10 +146,4 @@ fn forward_cancel(child: &OwnedChild, scope: &Operation) -> io::Result<()> {
         Ok(()) | Err(Errno::ESRCH) => Ok(()),
         Err(error) => Err(io::Error::from(error)),
     }
-}
-
-/// Console cancellation reaches both attached processes on Windows.
-#[cfg(windows)]
-const fn forward_cancel(_: &OwnedChild, _: &Operation) -> io::Result<()> {
-    Ok(())
 }

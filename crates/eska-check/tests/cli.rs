@@ -3,12 +3,12 @@
 use std::{
     fs,
     path::{Path, PathBuf},
-    process::{Command, Output},
+    process::Command,
 };
 
 #[cfg(unix)]
 use std::{
-    process::{Child, Stdio},
+    process::{Child, Output, Stdio},
     thread,
     time::{Duration, Instant},
 };
@@ -97,6 +97,7 @@ fn command(root: &Path, binary: &Path, locale: &str) -> Command {
 }
 
 /// A single parseable envelope is the entire machine-readable stdout, even on errors.
+#[cfg(unix)]
 fn document(output: &Output, code: i32) -> Value {
     assert_eq!(
         output.status.code(),

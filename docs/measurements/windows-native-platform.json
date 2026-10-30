@@ -1,0 +1,329 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-30",
+  "os": "Windows 11 x64 build 26100",
+  "platform": "8.3.27.2342",
+  "build_stand": "windows-native-installed-platform-nqyt7717",
+  "build": {
+    "complete": true,
+    "entry": "eska",
+    "platform_version": "8.3.27.2342",
+    "runner": "host",
+    "cases": [
+      {
+        "project_type": "configuration",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "5861fdf38d034ee2da7728e858861e714741bb76693e75430207c178f642d483",
+        "artifact_bytes": 76090,
+        "identity": {
+          "name": "Конфигурация",
+          "project_type": "configuration",
+          "uuid": "59cecfbe-e2bf-4a2c-817b-9f8e666fcc1f"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "c078d1e9af1f237ea4a96b2570441f10ca99910e99a749f7babe4703fc87e3e9",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "extension",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "02b6d9be1a764b356554a2174b44ac9a144e24563b1f94b5e8340b82979dcd26",
+        "artifact_bytes": 4619,
+        "identity": {
+          "name": "EskaTestExtension",
+          "project_type": "extension",
+          "uuid": "0983ccbb-ec61-4050-9342-99ca3155b13b"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "66765570afda90703f6a2b50789224f3e856d71841d2db6d492ede0cfc688228",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "processing",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "40f9f35df43364157c22793cdc6ad265488db14d1e533ef3dec21d325131ebe4",
+        "artifact_bytes": 4394,
+        "identity": {
+          "name": "EskaTestprocessing",
+          "project_type": "processing",
+          "uuid": "12298144-d8c6-49cb-a588-932201d59939"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "75d6def1095c073178a39dd830ced39266340d2324f978120fb14f95ae72a44a",
+        "repeated_artifact_bytes_equal": false
+      },
+      {
+        "project_type": "report",
+        "build": "passed",
+        "repeat": "reused_infobase",
+        "unpack": "passed",
+        "clean": "passed",
+        "artifact_sha256": "e95dda40738113cabaee981cc5132c4ef6b8d69a82eed70166742ca78c831bfc",
+        "artifact_bytes": 4394,
+        "identity": {
+          "name": "EskaTestreport",
+          "project_type": "report",
+          "uuid": "8eb36188-d035-47bb-aed6-189126aca895"
+        },
+        "source_unchanged": true,
+        "export_identity_matches_source": true,
+        "git_status": "absent",
+        "direct_wrapper_json_equal_except_duration": true,
+        "direct_wrapper_manifest_metadata_equal": true,
+        "first_artifact_sha256": "b972b926a5526cbe85da41094d1410b27550f352317793fcda5107570366a231",
+        "repeated_artifact_bytes_equal": false
+      }
+    ],
+    "cancellation": {
+      "unpack": {
+        "status": "not_run",
+        "reason": "POSIX-only signal probe"
+      },
+      "build": {
+        "status": "not_run",
+        "reason": "POSIX-only signal probe"
+      }
+    }
+  },
+  "cancellation_stand": "windows-native-platform-4ixcv3c5",
+  "cancellation": {
+    "build": {
+      "status": "passed",
+      "exit": 1,
+      "error": {
+        "code": "interrupted",
+        "stage": "import-sources"
+      },
+      "source_and_artifact_unchanged": true,
+      "native_pid_absent": true
+    },
+    "unpack": {
+      "status": "passed",
+      "exit": 130,
+      "input_unchanged": true,
+      "destination_absent": true,
+      "native_pid_absent": true
+    }
+  },
+  "onboarding_stand": "windows-native-onboarding-o1i72h8b",
+  "onboarding": {
+    "complete": true,
+    "platform": "8.3.27.2342",
+    "cases": [
+      {
+        "kind": "configuration",
+        "entry": "wrapper",
+        "locale": "en",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "source_identity_preserved": true,
+        "artifact_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "kind": "configuration",
+        "entry": "direct",
+        "locale": "ru",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "source_identity_preserved": true,
+        "artifact_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "kind": "extension",
+        "entry": "wrapper",
+        "locale": "en",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "source_identity_preserved": true,
+        "artifact_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "kind": "extension",
+        "entry": "direct",
+        "locale": "ru",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "source_identity_preserved": true,
+        "artifact_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "kind": "processing",
+        "entry": "wrapper",
+        "locale": "en",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "source_identity_preserved": true,
+        "artifact_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "kind": "processing",
+        "entry": "direct",
+        "locale": "ru",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "source_identity_preserved": true,
+        "artifact_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "kind": "report",
+        "entry": "wrapper",
+        "locale": "en",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "source_identity_preserved": true,
+        "artifact_unchanged": true,
+        "staging_absent": true
+      },
+      {
+        "kind": "report",
+        "entry": "direct",
+        "locale": "ru",
+        "new": "passed",
+        "import": "passed",
+        "init": "passed",
+        "source_identity_preserved": true,
+        "artifact_unchanged": true,
+        "staging_absent": true
+      }
+    ]
+  },
+  "queries_stand": "windows-native-queries-d1mkx9db",
+  "queries": {
+    "complete": true,
+    "queriesExecuted": false,
+    "platform": "8.3.27.2342",
+    "queryEdits": {
+      "before": {
+        "ConfigDumpInfo.xml": "d9e1739e465860bb72377119299cc362ad569950994ec8c349830884551477e9",
+        "Configuration.xml": "1f11f52157cf2c13c38da53943859f2eeef4eeea7b6c7a9e62c713bf960ce173",
+        "CommonForms/QueryLists.xml": "0f628505a86db8edd73056e770d39ef60082b864cf6ad29fe119dab716bd6ec7",
+        "CommonTemplates/QuerySchema.xml": "392fd52a80246df62d4a9971a4f73ce638fd6516f59d2d32d684a171c0fbc6d1",
+        "Ext/ParentConfigurations.bin": "597421127acd97300b1d9d4731e5c816031fab292c3bc098ad40a0c29c424a26",
+        "Languages/Русский.xml": "4c3c2c872e3dd3594ddfdf5d4672ccd3ae83159169186b411300311d3068a0bd",
+        "CommonTemplates/QuerySchema/Ext/Template.xml": "a8f2902d3b99570ed7ec18d8d23fd063dafa44d17915f422f54af6e7b9f0b85a",
+        "CommonForms/QueryLists/Ext/Form.xml": "d0420bee05fa8aa4e8d5508b65104f988b0c91b90763b4add73a8205a5a834f7"
+      },
+      "after": {
+        "ConfigDumpInfo.xml": "d9e1739e465860bb72377119299cc362ad569950994ec8c349830884551477e9",
+        "Configuration.xml": "1f11f52157cf2c13c38da53943859f2eeef4eeea7b6c7a9e62c713bf960ce173",
+        "CommonForms/QueryLists.xml": "0f628505a86db8edd73056e770d39ef60082b864cf6ad29fe119dab716bd6ec7",
+        "CommonTemplates/QuerySchema.xml": "392fd52a80246df62d4a9971a4f73ce638fd6516f59d2d32d684a171c0fbc6d1",
+        "Ext/ParentConfigurations.bin": "597421127acd97300b1d9d4731e5c816031fab292c3bc098ad40a0c29c424a26",
+        "Languages/Русский.xml": "4c3c2c872e3dd3594ddfdf5d4672ccd3ae83159169186b411300311d3068a0bd",
+        "CommonTemplates/QuerySchema/Ext/Template.xml": "934330024ae0fe649da8306f7aad695cc33d3b5b65ad87beabb206e911357682",
+        "CommonForms/QueryLists/Ext/Form.xml": "e11a2fc8ec518b5a204609161e4061cbe583d2723c518937f6ad79b2d1a49ce4"
+      },
+      "changes": [
+        {
+          "source": "CommonTemplates/QuerySchema/Ext/Template.xml",
+          "identity": {
+            "kind": "dataSet",
+            "path": [
+              "First"
+            ]
+          },
+          "text": "SELECT 11 AS N",
+          "sha256": "934330024ae0fe649da8306f7aad695cc33d3b5b65ad87beabb206e911357682"
+        },
+        {
+          "source": "CommonForms/QueryLists/Ext/Form.xml",
+          "identity": {
+            "id": "1",
+            "kind": "dynamicList",
+            "name": "List"
+          },
+          "text": "SELECT 12 AS N",
+          "sha256": "e11a2fc8ec518b5a204609161e4061cbe583d2723c518937f6ad79b2d1a49ce4"
+        }
+      ]
+    },
+    "schemaQueries": [
+      "SELECT 11 AS N",
+      "SELECT 2 AS N"
+    ],
+    "dynamicListQueries": [
+      "SELECT 12 AS N"
+    ],
+    "sourceUnchangedByBuild": true,
+    "artifactSha256": "6fd1846eb1293076a19105137c053412d63844a7aa3bc665459516ab261bcb1c"
+  },
+  "patch_stand": "windows-native-patch-nnngxk18",
+  "patch": {
+    "complete": true,
+    "dry_run_ru_en_equal": true,
+    "plan": {
+      "output": "\\\\?\\C:\\Users\\User\\Documents\\ChatGPT\\eska-playground\\windows-native-patch-nnngxk18\\build\\EskaPatch_6069d5773bb3.cfe",
+      "plan": {
+        "base": "refs/heads/main",
+        "base_commit": "026875c86e574d926fcc9bb3b22a278f716999ab",
+        "changes": [
+          {
+            "decision": "included",
+            "path": "src/CommonModules/Math/Ext/Module.bsl",
+            "reason": "changed_method_bodies"
+          }
+        ],
+        "head": "6069d5773bb3f10a34fd6ff4918b644b077ecf38",
+        "ignored_paths": [],
+        "merge_base": "026875c86e574d926fcc9bb3b22a278f716999ab",
+        "modules": [
+          {
+            "methods": [
+              "AddOne"
+            ],
+            "name": "Math"
+          }
+        ],
+        "name": "EskaPatch_6069d5773bb3"
+      },
+      "requires_safe_mode_disabled": true,
+      "runtime_verified": false,
+      "schema_version": 1,
+      "status": "planned",
+      "validation": null
+    },
+    "installed_platform_guard": {
+      "error": {
+        "code": "platform"
+      },
+      "schema_version": 1,
+      "status": "error"
+    },
+    "native_patch_executed": false,
+    "reason": "Existing patch contract requires exactly 8.3.27.2325"
+  }
+}

@@ -1,6 +1,6 @@
 //! TOML field layout, defaults and machine-facing value conversions.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
@@ -89,7 +89,7 @@ pub(super) struct SerializedDocument<'a> {
 pub(super) struct SerializedBuild<'a> {
     pub(super) platform_version: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(super) artifacts_directory: Option<&'a Path>,
+    pub(super) artifacts_directory: Option<super::paths::Portable<'a>>,
 }
 
 #[derive(Serialize)]
@@ -137,7 +137,7 @@ pub(super) struct SerializedProject<'a> {
     #[serde(rename = "type")]
     pub(super) project_type: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(super) source: Option<&'a Path>,
+    pub(super) source: Option<super::paths::Portable<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) source_format: Option<&'static str>,
 }

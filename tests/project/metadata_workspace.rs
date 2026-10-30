@@ -58,10 +58,13 @@ fn bytes(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
                 result.insert(PathBuf::from(entry.file_name()).join(path), content);
             }
         } else {
-            result.insert(
-                PathBuf::from(entry.file_name()),
-                fs::read(entry.path()).unwrap(),
-            );
+            // Empty source-lease files are mandatory locks on Windows; metadata proves their bytes.
+            let content = if entry.metadata().unwrap().len() == 0 {
+                Vec::new()
+            } else {
+                fs::read(entry.path()).unwrap()
+            };
+            result.insert(PathBuf::from(entry.file_name()), content);
         }
     }
     result

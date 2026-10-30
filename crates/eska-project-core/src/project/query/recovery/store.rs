@@ -133,6 +133,7 @@ impl Store {
             drop(file);
             compare_revision(&destination, expected)?;
             fs::rename(&temporary.0, &destination)?;
+            #[cfg(unix)]
             sync_directory(&self.directory)?;
         }
         Ok(Stored { record, revision })
@@ -156,6 +157,7 @@ impl Store {
         }
         compare_revision(&destination, Some(expected))?;
         fs::remove_file(destination)?;
+        #[cfg(unix)]
         sync_directory(&self.directory)?;
         Ok(true)
     }
@@ -187,6 +189,7 @@ impl Store {
         }
         let mut options = OpenOptions::new();
         options.read(true).write(true).create(true).truncate(false);
+        #[cfg(unix)]
         private_mode(&mut options);
         let file = options.open(path)?;
         match file.try_lock() {
@@ -219,16 +222,22 @@ fn checked_directory(path: &Path, create: bool) -> Result<bool, Error> {
     let mut current = PathBuf::new();
     for part in path.components() {
         current.push(part.as_os_str());
+        // A Windows drive/UNC prefix is not a complete path until its root separator is appended.
+        if matches!(part, Component::Prefix(_)) {
+            continue;
+        }
         if missing(&current)? {
             if !create {
                 return Ok(false);
             }
-            let mut builder = fs::DirBuilder::new();
+            let builder = fs::DirBuilder::new();
             #[cfg(unix)]
-            {
+            let builder = {
                 use std::os::unix::fs::DirBuilderExt;
+                let mut builder = builder;
                 builder.mode(0o700);
-            }
+                builder
+            };
             match builder.create(&current) {
                 Ok(()) => (),
                 Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => (),
@@ -321,6 +330,7 @@ fn temporary(directory: &Path) -> Result<(Temporary, File), Error> {
         ));
         let mut options = OpenOptions::new();
         options.write(true).create_new(true);
+        #[cfg(unix)]
         private_mode(&mut options);
         match options.open(&path) {
             Ok(file) => return Ok((Temporary(path), file)),
@@ -332,21 +342,15 @@ fn temporary(directory: &Path) -> Result<(Temporary, File), Error> {
 }
 
 /// New private records do not inherit a permissive process umask on Unix.
+#[cfg(unix)]
 fn private_mode(options: &mut OpenOptions) {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.mode(0o600);
-    }
-    #[cfg(not(unix))]
-    let _ = options;
+    use std::os::unix::fs::OpenOptionsExt;
+    options.mode(0o600);
 }
 
 /// Sync the containing directory after rename/removal where directory handles support it.
+#[cfg(unix)]
 fn sync_directory(path: &Path) -> Result<(), Error> {
-    #[cfg(unix)]
     File::open(path)?.sync_all()?;
-    #[cfg(not(unix))]
-    let _ = path;
     Ok(())
 }

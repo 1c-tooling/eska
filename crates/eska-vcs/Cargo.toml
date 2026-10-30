@@ -18,8 +18,15 @@ workspace = true
 eska-presentation = { workspace = true }
 clap = { version = "4.6.7", features = ["derive", "string"] }
 eska-project-core = { workspace = true }
-gix = { version = "0.90.0", default-features = false, features = ["blocking-http-transport-curl-rustls", "max-performance", "revision", "sha1", "status", "worktree-mutation"] }
+gix = { version = "0.90.0", default-features = false, features = ["max-performance", "revision", "sha1", "status", "worktree-mutation"] }
 roxmltree = { version = "0.21.2", default-features = false, features = ["std", "positions"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 sha2 = "0.11.1"
+
+[target.'cfg(windows)'.dependencies]
+# curl's ssl feature uses Schannel and the Windows certificate store on this target.
+gix = { version = "0.90.0", default-features = false, features = ["blocking-http-transport-curl-openssl"] }
+
+[target.'cfg(not(windows))'.dependencies]
+gix = { version = "0.90.0", default-features = false, features = ["blocking-http-transport-curl-rustls"] }

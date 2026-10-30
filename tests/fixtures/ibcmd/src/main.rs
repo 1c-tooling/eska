@@ -21,6 +21,14 @@ fn main() {
 
 /// Dispatch one fake command without using a platform shell.
 fn run(arguments: &[OsString]) -> Result<(), String> {
+    // Real Windows ibcmd rejects canonical Win32 paths even though Rust accepts them.
+    #[cfg(windows)]
+    if arguments
+        .iter()
+        .any(|argument| argument.to_string_lossy().contains(r"\\?\"))
+    {
+        return Err("ibcmd does not accept Win32 verbatim path arguments".to_owned());
+    }
     log_invocation(arguments).map_err(|error| format!("log invocation: {error}"))?;
     match arguments {
         [command] if command == "--version" => print_version(),

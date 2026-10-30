@@ -1,7 +1,9 @@
 //! The optional shell preserves the standalone complete-analysis policy and process result.
 
 use crate::support::TestDir;
-use std::{fs, path::Path, process::Command};
+#[cfg(unix)]
+use std::path::Path;
+use std::{fs, process::Command};
 
 /// Keep real check JSON and failure statuses identical while PATH contains no other ESKA tools.
 #[cfg(unix)]

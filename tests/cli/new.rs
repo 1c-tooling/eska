@@ -4,11 +4,14 @@ use std::{
     process::{Command, Output},
 };
 
+#[cfg(unix)]
+use crate::backend::project::{
+    ProjectType,
+    create::{self, CreationError},
+};
 use crate::backend::{
     config::{ProjectConfig, WorkspaceConfig},
-    project::ProjectType,
     project::build::PlatformVersion,
-    project::create::{self, CreationError},
     project::discovery,
     vcs::workflow::WorkflowPreset,
 };

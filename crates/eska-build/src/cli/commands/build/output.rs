@@ -230,13 +230,35 @@ pub(super) fn write_diagnostic(
 fn humanize_source_paths(message: &str, project: &Project, localizer: &Localizer) -> String {
     let source = project.source();
     let source_text = source.to_string_lossy();
+    #[cfg(windows)]
+    let native_source = source_text.strip_prefix(r"\\?\UNC\").map_or_else(
+        || {
+            source_text
+                .strip_prefix(r"\\?\")
+                .unwrap_or(&source_text)
+                .to_owned()
+        },
+        |unc| format!(r"\\{unc}"),
+    );
+    #[cfg(windows)]
+    let spellings = [source_text.as_ref(), native_source.as_str()];
+    #[cfg(not(windows))]
+    let spellings = [source_text.as_ref()];
     let mut rendered = String::with_capacity(message.len());
     let mut remaining = message;
-    while let Some(position) = remaining.find(source_text.as_ref()) {
+    while let Some((position, spelling)) = spellings
+        .iter()
+        .filter_map(|spelling| {
+            remaining
+                .find(spelling)
+                .map(|position| (position, *spelling))
+        })
+        .min_by_key(|(position, _)| *position)
+    {
         rendered.push_str(&remaining[..position]);
-        let after_source = &remaining[position + source_text.len()..];
+        let after_source = &remaining[position + spelling.len()..];
         let Some((relative, consumed)) = existing_source_path(after_source, source) else {
-            rendered.push_str(&source_text);
+            rendered.push_str(spelling);
             remaining = after_source;
             continue;
         };

@@ -4,7 +4,9 @@ pub use eska_project_core::config;
 pub use eska_vcs::vcs;
 
 pub mod project {
-    pub use eska_project::onboarding::project::{create, init};
+    #[cfg(unix)]
+    pub use eska_project::onboarding::project::create;
+    pub use eska_project::onboarding::project::init;
     pub use eska_project_core::project::*;
     pub use eska_vcs::project::{diff, finish, history, patch, save, semantic, start, switch};
 }

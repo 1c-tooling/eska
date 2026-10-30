@@ -28,62 +28,69 @@ use crate::{
 ///
 /// # Errors
 /// Returns signal subscription failures before any command-owned file transaction starts.
+#[cfg(unix)]
 pub fn cancellation_scope(
     localizer: &Localizer,
 ) -> Result<Option<eska_tool_runtime::Operation>, Failure> {
-    #[cfg(unix)]
-    {
-        eska_tool_runtime::Operation::new()
-            .map(Some)
-            .map_err(|error| {
-                Failure::new(
-                    "signal-handler",
-                    eska_presentation::components::present(&error, localizer),
-                )
-            })
-    }
-    #[cfg(not(unix))]
-    {
-        let _ = localizer;
-        Ok(None)
-    }
+    eska_tool_runtime::Operation::new()
+        .map(Some)
+        .map_err(|error| {
+            Failure::new(
+                "signal-handler",
+                eska_presentation::components::present(&error, localizer),
+            )
+        })
+}
+
+/// Windows retains the native console cancellation controller.
+///
+/// # Errors
+/// This platform requires no additional signal subscription.
+#[cfg(not(unix))]
+pub const fn cancellation_scope(
+    _: &Localizer,
+) -> Result<Option<eska_tool_runtime::Operation>, Failure> {
+    Ok(None)
 }
 
 /// Carry caller cancellation into discovery rather than attaching it after a probe has finished.
 #[must_use]
+#[cfg(unix)]
 pub fn scoped_options(
     options: crate::project::build::ToolOptions,
     scope: Option<&eska_tool_runtime::Operation>,
 ) -> crate::project::build::ToolOptions {
-    #[cfg(unix)]
-    {
-        match scope {
-            Some(scope) => options.with_cancellation(scope.clone()),
-            None => options,
-        }
+    match scope {
+        Some(scope) => options.with_cancellation(scope.clone()),
+        None => options,
     }
-    #[cfg(not(unix))]
-    {
-        let _ = scope;
-        options
-    }
+}
+
+/// Windows options already use the native console cancellation controller.
+#[must_use]
+#[cfg(not(unix))]
+pub const fn scoped_options(
+    options: crate::project::build::ToolOptions,
+    _: Option<&eska_tool_runtime::Operation>,
+) -> crate::project::build::ToolOptions {
+    options
 }
 
 /// Attach the already installed Unix scope; preserve the existing Windows console controller.
 #[must_use]
+#[cfg(unix)]
 pub fn attach_cancellation(tool: Ibcmd, scope: Option<&eska_tool_runtime::Operation>) -> Ibcmd {
-    #[cfg(unix)]
-    {
-        match scope {
-            Some(scope) => tool.with_cancellation(scope.clone()),
-            None => tool,
-        }
+    match scope {
+        Some(scope) => tool.with_cancellation(scope.clone()),
+        None => tool,
     }
-    #[cfg(not(unix))]
-    {
-        let _ = scope;
-        tool
-    }
+}
+
+/// Preserve the existing Windows console controller.
+#[must_use]
+#[cfg(not(unix))]
+pub const fn attach_cancellation(tool: Ibcmd, _: Option<&eska_tool_runtime::Operation>) -> Ibcmd {
+    tool
 }
 
 /// Stream platform diagnostics with the same color and progress policy used by build.

@@ -351,7 +351,9 @@ fn targeted_permissions_follow_descriptor_uuid_with_unchanged_mtime() {
     let session = workspace.project_mut(&ProjectScope::Standalone).unwrap();
     for uuid in [ROOT, "33333333-3333-3333-3333-333333333333", ROOT] {
         fs::write(&descriptor, input.replacen(ROOT, uuid, 1)).unwrap();
-        fs::File::open(&descriptor)
+        fs::OpenOptions::new()
+            .write(true)
+            .open(&descriptor)
             .unwrap()
             .set_times(fs::FileTimes::new().set_modified(modified))
             .unwrap();

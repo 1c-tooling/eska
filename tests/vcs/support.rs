@@ -37,7 +37,10 @@ pub fn git_output(root: &Path, args: &[&str]) -> Output {
         .env("GIT_AUTHOR_DATE", "2026-01-01T00:00:00+00:00")
         .env("GIT_COMMITTER_DATE", "2026-01-01T00:00:00+00:00")
         .args(["-c", "core.hooksPath=", "-c", "commit.gpgsign=false"])
-        .args(args)
+        .args(
+            args.iter()
+                .map(|argument| eska_vcs::vcs::git::native_path(Path::new(argument)).into_owned()),
+        )
         .output()
         .expect("run Git fixture command")
 }

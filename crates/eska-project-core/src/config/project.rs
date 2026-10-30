@@ -193,14 +193,14 @@ impl ProjectConfig {
                         .map_or("", crate::project::build::PlatformVersion::as_str),
                     artifacts_directory: (!workspace_member
                         && build.artifacts_directory() != default_build.artifacts_directory())
-                    .then(|| build.artifacts_directory()),
+                    .then(|| super::paths::Portable(build.artifacts_directory())),
                 }
             });
         let document = SerializedDocument {
             project: SerializedProject {
                 name: self.name.as_ref().map(ProjectName::as_str),
                 project_type: project_type_name(self.configuration.project_type()),
-                source,
+                source: source.map(super::paths::Portable),
                 source_format,
             },
             build,
@@ -305,7 +305,11 @@ impl From<BuildSettingsError> for ProjectConfigError {
 fn validate_source_path(path: &Path) -> Result<(), ProjectConfigError> {
     let reason = if path.as_os_str().is_empty() {
         Some(InvalidSourceReason::Empty)
-    } else if path.is_absolute() {
+    } else if path.has_root()
+        || path
+            .components()
+            .any(|part| matches!(part, Component::Prefix(_)))
+    {
         Some(InvalidSourceReason::Absolute)
     } else if path
         .components()
@@ -326,6 +330,7 @@ fn validate_source_path(path: &Path) -> Result<(), ProjectConfigError> {
 
 #[cfg(test)]
 mod tests {
+    use crate::test_path;
     use std::{
         fs,
         path::{Path, PathBuf},
@@ -359,7 +364,7 @@ mod tests {
             assert_eq!(parsed, config);
             assert_eq!(
                 parsed
-                    .into_project(PathBuf::from("/work/demo"))
+                    .into_project(test_path("/work/demo"))
                     .expect("project")
                     .configuration()
                     .workflow(),
@@ -530,10 +535,10 @@ mod tests {
         );
 
         let project = config
-            .into_project(PathBuf::from("/work/example"))
+            .into_project(test_path("/work/example"))
             .expect("valid project model");
-        assert_eq!(project.root(), Path::new("/work/example"));
-        assert_eq!(project.source(), Path::new("/work/example/src"));
+        assert_eq!(project.root(), test_path("/work/example"));
+        assert_eq!(project.source(), test_path("/work/example/src"));
         assert_eq!(
             project.configuration().project_type(),
             ProjectType::Configuration
@@ -601,6 +606,31 @@ mod tests {
                     if path == Path::new(source) && reason == expected_reason
             ));
         }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_sources_reject_rooted_and_drive_relative_paths() {
+        for source in [r"\outside", r"C:outside", r"C:\outside", r"\\server\share"] {
+            let input = format!("[project]\ntype = 'report'\nsource = '{source}'\n");
+            assert!(matches!(
+                ProjectConfig::from_toml(&input),
+                Err(ProjectConfigError::InvalidSource {
+                    reason: InvalidSourceReason::Absolute,
+                    ..
+                })
+            ));
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_manifest_paths_use_portable_separators() {
+        let config = ProjectConfig::from_toml("[project]\ntype = 'report'\nsource = 'src\\xml'\n[build]\nartifacts_directory = 'out\\reports'\n").unwrap();
+        let text = config.to_toml().unwrap();
+        assert!(text.contains("source = \"src/xml\""));
+        assert!(text.contains("artifacts_directory = \"out/reports\""));
+        assert_eq!(ProjectConfig::from_toml(&text).unwrap(), config);
     }
 
     #[test]
