@@ -10,6 +10,7 @@ use super::{
     ArtifactType, BuildPlan, Ibcmd, ManagedInfobaseError, ManifestError, ProcessStream, RunError,
     infobase::ManagedInfobase, manifest,
 };
+use crate::platform_path::native_path;
 use eska_project_core::project::{Project, ProjectType, designer_xml};
 
 static WORKSPACE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -203,7 +204,7 @@ where
             OsString::from("import"),
             option("--data", infobase.data()),
             option("--out", &artifact),
-            import_source.into_os_string(),
+            native_path(&import_source).as_os_str().to_owned(),
         ],
         &pid_file,
         on_output,
@@ -517,7 +518,7 @@ fn ensure_existing_output_ancestor_is_inside_project(
 fn option(name: &str, path: &Path) -> OsString {
     let mut argument = OsString::from(name);
     argument.push(OsStr::new("="));
-    argument.push(path);
+    argument.push(native_path(path).as_os_str());
     argument
 }
 
