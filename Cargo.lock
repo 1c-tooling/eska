@@ -715,7 +715,7 @@ dependencies = [
 
 [[package]]
 name = "eska"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "axoupdater",
  "base64 0.23.1",
@@ -740,7 +740,7 @@ dependencies = [
 
 [[package]]
 name = "eska-analyzer"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "eska-project-core",
  "serde",
@@ -752,7 +752,7 @@ dependencies = [
 
 [[package]]
 name = "eska-build"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "bstr",
  "clap",
@@ -767,7 +767,7 @@ dependencies = [
 
 [[package]]
 name = "eska-build-runtime"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "ctrlc",
  "directories",
@@ -784,7 +784,7 @@ dependencies = [
 
 [[package]]
 name = "eska-check"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "clap",
  "ctrlc",
@@ -797,7 +797,7 @@ dependencies = [
 
 [[package]]
 name = "eska-fmt"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "clap",
  "ctrlc",
@@ -810,7 +810,7 @@ dependencies = [
 
 [[package]]
 name = "eska-presentation"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "clap",
  "eska-project-core",
@@ -821,7 +821,7 @@ dependencies = [
 
 [[package]]
 name = "eska-project"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "base64 0.23.1",
  "clap",
@@ -837,7 +837,7 @@ dependencies = [
 
 [[package]]
 name = "eska-project-core"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "base64 0.23.1",
  "bstr",
@@ -856,7 +856,7 @@ dependencies = [
 
 [[package]]
 name = "eska-terminal"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "crossterm",
  "eska-presentation",
@@ -864,7 +864,7 @@ dependencies = [
 
 [[package]]
 name = "eska-tool-runtime"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "ctrlc",
  "nix 0.31.3",
@@ -874,7 +874,7 @@ dependencies = [
 
 [[package]]
 name = "eska-vcs"
-version = "0.21.1"
+version = "0.22.0"
 dependencies = [
  "clap",
  "eska-presentation",
