@@ -1,5 +1,7 @@
 //! Deterministic derived configuration, ownership checks and one active context per workspace root.
 
+#[cfg(windows)]
+use std::path::Prefix;
 use std::{
     fs,
     path::{Component, Path, PathBuf},
@@ -379,19 +381,29 @@ fn context_path<'a>(root: &Path, path: &'a Path, reference: bool) -> Result<&'a 
     }
 }
 
-/// Normalize native separators only; Unix backslashes remain literal filename characters.
+/// Emit ordinary Windows paths for upstream; Unix backslashes remain literal filename characters.
 fn portable(path: &Path) -> Result<String, Error> {
     if path.is_absolute() {
-        return path
-            .to_str()
-            .map(|path| {
-                if cfg!(windows) {
-                    path.replace('\\', "/")
-                } else {
-                    path.into()
+        let invalid = || Error::NonPortablePath { path: path.into() };
+        let value = path.to_str().ok_or_else(invalid)?;
+        #[cfg(windows)]
+        let value = match path.components().next() {
+            Some(Component::Prefix(prefix)) => match prefix.kind() {
+                Prefix::VerbatimDisk(_) => value.strip_prefix(r"\\?\").ok_or_else(invalid)?,
+                Prefix::VerbatimUNC(_, _) => {
+                    let tail = value.strip_prefix(r"\\?\UNC\").ok_or_else(invalid)?;
+                    return Ok(format!("//{}", tail.replace('\\', "/")));
                 }
-            })
-            .ok_or_else(|| Error::NonPortablePath { path: path.into() });
+                Prefix::Verbatim(_) | Prefix::DeviceNS(_) => return Err(invalid()),
+                _ => value,
+            },
+            _ => value,
+        };
+        return Ok(if cfg!(windows) {
+            value.replace('\\', "/")
+        } else {
+            value.into()
+        });
     }
     let mut components = Vec::new();
     for component in path.components() {
@@ -459,5 +471,26 @@ fn context_conflict(plan: &Plan) -> Error {
     Error::ContextConflict {
         current,
         requested: plan.ownership.context.clone(),
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_path_tests {
+    use super::portable;
+    use std::path::Path;
+
+    #[test]
+    fn analyzer_paths_use_ordinary_drive_and_unc_roots() {
+        for (source, expected) in [
+            (r"C:\База с БСП\src", "C:/База с БСП/src"),
+            (r"\\?\C:\База с БСП\src", "C:/База с БСП/src"),
+            (r"\\server\share\База\src", "//server/share/База/src"),
+            (r"\\?\UNC\server\share\База\src", "//server/share/База/src"),
+        ] {
+            assert_eq!(portable(Path::new(source)).unwrap(), expected);
+        }
+        for source in [r"\\.\pipe\eska", r"\\?\Volume{fixture}\src"] {
+            assert!(portable(Path::new(source)).is_err());
+        }
     }
 }

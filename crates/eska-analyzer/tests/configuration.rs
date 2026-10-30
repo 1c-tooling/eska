@@ -84,6 +84,40 @@ fn windows_uses_bundled_help_unless_policy_explicitly_selects_another_source() {
     }
 }
 
+/// Explicit external references must remain usable by upstream's URL conversion.
+#[cfg(windows)]
+#[test]
+fn windows_reference_root_is_an_ordinary_absolute_path_for_upstream_lsp() {
+    let fixture = TestDir::new();
+    let root = fixture.0.join("external");
+    let reference = fixture.0.join("База с БСП");
+    project(&root, ProjectType::Processing);
+    project(&reference, ProjectType::Configuration);
+    fs::remove_file(reference.join("eska.toml")).unwrap();
+    let manifest = root.join("eska.toml");
+    fs::write(
+        &manifest,
+        fs::read_to_string(&manifest).unwrap()
+            + "\n[analysis.configuration]\nsource='../База с БСП/src'\n",
+    )
+    .unwrap();
+    let plan = configuration::inspect(&root, None).unwrap();
+    let generated: toml::Table =
+        toml::from_str(std::str::from_utf8(&plan.contents).unwrap()).unwrap();
+    let canonical = fs::canonicalize(reference.join("src")).unwrap();
+    let expected = canonical
+        .to_str()
+        .unwrap()
+        .strip_prefix(r"\\?\")
+        .unwrap()
+        .replace('\\', "/");
+    assert_eq!(
+        generated["source"]["root"].as_str(),
+        Some(expected.as_str())
+    );
+    assert!(!expected.starts_with("//?/"));
+}
+
 /// Model executable failures separately from actual upstream validation, tested explicitly below.
 #[cfg(unix)]
 fn fake_analyzer(root: &Path) -> PathBuf {
