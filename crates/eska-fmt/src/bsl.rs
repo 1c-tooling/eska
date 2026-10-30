@@ -42,8 +42,9 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
         start: request.text.len(),
         end: 0,
     };
-    let gaps = spacing::plan(&units, tokens, &request.text, &request.options);
-    let alignments = alignment::plan(&units, tokens, &request.text, &request.options, &gaps);
+    let multiline = multiline_units(request, &units, tokens, eol);
+    let gaps = spacing::plan(&units, tokens, &request.text, &request.options, &multiline);
+    let alignments = alignment::plan(&units, tokens, &request.options, &gaps, &multiline);
     for (index, unit) in units.iter().enumerate() {
         let part = &tokens[unit.tokens.clone()];
         let end = part
@@ -108,6 +109,37 @@ pub fn format(request: &Request, tokens: &[Token<'_>]) -> Result<(String, Range)
         actual = selected;
     }
     Ok((output, actual))
+}
+
+/// Unaligned output decides table boundaries; a failed probe stays isolated until selected rendering.
+fn multiline_units(
+    request: &Request,
+    units: &[syntax::Unit],
+    tokens: &[Token<'_>],
+    eol: &str,
+) -> Vec<bool> {
+    let options = &request.options;
+    if !options.align_assignments
+        && !options.align_call_arguments
+        && options.blank_lines_around_multiline_statements == 0
+    {
+        return vec![false; units.len()];
+    }
+    units
+        .iter()
+        .map(|unit| {
+            unit.kind == syntax::UnitKind::Statement
+                && layout::render(
+                    &request.text,
+                    &tokens[unit.tokens.clone()],
+                    options,
+                    unit.level * usize::from(options.indent_width),
+                    eol,
+                    &alignment::Columns::new(),
+                )
+                .map_or(true, |text| text.contains('\n'))
+        })
+        .collect()
 }
 
 /// Preserve ordinary blank-line intent within the selected structural gap policy.

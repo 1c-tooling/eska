@@ -31,7 +31,7 @@ fn removed_blank_lines_expose_initializer_dependencies_immediately() {
                 ..options()
             }
         ),
-        "Flag = 1;\nObject = Factory();\nObject.A    = 1;\nObject.Long = 2;\n"
+        "Flag = 1;\n\nObject = Factory();\nObject.A    = 1;\nObject.Long = 2;\n"
     );
 }
 

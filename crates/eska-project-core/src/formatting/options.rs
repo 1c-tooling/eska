@@ -119,6 +119,10 @@ options! {
     blank_lines_inside_multistatement_blocks: u16 = 0,
     #[serde(default)]
     blank_lines_before_return: u16 = 0,
+    #[serde(default)]
+    blank_lines_around_multiline_statements: u16 = 0,
+    #[serde(default)]
+    blank_lines_between_object_groups: u16 = 0,
     trim_trailing_whitespace: bool = true,
     insert_final_newline: bool = true,
     comments: Comments = Comments::IndentOnly,
@@ -173,6 +177,18 @@ impl Options {
             ),
             ("column_limit", self.column_limit, 0, 4096),
             ("max_empty_lines", self.max_empty_lines, 0, 16),
+            (
+                "blank_lines_around_multiline_statements",
+                self.blank_lines_around_multiline_statements,
+                0,
+                16,
+            ),
+            (
+                "blank_lines_between_object_groups",
+                self.blank_lines_between_object_groups,
+                0,
+                16,
+            ),
             (
                 "blank_lines_between_queries",
                 self.blank_lines_between_queries,

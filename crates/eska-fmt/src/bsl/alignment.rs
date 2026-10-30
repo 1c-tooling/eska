@@ -19,19 +19,19 @@ pub type Columns = BTreeMap<usize, usize>;
 pub fn plan(
     units: &[Unit],
     tokens: &[Token<'_>],
-    input: &str,
     options: &Options,
     gaps: &[usize],
+    multiline: &[bool],
 ) -> Vec<Columns> {
     let mut output = vec![Columns::new(); units.len()];
     if options.align_assignments {
-        assignments(units, tokens, gaps, options, &mut output);
+        assignments(units, tokens, gaps, multiline, options, &mut output);
     }
     if options.align_call_arguments
         && options.wrap_arguments != Wrapping::OnePerLine
         && options.wrap_binary != Wrapping::OnePerLine
     {
-        calls(units, tokens, input, options, gaps, &mut output);
+        calls(units, tokens, options, gaps, multiline, &mut output);
     }
     output
 }
@@ -41,6 +41,7 @@ struct Assignment {
     offset: usize,
     column: usize,
     target: Range<usize>,
+    end_column: usize,
 }
 
 /// A blank line, comment, directive or block transition ends an assignment table.
@@ -48,6 +49,7 @@ fn assignments(
     units: &[Unit],
     tokens: &[Token<'_>],
     gaps: &[usize],
+    multiline: &[bool],
     options: &Options,
     output: &mut [Columns],
 ) {
@@ -56,7 +58,9 @@ fn assignments(
         let part = &tokens[unit.tokens.clone()];
         let assign =
             unit.kind == UnitKind::Statement && part[0].kind == Kind::Word && part[0].key.is_none();
-        let equals = assign.then(|| layout::assignment(part)).flatten();
+        let equals = (assign && !multiline[index])
+            .then(|| layout::assignment(part))
+            .flatten();
         if equals.is_none() || !adjacent(index, units, gaps) {
             finish_assignments(&group, tokens, options, output);
             group.clear();
@@ -69,6 +73,11 @@ fn assignments(
                     + layout::width(&layout::flat(&part[..at], options), 0, options.tab_width)
                     + usize::from(options.space_around_operators),
                 target: unit.tokens.start..unit.tokens.start + at,
+                end_column: layout::width(
+                    &layout::flat(part, options),
+                    unit.level * usize::from(options.indent_width),
+                    options.tab_width,
+                ),
             });
         }
     }
@@ -83,7 +92,7 @@ fn finish_assignments(
     output: &mut [Columns],
 ) {
     if !options.separate_object_initialization {
-        assignment_columns(group, output);
+        assignment_columns(group, options, output);
         return;
     }
     let mut receivers = BTreeSet::new();
@@ -96,11 +105,42 @@ fn finish_assignments(
     let mut start = 0;
     for (end, initializer) in initializers.into_iter().enumerate() {
         if initializer {
-            assignment_columns(&group[start..end], output);
+            assignment_columns(&group[start..end], options, output);
             start = end + 1;
         }
     }
-    assignment_columns(&group[start..], output);
+    assignment_columns(&group[start..], options, output);
+}
+
+/// An initializer followed by its own field/index assignments starts a syntactic population group.
+pub(super) fn object_initializers(units: &[Unit], tokens: &[Token<'_>]) -> Vec<bool> {
+    let mut result = vec![false; units.len()];
+    for (index, unit) in units.iter().enumerate() {
+        let Some(target) = assignment_target(unit, tokens) else {
+            continue;
+        };
+        let Some(next) = units[index + 1..]
+            .iter()
+            .find(|next| next.kind != UnitKind::Comment)
+            .filter(|next| next.level == unit.level)
+            .and_then(|next| assignment_target(next, tokens))
+        else {
+            continue;
+        };
+        let (target, _) = assignment_targets(target);
+        let (_, parents) = assignment_targets(next);
+        result[index] = parents.contains(&target);
+    }
+    result
+}
+
+/// Only an outer assignment's complete left-hand token path can own subsequent population.
+fn assignment_target<'a>(unit: &Unit, tokens: &'a [Token<'a>]) -> Option<&'a [Token<'a>]> {
+    let part = &tokens[unit.tokens.clone()];
+    (unit.kind == UnitKind::Statement && part[0].kind == Kind::Word && part[0].key.is_none())
+        .then(|| layout::assignment(part))
+        .flatten()
+        .map(|at| &part[..at])
 }
 
 /// Identifier matching is case-insensitive; index literal bytes and nested delimiters remain exact.
@@ -131,10 +171,18 @@ fn assignment_targets(tokens: &[Token<'_>]) -> (String, Vec<String>) {
 }
 
 /// A single assignment retains ordinary spacing, while a table uses its widest left-hand side.
-fn assignment_columns(group: &[Assignment], output: &mut [Columns]) {
+fn assignment_columns(group: &[Assignment], options: &Options, output: &mut [Columns]) {
     if group.len() > 1
         && let Some(maximum) = group.iter().map(|assignment| assignment.column).max()
     {
+        if options.column_limit != 0
+            && group.iter().any(|assignment| {
+                assignment.end_column + maximum - assignment.column
+                    > usize::from(options.column_limit)
+            })
+        {
+            return;
+        }
         for assignment in group {
             output[assignment.unit].insert(assignment.offset, maximum);
         }
@@ -153,14 +201,16 @@ struct Call {
 fn calls(
     units: &[Unit],
     tokens: &[Token<'_>],
-    input: &str,
     options: &Options,
     gaps: &[usize],
+    multiline: &[bool],
     output: &mut [Columns],
 ) {
     let mut group: Vec<Call> = Vec::new();
     for (index, unit) in units.iter().enumerate() {
-        let candidate = call(index, unit, tokens, input, options);
+        let candidate = (!multiline[index])
+            .then(|| call(index, unit, tokens, options))
+            .flatten();
         let compatible = candidate.as_ref().is_some_and(|current| {
             group.last().is_none_or(|previous| {
                 current.callee == previous.callee
@@ -180,13 +230,7 @@ fn calls(
 }
 
 /// Only calls that render on one line enter a table, including source lines collapsed by policy.
-fn call(
-    index: usize,
-    unit: &Unit,
-    tokens: &[Token<'_>],
-    input: &str,
-    options: &Options,
-) -> Option<Call> {
+fn call(index: usize, unit: &Unit, tokens: &[Token<'_>], options: &Options) -> Option<Call> {
     let part = &tokens[unit.tokens.clone()];
     if unit.kind != UnitKind::Statement
         || !part.last()?.is(";")
@@ -233,14 +277,6 @@ fn call(
         }
     }
     if arguments.is_empty() {
-        return None;
-    }
-    // Single-line calls already fit the budget; only source breaks need a layout probe.
-    if input[part.first()?.range.start..part.last()?.range.end].contains('\n')
-        && layout::render(input, part, options, indent, "\n", &Columns::new())
-            .ok()?
-            .contains('\n')
-    {
         return None;
     }
     let callee = layout::flat(&part[..=open], options);

@@ -84,3 +84,32 @@ fn arithmetic_wraps_at_addition_before_multiplication() {
         "Result = FirstValue * SecondValue\n\t+ ThirdValue * FourthValue;\n"
     );
 }
+
+/// Nested expressions remain stable across widths, continuation directions and manual-break policy.
+#[test]
+fn expression_layout_is_stable_across_fit_options() {
+    for source in [
+        "Result = LongFirst = LongSecond And LongThird = LongFourth Or LongFifth = LongSixth;\n",
+        "Result = (LongFirst = LongSecond Or LongThird = LongFourth) And LongFifth = LongSixth;\n",
+        "Result = First(Alpha, Beta) + Second(Gamma, Delta) * Third(Epsilon, Zeta);\n",
+        "Call(Object.Value = Snapshot.Value, X + Y * Z);\n",
+        "Result = -FirstValue + -SecondValue * ThirdValue;\n",
+        "Result = A = B\nAnd C\n<> D;\n",
+    ] {
+        for column_limit in [0, 24, 40, 80] {
+            for break_before_binary_operators in [false, true] {
+                for preserve_existing_line_breaks in [false, true] {
+                    formatted(
+                        source,
+                        Options {
+                            column_limit,
+                            break_before_binary_operators,
+                            preserve_existing_line_breaks,
+                            ..options()
+                        },
+                    );
+                }
+            }
+        }
+    }
+}

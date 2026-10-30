@@ -54,6 +54,8 @@ pub(super) fn apply(
         options.blank_lines_around_blocks,
         options.blank_lines_inside_multistatement_blocks,
         options.blank_lines_before_return,
+        options.blank_lines_around_multiline_statements,
+        options.blank_lines_between_object_groups,
     ]
     .into_iter()
     .max()

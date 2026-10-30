@@ -210,6 +210,18 @@
           "maximum": 16,
           "default": 0
         },
+        "blank_lines_around_multiline_statements": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 0
+        },
+        "blank_lines_between_object_groups": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "default": 0
+        },
         "blank_lines_between_methods": {
           "type": "integer",
           "minimum": 0,

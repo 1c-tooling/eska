@@ -4,6 +4,7 @@ mod alignment;
 mod expressions;
 mod initialization;
 mod literals;
+mod readability;
 mod spacing;
 
 use super::{apply, formatted};
