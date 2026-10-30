@@ -42,6 +42,7 @@ fn query_assignment_ends_horizontal_tables_even_when_gaps_are_disabled() {
         source,
         Options {
             blank_lines_around_multiline_statements: 0,
+            blank_lines_between_object_groups: 0,
             ..options()
         },
     );

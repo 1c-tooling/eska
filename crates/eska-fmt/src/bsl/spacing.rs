@@ -1,7 +1,7 @@
 //! Vertical spacing follows parsed statement boundaries, never physical line or semicolon counts.
 
 use super::{
-    alignment,
+    groups,
     syntax::{Unit, UnitKind},
 };
 use crate::{lex::Token, spelling::Key};
@@ -158,7 +158,11 @@ fn separate_statements(
     multiline: &[bool],
     gaps: &mut [Gap],
 ) {
-    let initializers = alignment::object_initializers(units, tokens);
+    let groups = if options.blank_lines_between_object_groups == 0 {
+        vec![groups::Boundary::default(); units.len()]
+    } else {
+        groups::plan(units, tokens)
+    };
     for (index, unit) in units.iter().enumerate() {
         let key = tokens[unit.tokens.start].key;
         let multiline_gap = if multiline[index] {
@@ -166,7 +170,7 @@ fn separate_statements(
         } else {
             0
         };
-        let group_gap = if initializers[index] {
+        let group_gap = if groups[index].before {
             options.blank_lines_between_object_groups
         } else {
             0
@@ -186,7 +190,14 @@ fn separate_statements(
                 gaps[start].require(before);
             }
         }
-        if unit.kind == UnitKind::End || multiline_gap > 0 {
+        let after = multiline_gap.max(if groups[index].after {
+            options.blank_lines_between_object_groups
+        } else if unit.kind == UnitKind::End {
+            options.blank_lines_around_blocks
+        } else {
+            0
+        });
+        if after > 0 {
             let next = units[index + 1..]
                 .iter()
                 .find(|unit| unit.kind != UnitKind::Comment);
@@ -194,11 +205,7 @@ fn separate_statements(
                 next.level == unit.level
                     && matches!(next.kind, UnitKind::Statement | UnitKind::Header)
             }) {
-                gaps[index + 1].require(if unit.kind == UnitKind::End {
-                    options.blank_lines_around_blocks
-                } else {
-                    multiline_gap
-                });
+                gaps[index + 1].require(after);
             }
         }
         if unit.kind == UnitKind::Statement && key == Some(Key::Return) {

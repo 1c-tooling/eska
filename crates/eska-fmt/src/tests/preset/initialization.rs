@@ -16,7 +16,13 @@ fn object_initialization_is_not_padded_to_its_field_names() {
 fn initializer_is_isolated_from_both_neighboring_assignment_groups() {
     let source = "A=1;\nLong=2;\nObj=Factory();\nFlag=1;\nObj.Short=2;\nObj.LongName=3;\n";
     assert_eq!(
-        formatted(source, options()),
+        formatted(
+            source,
+            Options {
+                blank_lines_between_object_groups: 0,
+                ..options()
+            }
+        ),
         "A    = 1;\nLong = 2;\nObj = Factory();\nFlag         = 1;\nObj.Short    = 2;\nObj.LongName = 3;\n"
     );
 }
@@ -48,14 +54,18 @@ fn nested_and_indexed_initializers_are_recognized_without_analyzer_types() {
 /// Similar identifier spellings and differently cased index literals are distinct receivers.
 #[test]
 fn prefix_collisions_and_index_literals_do_not_split_unrelated_tables() {
+    let policy = Options {
+        blank_lines_between_object_groups: 0,
+        ..options()
+    };
     assert_eq!(
-        formatted("Obj=Factory();\nObj2.A=1;\nObj2.Long=2;\n", options()),
+        formatted("Obj=Factory();\nObj2.A=1;\nObj2.Long=2;\n", policy.clone()),
         "Obj       = Factory();\nObj2.A    = 1;\nObj2.Long = 2;\n"
     );
     assert_eq!(
         formatted(
             "Rows[\"A\"]=Factory();\nRows[\"a\"].X=1;\nRows[\"a\"].Long=2;\n",
-            options()
+            policy
         ),
         "Rows[\"A\"]      = Factory();\nRows[\"a\"].X    = 1;\nRows[\"a\"].Long = 2;\n"
     );

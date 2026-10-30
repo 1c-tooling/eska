@@ -2,6 +2,7 @@
 
 mod alignment;
 mod expressions;
+mod groups;
 pub mod layout;
 mod spacing;
 mod syntax;

@@ -1,13 +1,12 @@
 //! Horizontal tables are planned across adjacent syntax units, without inspecting literal values.
 
 use super::{
-    layout,
+    groups, layout,
     syntax::{Unit, UnitKind, group_end},
 };
 use crate::lex::{Kind, Token};
 use eska_project_core::formatting::{Options, Wrapping};
 use std::{
-    borrow::Cow,
     collections::{BTreeMap, BTreeSet},
     ops::Range,
 };
@@ -97,10 +96,13 @@ fn finish_assignments(
     }
     let mut receivers = BTreeSet::new();
     let mut initializers = vec![false; group.len()];
-    for (index, assignment) in group.iter().enumerate().rev() {
-        let (target, parents) = assignment_targets(&tokens[assignment.target.clone()]);
-        initializers[index] = receivers.contains(&target);
-        receivers.extend(parents);
+    let targets: Vec<_> = group
+        .iter()
+        .map(|assignment| groups::path_key(&tokens[assignment.target.clone()]))
+        .collect();
+    for (index, target) in targets.iter().enumerate().rev() {
+        initializers[index] = receivers.contains(target.key.as_str());
+        receivers.extend(target.parents());
     }
     let mut start = 0;
     for (end, initializer) in initializers.into_iter().enumerate() {
@@ -110,64 +112,6 @@ fn finish_assignments(
         }
     }
     assignment_columns(&group[start..], options, output);
-}
-
-/// An initializer followed by its own field/index assignments starts a syntactic population group.
-pub(super) fn object_initializers(units: &[Unit], tokens: &[Token<'_>]) -> Vec<bool> {
-    let mut result = vec![false; units.len()];
-    for (index, unit) in units.iter().enumerate() {
-        let Some(target) = assignment_target(unit, tokens) else {
-            continue;
-        };
-        let Some(next) = units[index + 1..]
-            .iter()
-            .find(|next| next.kind != UnitKind::Comment)
-            .filter(|next| next.level == unit.level)
-            .and_then(|next| assignment_target(next, tokens))
-        else {
-            continue;
-        };
-        let (target, _) = assignment_targets(target);
-        let (_, parents) = assignment_targets(next);
-        result[index] = parents.contains(&target);
-    }
-    result
-}
-
-/// Only an outer assignment's complete left-hand token path can own subsequent population.
-fn assignment_target<'a>(unit: &Unit, tokens: &'a [Token<'a>]) -> Option<&'a [Token<'a>]> {
-    let part = &tokens[unit.tokens.clone()];
-    (unit.kind == UnitKind::Statement && part[0].kind == Kind::Word && part[0].key.is_none())
-        .then(|| layout::assignment(part))
-        .flatten()
-        .map(|at| &part[..at])
-}
-
-/// Identifier matching is case-insensitive; index literal bytes and nested delimiters remain exact.
-fn assignment_targets(tokens: &[Token<'_>]) -> (String, Vec<String>) {
-    let mut target = String::new();
-    let mut parents = Vec::new();
-    let mut depth = 0_usize;
-    for token in tokens.iter().filter(|token| token.kind != Kind::Comment) {
-        if depth == 0 && (token.is(".") || token.is("[")) {
-            parents.push(target.clone());
-        }
-        let text = if token.kind == Kind::Word {
-            Cow::Owned(token.text.to_lowercase())
-        } else {
-            Cow::Borrowed(token.text)
-        };
-        // Length framing distinguishes token sequences such as [New Item] and [NewItem].
-        target.push_str(&text.len().to_string());
-        target.push(':');
-        target.push_str(&text);
-        match token.text {
-            "(" | "[" => depth += 1,
-            ")" | "]" => depth = depth.saturating_sub(1),
-            _ => {}
-        }
-    }
-    (target, parents)
 }
 
 /// A single assignment retains ordinary spacing, while a table uses its widest left-hand side.

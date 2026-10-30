@@ -4,6 +4,7 @@ mod alignment;
 mod expressions;
 mod initialization;
 mod literals;
+mod object_groups;
 mod readability;
 mod spacing;
 

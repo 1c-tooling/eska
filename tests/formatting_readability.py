@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the seven readability rules through CLI/facade/RPC and an optional read-only user snapshot."""
+"""Check BSL readability and receiver groups through CLI/facade/RPC and an optional user snapshot."""
 
 import argparse
 import hashlib
@@ -97,6 +97,8 @@ def main():
     environment = dict(os.environ, ESKA_FMT_BINARY=str(binaries["formatter"]),
                        ESKA_BSL_ANALYZER=str(stand / "missing-analyzer"))
     samples = {"examples": b"\xef\xbb\xbf" + SAMPLE.replace("\n", "\r\n").encode()}
+    fixtures = repository / "crates/eska-fmt/src/tests/preset/fixtures"
+    samples["receiver-groups"] = b"\xef\xbb\xbf" + (fixtures / "receiver-groups.input.bsl").read_text().replace("\n", "\r\n").encode()
     if arguments.source:
         samples["ObjectModule"] = arguments.source.read_bytes()
     report = {"complete": False, "stand": str(stand), "samples": {}}
@@ -119,10 +121,11 @@ def main():
         locales, outputs, checks = {}, [], []
         for locale in ("ru-RU", "en-US"):
             module.write_bytes(original)
-            check = command("formatter", locale, directory, ["--check"], (1,))
+            check = command("formatter", locale, directory, ["--check"], (1,) if name != "ObjectModule" else (0, 1))
             assert check[1]["schema_version"] == 1
+            assert check[0] == int(check[1]["files"][0]["changed"])
             checks.append(check[1])
-            facade = command("facade", locale, directory, ["--check"], (1,))
+            facade = command("facade", locale, directory, ["--check"], (check[0],))
             assert check == facade
             preview = command("formatter", locale, directory, ["--diff"], (0,))[1]
             assert preview["files"][0]["edits"] == check[1]["files"][0]["edits"]
@@ -143,7 +146,7 @@ def main():
                     rpc.child.wait(timeout=5)
             applied = command("formatter", locale, directory, [], (0,))[1]
             formatted = module.read_bytes()
-            assert applied["files"][0]["status"] == "applied"
+            assert applied["files"][0]["status"] == ("applied" if check[0] else "unchanged")
             stable = command("formatter", locale, directory, ["--check"], (0,))[1]
             assert stable["files"][0]["edits"] == []
             assert command("formatter", locale, directory, ["--diff"], (0,))[1]["files"][0]["diff"] is None
@@ -152,6 +155,9 @@ def main():
                 assert b"\n" not in formatted.replace(b"\r\n", b"")
             if name == "examples":
                 verify_examples(formatted)
+            if name == "receiver-groups":
+                expected = (fixtures / "receiver-groups.expected.bsl").read_text()
+                assert formatted == b"\xef\xbb\xbf" + expected.replace("\n", "\r\n").encode()
             outputs.append(formatted)
             locales[locale] = {"initialExit": check[0], "finalExit": 0,
                                "cliFacadeRpcParity": True, "idempotent": True}
