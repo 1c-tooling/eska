@@ -157,7 +157,9 @@ fn literals_and_preprocessor_branches_keep_their_structure() {
     let source = "Если Флаг Тогда\nТекст=\"Первое; Второе;\n |Третье\";\nКонецЕсли;\n#Если Клиент Тогда\nЕсли Первое Тогда\n#Иначе\nЕсли Второе Тогда\n#КонецЕсли\nДействие();\nКонецЕсли;\n";
     let output = formatted(source, options());
     assert!(
-        output.starts_with("Если Флаг Тогда\n\tТекст = \"Первое; Второе;\n |Третье\";\nКонецЕсли;"),
+        output.starts_with(
+            "Если Флаг Тогда\n\tТекст =\n\t\t\"Первое; Второе;\n\t\t|Третье\";\nКонецЕсли;"
+        ),
         "{output}"
     );
     assert!(

@@ -178,6 +178,10 @@
           "type": "boolean",
           "default": false
         },
+        "indent_multiline_strings": {
+          "type": "boolean",
+          "default": false
+        },
         "blank_lines_inside_methods": {
           "type": "integer",
           "minimum": 0,

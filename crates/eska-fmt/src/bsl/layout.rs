@@ -3,6 +3,7 @@
 use super::{alignment::Columns, syntax::group_end, wrapping};
 use crate::{
     lex::{Kind, Token},
+    literals,
     spelling::{self, Key},
 };
 use eska_project_core::formatting::{Error, IndentStyle, Options, Wrapping};
@@ -87,9 +88,9 @@ fn sequence(
         if token.kind == Kind::Comment && before && writer.has_text {
             writer.newline(base + usize::from(writer.options.continuation_indent_width))?;
         }
-        if before
-            && writer.options.preserve_existing_line_breaks
-            && assignment == at.checked_sub(1)
+        if assignment == at.checked_sub(1)
+            && (before && writer.options.preserve_existing_line_breaks
+                || writer.options.indent_multiline_strings && literals::multiline(token.text))
             && writer.has_text
         {
             writer.newline(base + usize::from(writer.options.continuation_indent_width))?;
@@ -108,11 +109,18 @@ fn sequence(
             at = end;
             continue;
         }
-        writer.push(&spelling::render(
-            token.text,
-            token.key,
-            writer.options.keyword_case,
-        ))?;
+        if writer.options.indent_multiline_strings && literals::multiline(token.text) {
+            writer.push(&literals::reindent(
+                token.text,
+                &indentation(writer.column, writer.options),
+            )?)?;
+        } else {
+            writer.push(&spelling::render(
+                token.text,
+                token.key,
+                writer.options.keyword_case,
+            ))?;
+        }
         writer.line_comment_open = token.kind == Kind::Comment && token.text.starts_with("//");
         if token.kind == Kind::Comment && at + 1 < tokens.len() {
             writer.newline(
@@ -159,6 +167,8 @@ fn group(
             Wrapping::Fit => {
                 long || writer.options.preserve_existing_line_breaks && existing
                     || body.iter().any(|token| token.kind == Kind::Comment)
+                    || writer.options.indent_multiline_strings
+                        && body.iter().any(|token| literals::multiline(token.text))
             }
             Wrapping::Preserve => existing,
         };

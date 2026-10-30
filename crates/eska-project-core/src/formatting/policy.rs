@@ -161,6 +161,7 @@ pub(super) fn validate_patch(patch: &Patch, language: Option<Language>) -> Resul
         || patch.align_call_arguments.is_some()
         || patch.closing_parenthesis_on_new_line.is_some()
         || patch.preserve_existing_line_breaks.is_some()
+        || patch.indent_multiline_strings.is_some()
         || patch.blank_lines_between_methods.is_some()
         || patch.blank_lines_inside_methods.is_some()
         || patch.blank_lines_around_blocks.is_some()
@@ -271,6 +272,7 @@ pub(super) fn builtin_profile(name: &str, language: Language) -> Option<Patch> {
         "eska" if language == Language::Bsl => Some(Patch {
             column_limit: Some(150),
             preserve_existing_line_breaks: Some(true),
+            indent_multiline_strings: Some(true),
             align_assignments: Some(true),
             separate_object_initialization: Some(true),
             align_call_arguments: Some(true),

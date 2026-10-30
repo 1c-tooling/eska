@@ -17,6 +17,7 @@ fn old_protocol_options_receive_only_pinned_additive_defaults() {
         "align_call_arguments",
         "closing_parenthesis_on_new_line",
         "preserve_existing_line_breaks",
+        "indent_multiline_strings",
         "blank_lines_inside_methods",
         "blank_lines_around_blocks",
         "blank_lines_inside_multistatement_blocks",
@@ -75,6 +76,7 @@ fn eska_profile_is_versioned_language_specific_and_inheritable() {
     assert!(bsl.options.align_assignments && bsl.options.align_call_arguments);
     assert!(bsl.options.separate_object_initialization);
     assert!(bsl.options.closing_parenthesis_on_new_line);
+    assert!(bsl.options.indent_multiline_strings);
     assert_eq!(bsl.options.blank_lines_inside_methods, 1);
     assert_eq!(bsl.options.blank_lines_around_blocks, 1);
     assert_eq!(bsl.options.blank_lines_inside_multistatement_blocks, 1);
@@ -189,6 +191,8 @@ fn strict_policies_reject_invalid_or_unsupported_options() {
         "[sdbl]\nalign_call_arguments=false",
         "[common]\nclosing_parenthesis_on_new_line=true",
         "[sdbl]\npreserve_existing_line_breaks=true",
+        "[sdbl]\nindent_multiline_strings=true",
+        "[common]\nindent_multiline_strings=false",
         "[bsl]\nblank_lines_inside_methods=17",
         "[bsl]\nblank_lines_around_blocks=17",
         "[bsl]\nblank_lines_inside_multistatement_blocks=17",

@@ -3,6 +3,7 @@
 mod alignment;
 mod expressions;
 mod initialization;
+mod literals;
 mod spacing;
 
 use super::{apply, formatted};
@@ -172,7 +173,7 @@ fn selected_table_row_preserves_surrounding_bytes() {
     assert!(output.starts_with("Метод(\"А\"      , 1);\n"));
 }
 
-/// The new preset cannot change query literals, disabled sections or controlled methods.
+/// The preset preserves query content, disabled sections and controlled methods exactly.
 #[test]
 fn preset_retains_opaque_and_protected_source() {
     let protected = "&ИзменениеИКонтроль(\"Тест\")\nПроцедура Тест()\n  А=1;\nКонецПроцедуры\n";
@@ -183,17 +184,17 @@ fn preset_retains_opaque_and_protected_source() {
     );
     let output = formatted(&source, options());
     assert!(output.starts_with(protected));
-    assert!(output.contains(literal));
+    assert!(output.contains("\"ВЫБРАТЬ\n\t\t|  1 КАК А,2 КАК Б\""));
     assert!(output.contains(disabled));
 }
 
-/// Query values can start on a separate continuation line without changing any literal bytes.
+/// Query values start on a separate continuation line and retain their exact content after the bars.
 #[test]
 fn preset_keeps_a_separate_assignment_value_line() {
     let source = "Функция ТекстЗапроса()\nЗапрос = Новый Запрос;\nЗапрос.Текст =\n\"ВЫБРАТЬ\n        | А КАК А,Б КАК Б\";\nВозврат Запрос.Текст;\nКонецФункции\n";
     let output = formatted(source, options());
     assert!(
-        output.contains("\tЗапрос.Текст =\n\t\t\"ВЫБРАТЬ\n        | А КАК А,Б КАК Б\";"),
+        output.contains("\tЗапрос.Текст =\n\t\t\"ВЫБРАТЬ\n\t\t| А КАК А,Б КАК Б\";"),
         "{output}"
     );
 }
